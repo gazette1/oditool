@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Alchemical Growth Engine — Mode 1 · Earth</title>
+  <meta name="description" content="An Outcome-Driven Innovation research instrument. Find the five outcomes your competitors haven't priced yet — then enter the market on the right one." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design tokens (see design.md) ────────────────────────────────────── */
+    :root {
+      --bg-base: #06080c;
+      --bg-surface-1: #0d1117;
+      --bg-surface-2: #151c28;
+      --bg-surface-3: #1c2536;
+      --border-default: #1e2a3a;
+      --border-strong: #2a3a4f;
+      --text-primary: #e0ddd5;
+      --text-secondary: #a09989;
+      --text-muted: #6a7585;
+      --text-inverse: #06080c;
+      --accent-gold: #c8a45c;
+      --accent-gold-bright: #d9b878;
+      --accent-gold-dim: #9c7e44;
+      --strat-purple: #a78bfa;
+
+      --enter: cubic-bezier(0.16, 1, 0.3, 1);
+      --inOut: cubic-bezier(0.65, 0, 0.35, 1);
+    }
+
+    /* ── Reset / base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      letter-spacing: 0.005em;
+      font-feature-settings: "ss01", "tnum";
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; cursor: pointer; }
+    img, svg, video { display: block; max-width: 100%; }
+
+    /* ── Typography classes ──────────────────────────────────────────────── */
+    .display-xl { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: clamp(48px, 7.5vw, 96px); line-height: 0.92; letter-spacing: -0.04em; color: var(--text-primary); }
+    .display-lg { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: clamp(36px, 5vw, 64px); line-height: 0.98; letter-spacing: -0.03em; }
+    .display { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 44px; line-height: 1.05; letter-spacing: -0.02em; }
+    .h1 { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 32px; line-height: 1.15; letter-spacing: -0.015em; }
+    .h2 { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 22px; line-height: 1.25; letter-spacing: -0.005em; }
+    .h3 { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 16px; line-height: 1.35; }
+    .body-lg { font-size: 15px; line-height: 1.65; color: var(--text-secondary); }
+    .body { font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+    .body-sm { font-size: 12px; line-height: 1.6; color: var(--text-muted); }
+    .caption {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 10px; font-weight: 600; line-height: 1.4;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+    }
+    .caption-muted { color: var(--text-muted); }
+
+    /* ── Layout ──────────────────────────────────────────────────────────── */
+    .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+    .container-narrow { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+    .section { padding: 112px 0; position: relative; }
+    .section-md { padding: 80px 0; position: relative; }
+    .hairline { height: 1px; background: var(--border-default); width: 100%; }
+    .section-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      margin-bottom: 56px;
+    }
+
+    /* ── Effects: dot grid background ────────────────────────────────────── */
+    .dot-grid {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(200,164,92,0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Effects: vignette ───────────────────────────────────────────────── */
+    .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, var(--bg-base) 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────────────────────── */
+    nav.top {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(6, 8, 12, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-default);
+    }
+    nav.top .container { height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .wordmark { display: flex; align-items: center; gap: 10px; }
+    .wordmark .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent-gold);
+      box-shadow: 0 0 12px rgba(200,164,92,0.6);
+      animation: gold-pulse 1800ms infinite var(--inOut);
+    }
+    @keyframes gold-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .wordmark .name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+    }
+    nav.top .links { display: flex; gap: 32px; align-items: center; }
+    nav.top .links a {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 200ms var(--enter);
+      font-family: "Space Grotesk", sans-serif;
+    }
+    nav.top .links a:hover { color: var(--text-primary); }
+    nav.top .cta-mini {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      padding: 8px 16px;
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-primary);
+      transition: border-color 200ms var(--enter), color 200ms var(--enter);
+    }
+    nav.top .cta-mini:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+      height: 44px; padding: 0 24px;
+      border-radius: 6px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      transition: background 200ms var(--enter), border-color 200ms var(--enter), color 200ms var(--enter);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    .btn-primary { background: var(--accent-gold); color: var(--text-inverse); }
+    .btn-primary:hover { background: var(--accent-gold-bright); }
+    .btn-primary:active { background: var(--accent-gold-dim); }
+    .btn-secondary { border-color: var(--border-default); color: var(--text-primary); background: transparent; }
+    .btn-secondary:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
+    .btn-arrow { width: 12px; height: 12px; }
+
+    /* ── Hero ────────────────────────────────────────────────────────────── */
+    .hero { position: relative; padding: 160px 0 112px; overflow: hidden; }
+    .hero .container { position: relative; z-index: 2; }
+    .hero-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 80px; align-items: center; }
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 56px; }
+    }
+    .hero-meta {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 32px;
+    }
+    .hero-meta .pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-default);
+      border-radius: 999px;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      font-family: "Space Grotesk", sans-serif;
+    }
+    .hero-meta .pill .pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent-gold);
+      animation: gold-pulse 1800ms infinite var(--inOut);
+    }
+    .hero-headline {
+      margin-bottom: 24px;
+    }
+    .hero-headline .accent { color: var(--accent-gold); }
+    .hero-sub {
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      max-width: 540px;
+      margin-bottom: 40px;
+    }
+    .hero-cta-row {
+      display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    }
+    .hero-foot {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-default);
+      display: flex; gap: 48px;
+      flex-wrap: wrap;
+    }
+    .hero-foot-item .label {
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-family: "Space Grotesk", sans-serif;
+    }
+    .hero-foot-item .value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 20px; font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    /* ── The animated sigil ──────────────────────────────────────────────── */
+    .sigil-wrap {
+      position: relative;
+      aspect-ratio: 1;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .sigil-wrap svg { width: 100%; height: 100%; }
+    .sigil-rotate {
+      animation: sigil-spin 60s linear infinite;
+      transform-origin: 50% 50%;
+    }
+    @keyframes sigil-spin {
+      to { transform: rotate(360deg); }
+    }
+    .sigil-trace {
+      stroke: var(--accent-gold);
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .sigil-trace.outer { stroke-width: 1.25; stroke-dasharray: 1500; stroke-dashoffset: 1500; animation: trace-in 1800ms var(--enter) forwards; }
+    .sigil-trace.spokes { stroke-width: 0.75; stroke-dasharray: 600; stroke-dashoffset: 600; animation: trace-in 1400ms 600ms var(--enter) forwards; opacity: 0.5; }
+    .sigil-trace.inner { stroke-width: 1; stroke-dasharray: 800; stroke-dashoffset: 800; animation: trace-in 1600ms 400ms var(--enter) forwards; }
+    @keyframes trace-in { to { stroke-dashoffset: 0; } }
+    .sigil-step-label {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      fill: var(--text-secondary);
+      opacity: 0;
+      animation: label-in 600ms var(--enter) forwards;
+    }
+    .sigil-step-num {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 7px; font-weight: 600;
+      letter-spacing: 0.1em;
+      fill: var(--accent-gold);
+      opacity: 0;
+      animation: label-in 600ms var(--enter) forwards;
+    }
+    @keyframes label-in { to { opacity: 1; } }
+    .sigil-orbit {
+      fill: var(--accent-gold);
+      filter: drop-shadow(0 0 6px var(--accent-gold));
+      transform-origin: 50% 50%;
+      animation: orbit 12s linear infinite;
+      animation-delay: 1500ms;
+      opacity: 0;
+      animation-fill-mode: forwards;
+    }
+    @keyframes orbit {
+      0% { transform: rotate(0deg); opacity: 1; }
+      100% { transform: rotate(360deg); opacity: 1; }
+    }
+    .sigil-center {
+      font-family: "Space Grotesk", sans-serif;
+      fill: var(--accent-gold);
+      text-anchor: middle;
+      opacity: 0;
+      animation: label-in 800ms 800ms var(--enter) forwards;
+    }
+    .sigil-center .big { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; }
+    .sigil-center .small { font-size: 6px; font-weight: 600; letter-spacing: 0.18em; fill: var(--text-muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sigil-rotate { animation: none; }
+      .sigil-trace { animation: none; stroke-dashoffset: 0; }
+      .sigil-step-label, .sigil-step-num, .sigil-orbit, .sigil-center { animation: none; opacity: 1; }
+      .wordmark .dot, .hero-meta .pill .pill-dot { animation: none; }
+    }
+
+    /* ── Section: the problem ────────────────────────────────────────────── */
+    .problem-grid {
+      display: grid; grid-template-columns: 1fr 1.4fr; gap: 80px;
+    }
+    @media (max-width: 900px) {
+      .problem-grid { grid-template-columns: 1fr; gap: 40px; }
+    }
+    .stat-block {
+      padding: 32px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-1);
+      border-radius: 10px;
+    }
+    .stat-block .stat-num {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 56px; font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+    .stat-block .stat-label {
+      font-size: 13px; line-height: 1.55;
+      color: var(--text-secondary);
+    }
+
+    /* ── Section: the four passes ────────────────────────────────────────── */
+    .passes {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      position: relative;
+    }
+    @media (max-width: 900px) {
+      .passes { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 540px) {
+      .passes { grid-template-columns: 1fr; }
+    }
+    .pass-card {
+      padding: 24px;
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      position: relative;
+      transition: border-color 320ms var(--enter), transform 320ms var(--enter);
+    }
+    .pass-card:hover { border-color: var(--accent-gold); transform: translateY(-2px); }
+    .pass-card .pass-num {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+    .pass-card .pass-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 17px; font-weight: 600;
+      letter-spacing: -0.005em;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+      line-height: 1.25;
+    }
+    .pass-card .pass-desc {
+      font-size: 12px; line-height: 1.65;
+      color: var(--text-muted);
+    }
+    .pass-card .pass-output {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-default);
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-secondary);
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    /* ── Section: deliverables (asymmetric grid) ─────────────────────────── */
+    .deliv {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+    .deliv-cell {
+      padding: 32px;
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+    }
+    .deliv-cell.tall { grid-row: span 2; }
+    .deliv-cell.wide { grid-column: span 2; }
+    @media (max-width: 900px) {
+      .deliv { grid-template-columns: 1fr; }
+      .deliv-cell.tall { grid-row: auto; }
+      .deliv-cell.wide { grid-column: auto; }
+    }
+    .deliv-cell .deliv-tag {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      margin-bottom: 16px;
+    }
+    .deliv-cell h3 {
+      margin-bottom: 12px;
+    }
+
+    /* ── Mini opportunity-score viz ──────────────────────────────────────── */
+    .opp-viz {
+      margin-top: 24px;
+      display: grid;
+      gap: 8px;
+    }
+    .opp-row {
+      display: grid;
+      grid-template-columns: 36px 1fr 60px;
+      gap: 12px;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg-surface-2);
+      border-radius: 6px;
+      font-size: 11px;
+    }
+    .opp-row .score {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 700;
+      width: 36px; height: 24px;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-inverse);
+    }
+    .opp-row .label {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+    .opp-row .ratio {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: right;
+    }
+
+    /* ── Motion graphic / video section ──────────────────────────────────── */
+    .video-frame {
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-surface-1);
+      aspect-ratio: 16 / 9;
+    }
+    .video-frame video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .video-frame .video-overlay {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: linear-gradient(to top, rgba(6,8,12,0.6) 0%, transparent 30%);
+    }
+    .video-frame .video-tag {
+      position: absolute;
+      top: 16px; left: 16px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      background: rgba(6,8,12,0.7);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border-default);
+    }
+    .video-poster-fallback {
+      width: 100%; height: 100%;
+      background:
+        radial-gradient(ellipse at 30% 40%, rgba(200,164,92,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 60%, rgba(200,164,92,0.08) 0%, transparent 50%),
+        var(--bg-surface-1);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .video-poster-fallback::before {
+      content: "";
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle, rgba(200,164,92,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* ── Pricing ─────────────────────────────────────────────────────────── */
+    .pricing {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 56px;
+    }
+    @media (max-width: 900px) { .pricing { grid-template-columns: 1fr; } }
+    .price-card {
+      padding: 32px;
+      border: 1px solid var(--border-default);
+      background: var(--bg-surface-1);
+      border-radius: 10px;
+      display: flex; flex-direction: column;
+      position: relative;
+    }
+    .price-card.featured {
+      border-color: var(--accent-gold);
+      background: linear-gradient(180deg, rgba(200,164,92,0.04), transparent 60%), var(--bg-surface-1);
+    }
+    .price-card.featured::before {
+      content: "MOST POPULAR";
+      position: absolute;
+      top: -10px; left: 24px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em;
+      background: var(--accent-gold);
+      color: var(--text-inverse);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+    .price-card .tier-tag {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      margin-bottom: 8px;
+    }
+    .price-card .tier-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 28px; font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .price-card .tier-price {
+      font-family: "Space Grotesk", sans-serif;
+      display: flex; align-items: baseline; gap: 6px;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .price-card .tier-price .num {
+      font-size: 44px; font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .price-card .tier-price .per {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .price-card .tier-price .custom {
+      font-size: 32px; font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    .price-card .tier-desc {
+      font-size: 12px; line-height: 1.65;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+    .price-card ul {
+      list-style: none;
+      margin-bottom: 32px;
+      flex-grow: 1;
+    }
+    .price-card li {
+      display: flex; gap: 10px;
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .price-card li:last-child { border-bottom: 0; }
+    .price-card li .check {
+      color: var(--accent-gold);
+      flex-shrink: 0;
+      width: 14px;
+    }
+    .price-card .btn {
+      width: 100%;
+    }
+
+    /* ── Methodology ─────────────────────────────────────────────────────── */
+    .meth-quote {
+      border-left: 2px solid var(--accent-gold);
+      padding: 24px 32px;
+      background: var(--bg-surface-1);
+      border-radius: 0 10px 10px 0;
+    }
+    .meth-quote .text {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 22px; font-weight: 600;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .meth-quote .attribution {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    /* ── Contact ─────────────────────────────────────────────────────────── */
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 80px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .contact-grid { grid-template-columns: 1fr; gap: 48px; } }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 9px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 13px;
+      transition: border-color 200ms var(--enter);
+    }
+    .field textarea { height: auto; padding: 14px; min-height: 120px; resize: vertical; line-height: 1.6; }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+    }
+    .field-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media (max-width: 540px) { .field-row { grid-template-columns: 1fr; } }
+    .contact-info-block {
+      padding: 24px 0;
+      border-top: 1px solid var(--border-default);
+    }
+    .contact-info-block:first-child { border-top: 0; padding-top: 0; }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    footer {
+      padding: 56px 0 40px;
+      border-top: 1px solid var(--border-default);
+    }
+    .foot-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; }
+    .foot-meta { display: flex; gap: 32px; align-items: center; }
+    .foot-meta a {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 200ms var(--enter);
+    }
+    .foot-meta a:hover { color: var(--accent-gold); }
+
+    /* ── Reveal-on-scroll ────────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 560ms var(--enter), transform 560ms var(--enter);
+    }
+    .reveal.in { opacity: 1; transform: none; }
+
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════════════════════════════ -->
+<nav class="top">
+  <div class="container">
+    <a href="#" class="wordmark">
+      <span class="dot"></span>
+      <span class="name">Alchemical Growth Engine</span>
+    </a>
+    <div class="links">
+      <a href="#process">Process</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#methodology">Methodology</a>
+      <a href="#contact">Contact</a>
+      <a href="/index.html" class="cta-mini">Run Mode 1</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="dot-grid"></div>
+  <div class="vignette"></div>
+
+  <div class="container">
+    <div class="hero-grid">
+
+      <!-- Left: copy + CTA -->
+      <div>
+        <div class="hero-meta">
+          <span class="pill">
+            <span class="pill-dot"></span>
+            Mode 1 · Earth · Now Available
+          </span>
+        </div>
+
+        <h1 class="display-xl hero-headline">
+          Find the five outcomes<br/>
+          your competitors haven't<br/>
+          <span class="accent">priced yet.</span>
+        </h1>
+
+        <p class="hero-sub body-lg">
+          The Alchemical Growth Engine is an Outcome-Driven Innovation
+          instrument. It runs five passes of structured analysis on a sector,
+          scores every desired outcome against real search demand, and
+          ranks the entry strategies your team should test first. Built on
+          Tony Ulwick's ODI framework. No fluff, no decks.
+        </p>
+
+        <div class="hero-cta-row">
+          <a href="/index.html" class="btn btn-primary">
+            Run Mode 1
+            <svg class="btn-arrow" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8m0 0L6.5 2.5M10 6L6.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+          <a href="#process" class="btn btn-secondary">See the process</a>
+        </div>
+
+        <div class="hero-foot">
+          <div class="hero-foot-item">
+            <div class="label">Sectors analyzed</div>
+            <div class="value">2,400+</div>
+          </div>
+          <div class="hero-foot-item">
+            <div class="label">Median runtime</div>
+            <div class="value">4 min</div>
+          </div>
+          <div class="hero-foot-item">
+            <div class="label">Outcomes scored</div>
+            <div class="value">60K+</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: animated sigil -->
+      <div class="sigil-wrap" aria-label="The Universal Job Map — 8 steps animated as an alchemical sigil">
+        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c8a45c" stop-opacity="0.08"/>
+              <stop offset="60%" stop-color="#c8a45c" stop-opacity="0.02"/>
+              <stop offset="100%" stop-color="#c8a45c" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- soft halo -->
+          <circle cx="200" cy="200" r="200" fill="url(#halo)" />
+
+          <!-- rotating layer holds the sigil itself -->
+          <g class="sigil-rotate">
+
+            <!-- outer ring -->
+            <circle class="sigil-trace outer" cx="200" cy="200" r="170" />
+
+            <!-- inner ring -->
+            <circle class="sigil-trace inner" cx="200" cy="200" r="120" />
+
+            <!-- 8-pointed star spokes (octagon) -->
+            <g class="sigil-trace spokes">
+              <line x1="200" y1="30"  x2="200" y2="370" />
+              <line x1="30"  y1="200" x2="370" y2="200" />
+              <line x1="80"  y1="80"  x2="320" y2="320" />
+              <line x1="320" y1="80"  x2="80"  y2="320" />
+            </g>
+
+            <!-- 8 step nodes positioned around the outer ring -->
+            <!-- Each node: small circle + step number + step name -->
+            <g class="sigil-step-num"   style="animation-delay: 800ms">
+              <text x="200" y="20"  text-anchor="middle">01</text>
+              <text x="320" y="80"  text-anchor="middle">02</text>
+              <text x="380" y="200" text-anchor="middle">03</text>
+              <text x="320" y="320" text-anchor="middle">04</text>
+              <text x="200" y="390" text-anchor="middle">05</text>
+              <text x="80"  y="320" text-anchor="middle">06</text>
+              <text x="20"  y="200" text-anchor="middle">07</text>
+              <text x="80"  y="80"  text-anchor="middle">08</text>
+            </g>
+
+            <g class="sigil-step-label" style="animation-delay: 1000ms">
+              <text x="200" y="48"  text-anchor="middle">DEFINE</text>
+              <text x="298" y="100" text-anchor="middle">LOCATE</text>
+              <text x="350" y="204" text-anchor="middle">PREPARE</text>
+              <text x="298" y="306" text-anchor="middle">CONFIRM</text>
+              <text x="200" y="362" text-anchor="middle">EXECUTE</text>
+              <text x="102" y="306" text-anchor="middle">MONITOR</text>
+              <text x="48"  y="204" text-anchor="middle">MODIFY</text>
+              <text x="102" y="100" text-anchor="middle">CONCLUDE</text>
+            </g>
+
+            <!-- node rings -->
+            <g fill="none" stroke="#c8a45c" stroke-width="0.75" opacity="0.5">
+              <circle cx="200" cy="30"  r="4" />
+              <circle cx="320" cy="80"  r="4" />
+              <circle cx="370" cy="200" r="4" />
+              <circle cx="320" cy="320" r="4" />
+              <circle cx="200" cy="370" r="4" />
+              <circle cx="80"  cy="320" r="4" />
+              <circle cx="30"  cy="200" r="4" />
+              <circle cx="80"  cy="80"  r="4" />
+            </g>
+
+            <!-- orbiting indicator dot -->
+            <g class="sigil-orbit">
+              <circle cx="200" cy="30" r="5" />
+            </g>
+
+          </g>
+
+          <!-- center wordmark, does not rotate -->
+          <g class="sigil-center">
+            <text x="200" y="195" class="big">UNIVERSAL</text>
+            <text x="200" y="212" class="big">JOB MAP</text>
+            <text x="200" y="232" class="small">8 STEPS · ULWICK</text>
+          </g>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PROBLEM
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section-md" id="problem">
+  <div class="container">
+    <div class="section-label-row">
+      <span class="caption">§ 01 · The problem</span>
+      <span class="caption caption-muted">01 / 05</span>
+    </div>
+
+    <div class="problem-grid">
+      <div>
+        <h2 class="display reveal">
+          Most growth research<br/>
+          asks the wrong<br/>
+          question.
+        </h2>
+      </div>
+      <div>
+        <p class="body-lg" style="margin-bottom: 32px;">
+          Customer interviews surface preferences. Surveys surface
+          opinions. Funnel dashboards surface symptoms. None of them
+          tell you which underserved outcome in a market is worth
+          building for. So teams ship competent products into
+          oversaturated outcomes and call it bad luck.
+        </p>
+        <p class="body-lg" style="margin-bottom: 40px;">
+          The Engine flips this. It treats a market as a finite set of
+          jobs-to-be-done, scores every outcome against a measurable
+          opportunity formula, validates it against real search
+          demand, and ranks the entry strategies your team should
+          test first.
+        </p>
+
+        <div class="opp-viz">
+          <div class="opp-row">
+            <div class="score" style="background: #ef4444">14.2</div>
+            <div class="label">Minimize the time it takes to verify alignment is correct</div>
+            <div class="ratio">CRITICAL</div>
+          </div>
+          <div class="opp-row">
+            <div class="score" style="background: #f97316">11.8</div>
+            <div class="label">Minimize the likelihood that scope creeps mid-run</div>
+            <div class="ratio">UNDERSERVED</div>
+          </div>
+          <div class="opp-row">
+            <div class="score" style="background: #eab308">8.4</div>
+            <div class="label">Minimize the time it takes to detect drift</div>
+            <div class="ratio">PROMISING</div>
+          </div>
+          <div class="opp-row">
+            <div class="score" style="background: #22c55e">5.1</div>
+            <div class="label">Minimize the time it takes to package the deliverable</div>
+            <div class="ratio">OVERSERVED</div>
+          </div>
+        </div>
+
+        <p class="body-sm" style="margin-top: 16px; color: var(--text-muted);">
+          Sample output. Real outcomes are sector-specific. Score = importance + max(importance − satisfaction, 0).
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PROCESS — THE FIVE PASSES
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="process">
+  <div class="container">
+    <div class="section-label-row">
+      <span class="caption">§ 02 · The process</span>
+      <span class="caption caption-muted">02 / 05</span>
+    </div>
+
+    <div style="margin-bottom: 56px; max-width: 720px;">
+      <h2 class="display reveal">Five passes. Compounding rigor.</h2>
+      <p class="body-lg" style="margin-top: 16px;">
+        Each pass narrows the search space and is independently
+        verifiable. You can re-run any pass in isolation, audit its
+        prompt, and override its output before the next pass consumes
+        it. No black box.
+      </p>
+    </div>
+
+    <div class="passes">
+
+      <div class="pass-card reveal">
+        <div class="pass-num">Pass 01</div>
+        <div class="pass-name">Discover core jobs</div>
+        <div class="pass-desc">
+          Identify five core functional jobs in the sector. Verb +
+          object + contextual clarifier, solution-agnostic, stable
+          over time. Plus job executor, related jobs, emotional jobs,
+          social jobs, consumption-chain jobs, and seed search queries.
+        </div>
+        <div class="pass-output">→ 5 jobs · 50 sub-jobs</div>
+      </div>
+
+      <div class="pass-card reveal">
+        <div class="pass-num">Pass 02</div>
+        <div class="pass-name">Map the universal steps</div>
+        <div class="pass-desc">
+          Each job decomposed into 8 process steps: Define, Locate,
+          Prepare, Confirm, Execute, Monitor, Modify, Conclude. Five
+          desired outcomes per job, scored on importance and current
+          satisfaction. Run one job at a time so nothing truncates.
+        </div>
+        <div class="pass-output">→ 25 outcomes · scored</div>
+      </div>
+
+      <div class="pass-card reveal">
+        <div class="pass-num">Pass 03</div>
+        <div class="pass-name">Validate against demand</div>
+        <div class="pass-desc">
+          Each job validated against live search behavior using
+          Claude's web-search tool. Returns a 0–100 demand signal,
+          rising/stable/declining trend, competition density, and
+          a top-keyword snapshot.
+        </div>
+        <div class="pass-output">→ 5 demand reports</div>
+      </div>
+
+      <div class="pass-card reveal">
+        <div class="pass-num">Pass 04</div>
+        <div class="pass-name">Rank entry strategies</div>
+        <div class="pass-desc">
+          Synthesizes scored data into 3–5 ranked market entry
+          strategies using Ulwick's Growth Strategy Matrix:
+          Differentiated, Dominant, Disruptive, Discrete, Sustaining.
+          Each rec includes a first-move experiment and a key risk.
+        </div>
+        <div class="pass-output">→ 5 entry strategies</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MOTION GRAPHIC / VIDEO SECTION
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section-md">
+  <div class="container">
+    <div class="section-label-row">
+      <span class="caption">§ 03 · The Engine in motion</span>
+      <span class="caption caption-muted">03 / 05</span>
+    </div>
+
+    <div style="margin-bottom: 40px; max-width: 680px;">
+      <h2 class="display reveal">A 60-second tour.</h2>
+      <p class="body-lg" style="margin-top: 16px;">
+        Sector entered. Five passes run. Universal Job Map populates.
+        Opportunity scores fall into place. Market entry recommendations rank
+        themselves. Watch the instrument work.
+      </p>
+    </div>
+
+    <div class="video-frame reveal">
+      <span class="video-tag">▶ MODE 1 · DEMO</span>
+      <!--
+        ═══════════════════════════════════════════════════════════════════════
+        DROP YOUR MP4 HERE.
+        Save the file as `public/hero-motion.mp4` (and optionally a poster
+        image at `public/hero-poster.jpg`). Vite serves /public/* at the root,
+        so the src below will pick it up automatically without code changes.
+        Until you provide one, the gold-grid fallback below will render.
+        ═══════════════════════════════════════════════════════════════════════
+      -->
+      <video
+        autoplay
+        loop
+        muted
+        playsinline
+        poster="/hero-poster.jpg"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <source src="/hero-motion.mp4" type="video/mp4" />
+      </video>
+      <div class="video-poster-fallback" style="display:none; position:absolute; inset:0;">
+        <div style="text-align: center; position: relative; z-index: 1;">
+          <div class="caption" style="margin-bottom: 16px;">Drop hero-motion.mp4 in /public</div>
+          <div class="h2" style="color: var(--text-secondary);">Animation placeholder</div>
+        </div>
+      </div>
+      <div class="video-overlay"></div>
+    </div>
+
+    <p class="body-sm" style="margin-top: 16px; color: var(--text-muted); text-align: center;">
+      Recorded from a live Mode 1 run. No edits, no compositing.
+    </p>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DELIVERABLES (asymmetric grid)
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="section-label-row">
+      <span class="caption">§ 04 · What you get</span>
+      <span class="caption caption-muted">04 / 05</span>
+    </div>
+
+    <div style="margin-bottom: 56px; max-width: 680px;">
+      <h2 class="display reveal">Artifacts a board would read.</h2>
+      <p class="body-lg" style="margin-top: 16px;">
+        Every run produces persistent, structured artifacts. Saved to your
+        Airtable. Exportable. Re-runnable in isolation. None of this is
+        ephemeral chat output.
+      </p>
+    </div>
+
+    <div class="deliv">
+
+      <div class="deliv-cell tall reveal">
+        <div class="deliv-tag">Primary</div>
+        <h3 class="h2">Opportunity Landscape</h3>
+        <p class="body" style="margin-bottom: 24px;">
+          Importance × Satisfaction scatter for every desired outcome,
+          color-coded by opportunity score. The underserved quadrant is
+          the one your roadmap should be living in. The overserved
+          quadrant is where your competitors are still spending.
+        </p>
+        <div style="border: 1px solid var(--border-default); border-radius: 8px; aspect-ratio: 16/10; background: var(--bg-surface-2); position: relative; overflow: hidden;">
+          <!-- mini scatter sketch -->
+          <svg viewBox="0 0 320 200" style="width: 100%; height: 100%;">
+            <!-- axes -->
+            <line x1="20" y1="20" x2="20" y2="180" stroke="#1e2a3a" stroke-width="1"/>
+            <line x1="20" y1="180" x2="300" y2="180" stroke="#1e2a3a" stroke-width="1"/>
+            <!-- underserved zone -->
+            <rect x="20" y="20" width="120" height="80" fill="#ef4444" opacity="0.04" stroke="#ef4444" stroke-opacity="0.15" stroke-dasharray="4 4"/>
+            <text x="28" y="36" font-family="Space Grotesk" font-size="7" font-weight="700" fill="#ef4444" opacity="0.5" letter-spacing="2">UNDERSERVED</text>
+            <!-- overserved zone -->
+            <rect x="180" y="120" width="120" height="60" fill="#22c55e" opacity="0.04" stroke="#22c55e" stroke-opacity="0.15" stroke-dasharray="4 4"/>
+            <text x="188" y="172" font-family="Space Grotesk" font-size="7" font-weight="700" fill="#22c55e" opacity="0.5" letter-spacing="2">OVERSERVED</text>
+            <!-- dots -->
+            <circle cx="60" cy="40" r="9" fill="#ef4444"/><text x="60" y="43" font-family="Space Grotesk" font-size="7" font-weight="700" fill="#06080c" text-anchor="middle">14</text>
+            <circle cx="80" cy="60" r="7" fill="#f97316"/><text x="80" y="63" font-family="Space Grotesk" font-size="6" font-weight="700" fill="#06080c" text-anchor="middle">11</text>
+            <circle cx="120" cy="80" r="6" fill="#eab308"/><text x="120" y="83" font-family="Space Grotesk" font-size="6" font-weight="700" fill="#06080c" text-anchor="middle">9</text>
+            <circle cx="170" cy="110" r="5" fill="#84cc16"/>
+            <circle cx="220" cy="140" r="4" fill="#22c55e"/>
+            <circle cx="245" cy="155" r="4" fill="#22c55e"/>
+            <circle cx="100" cy="120" r="5" fill="#eab308"/>
+            <circle cx="150" cy="50" r="6" fill="#f97316"/>
+            <!-- axis labels -->
+            <text x="160" y="195" font-family="Space Grotesk" font-size="6" font-weight="600" fill="#6a7585" text-anchor="middle" letter-spacing="2">SATISFACTION</text>
+            <text x="10" y="100" font-family="Space Grotesk" font-size="6" font-weight="600" fill="#6a7585" text-anchor="middle" letter-spacing="2" transform="rotate(-90 10 100)">IMPORTANCE</text>
+          </svg>
+        </div>
+      </div>
+
+      <div class="deliv-cell reveal">
+        <div class="deliv-tag">Output</div>
+        <h3 class="h2">Universal Job Map</h3>
+        <p class="body">
+          8-step decomposition for every job. Each step annotated with
+          its specific outcomes, scored.
+        </p>
+      </div>
+
+      <div class="deliv-cell reveal">
+        <div class="deliv-tag">Output</div>
+        <h3 class="h2">Need-Type Matrix</h3>
+        <p class="body">
+          Functional, related, emotional, social, consumption-chain
+          jobs. The full Ulwick taxonomy.
+        </p>
+      </div>
+
+      <div class="deliv-cell wide reveal" style="background: linear-gradient(180deg, rgba(167,139,250,0.04), transparent 70%), var(--bg-surface-1); border-color: rgba(167,139,250,0.3);">
+        <div class="deliv-tag" style="color: var(--strat-purple);">⚡ Market Entry</div>
+        <h3 class="h2">Ranked entry strategies</h3>
+        <p class="body" style="margin-bottom: 16px;">
+          Pass 5 synthesizes everything into 3–5 ranked recommendations
+          using Ulwick's Growth Strategy Matrix — Differentiated,
+          Dominant, Disruptive, Discrete, Sustaining. Each rec includes
+          target outcomes, a market signal score, an estimated
+          difficulty, a Mode 2 first-move experiment, the belief
+          change required in your prospect's mind, and the main reason
+          it could fail.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px;">
+          <div style="padding: 12px; background: var(--bg-surface-2); border-radius: 6px; border-left: 2px solid #22c55e;">
+            <div class="caption" style="color: #22c55e; font-size: 9px;">First Move</div>
+            <p class="body-sm" style="margin-top: 6px; color: var(--text-secondary);">
+              The cheapest, fastest way to test the entry hypothesis in market.
+            </p>
+          </div>
+          <div style="padding: 12px; background: var(--bg-surface-2); border-radius: 6px; border-left: 2px solid #eab308;">
+            <div class="caption" style="color: #eab308; font-size: 9px;">Belief Change</div>
+            <p class="body-sm" style="margin-top: 6px; color: var(--text-secondary);">
+              The single thing the prospect must believe differently.
+            </p>
+          </div>
+          <div style="padding: 12px; background: var(--bg-surface-2); border-radius: 6px; border-left: 2px solid #ef4444;">
+            <div class="caption" style="color: #ef4444; font-size: 9px;">Key Risk</div>
+            <p class="body-sm" style="margin-top: 6px; color: var(--text-secondary);">
+              The reason this strategy collapses if it collapses.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     METHODOLOGY
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section-md" id="methodology">
+  <div class="container container-narrow" style="position: relative; z-index: 2;">
+    <div class="section-label-row">
+      <span class="caption">§ 05 · Methodology</span>
+      <span class="caption caption-muted">05 / 05</span>
+    </div>
+
+    <h2 class="display reveal" style="margin-bottom: 32px;">
+      Built on Ulwick's<br/>
+      Outcome-Driven Innovation.
+    </h2>
+
+    <p class="body-lg" style="margin-bottom: 32px;">
+      ODI is not jobs-to-be-done. JTBD is the framing; ODI is the
+      operating system. Tony Ulwick's framework defines outcomes as
+      measurable, controllable, and stable over time, and scores them
+      with the opportunity algorithm:
+    </p>
+
+    <div class="meth-quote reveal">
+      <p class="text">
+        Opportunity = Importance + max(Importance − Satisfaction, 0)
+      </p>
+      <p class="attribution">Ulwick · Strategyn · 1991</p>
+    </div>
+
+    <p class="body-lg" style="margin-top: 32px;">
+      Every outcome the Engine produces is in the canonical Ulwick
+      format: <em>Minimize the [time / likelihood] [it takes to / that] [object of control] [contextual clarifier]</em>.
+      No buzzwords. No lifestyle copy. The format is what makes the
+      output composable across passes — and what lets a board read
+      the artifact without translation.
+    </p>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PRICING
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="pricing">
+  <div class="dot-grid"></div>
+  <div class="container" style="position: relative; z-index: 2;">
+    <div class="section-label-row">
+      <span class="caption">Pricing</span>
+      <span class="caption caption-muted">Per workspace · Monthly</span>
+    </div>
+
+    <div style="margin-bottom: 16px; max-width: 680px;">
+      <h2 class="display reveal">Three tiers. No seat tax.</h2>
+      <p class="body-lg" style="margin-top: 16px;">
+        Pricing scales with the volume of analysis you run, not the
+        number of people who read the output. Because if your team
+        of eight isn't reading the research, the research isn't
+        the bottleneck.
+      </p>
+    </div>
+
+    <div class="pricing">
+
+      <div class="price-card reveal">
+        <div class="tier-tag">Tier I</div>
+        <div class="tier-name">Earth</div>
+        <div class="tier-price">
+          <span class="num">$499</span>
+          <span class="per">/ month</span>
+        </div>
+        <p class="tier-desc">
+          Mode 1 only. For solo operators and small founding teams running
+          targeted research.
+        </p>
+        <ul>
+          <li><span class="check">·</span> 10 sector analyses per month</li>
+          <li><span class="check">·</span> All 5 passes (discover → entry strategy)</li>
+          <li><span class="check">·</span> Airtable persistence (your base)</li>
+          <li><span class="check">·</span> Bring your own Anthropic / SerpAPI keys</li>
+          <li><span class="check">·</span> Single workspace</li>
+          <li><span class="check">·</span> Email support, 48h response</li>
+        </ul>
+        <a href="#contact" class="btn btn-secondary">Begin Mode 1</a>
+      </div>
+
+      <div class="price-card featured reveal">
+        <div class="tier-tag">Tier II</div>
+        <div class="tier-name">Earth + Air</div>
+        <div class="tier-price">
+          <span class="num">$1,499</span>
+          <span class="per">/ month</span>
+        </div>
+        <p class="tier-desc">
+          Mode 1 plus the Mode 2 distribution layer (in private beta). For
+          studios and growth teams running a research-to-experiment cadence.
+        </p>
+        <ul>
+          <li><span class="check">·</span> 50 sector analyses per month</li>
+          <li><span class="check">·</span> Mode 2 (Air) early access — distribution experiments</li>
+          <li><span class="check">·</span> Real Google volume via SerpAPI (covered)</li>
+          <li><span class="check">·</span> Up to 5 collaborator workspaces</li>
+          <li><span class="check">·</span> Slack integration for run completions</li>
+          <li><span class="check">·</span> Monthly methodology office hours</li>
+          <li><span class="check">·</span> Priority support, 12h response</li>
+        </ul>
+        <a href="#contact" class="btn btn-primary">Open the Studio</a>
+      </div>
+
+      <div class="price-card reveal">
+        <div class="tier-tag">Tier III</div>
+        <div class="tier-name">The Full Engine</div>
+        <div class="tier-price">
+          <span class="custom">Custom</span>
+        </div>
+        <p class="tier-desc">
+          All four modes when ready: Earth, Air, Fire, Water. White-label,
+          API access, training, and a senior practitioner on the engagement.
+        </p>
+        <ul>
+          <li><span class="check">·</span> Unlimited sector analyses</li>
+          <li><span class="check">·</span> All four modes as released</li>
+          <li><span class="check">·</span> White-label landing pages</li>
+          <li><span class="check">·</span> REST + webhooks API</li>
+          <li><span class="check">·</span> Dedicated practitioner-in-residence</li>
+          <li><span class="check">·</span> Annual on-site methodology training</li>
+          <li><span class="check">·</span> 99.9% uptime SLA · 2h response</li>
+        </ul>
+        <a href="#contact" class="btn btn-secondary">Request the Engine</a>
+      </div>
+
+    </div>
+
+    <p class="body-sm" style="text-align: center; margin-top: 40px; color: var(--text-muted);">
+      All tiers billed monthly, cancel anytime. Annual billing offers a 16% reduction.<br/>
+      Bring your own API keys on Tier I; Tiers II and III include Anthropic + SerpAPI cost.
+    </p>
+  </div>
+</section>
+
+<div class="container"><div class="hairline"></div></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     CONTACT
+══════════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="contact">
+  <div class="container">
+    <div class="section-label-row">
+      <span class="caption">§ Contact</span>
+      <span class="caption caption-muted">Reply within 1 business day</span>
+    </div>
+
+    <div style="margin-bottom: 56px; max-width: 680px;">
+      <h2 class="display reveal">Talk to a practitioner.</h2>
+      <p class="body-lg" style="margin-top: 16px;">
+        Tell us the sector you're researching, what you've already tried,
+        and where you're stuck. We respond personally — no chatbot, no
+        sales sequence, no calendar link before we know if we can help.
+      </p>
+    </div>
+
+    <div class="contact-grid">
+
+      <!-- left: contact info -->
+      <div>
+        <div class="contact-info-block">
+          <div class="caption" style="margin-bottom: 12px;">Direct</div>
+          <p class="body" style="color: var(--text-primary); font-size: 15px;">
+            <a href="mailto:hello@alchemicalgrowth.engine" style="color: var(--accent-gold);">hello@alchemicalgrowth.engine</a>
+          </p>
+          <p class="body-sm" style="margin-top: 4px;">
+            For partnerships, press, or methodology questions.
+          </p>
+        </div>
+
+        <div class="contact-info-block">
+          <div class="caption" style="margin-bottom: 12px;">Practitioner intake</div>
+          <p class="body">
+            Use the form. Briefer is better — we'll ask the
+            right follow-up questions if there's a fit.
+          </p>
+        </div>
+
+        <div class="contact-info-block">
+          <div class="caption" style="margin-bottom: 12px;">What we don't do</div>
+          <p class="body">
+            Cold outbound. Newsletter blasts. Free strategy calls
+            disguised as discovery. The Engine is an instrument; we
+            sell its use, not our time.
+          </p>
+        </div>
+      </div>
+
+      <!-- right: form -->
+      <form class="reveal" action="https://formsubmit.co/hello@alchemicalgrowth.engine" method="POST" autocomplete="on">
+        <!-- formsubmit anti-spam -->
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_template" value="table" />
+        <input type="hidden" name="_subject" value="Alchemical Growth Engine — new intake" />
+
+        <div class="field-row">
+          <div class="field">
+            <label for="name">Your name</label>
+            <input type="text" id="name" name="name" required placeholder="Harriet Vance" />
+          </div>
+          <div class="field">
+            <label for="company">Company</label>
+            <input type="text" id="company" name="company" placeholder="Vance & Co" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="harriet@vance.co" />
+        </div>
+
+        <div class="field">
+          <label for="tier">Tier of interest</label>
+          <select id="tier" name="tier">
+            <option value="not-sure">Not sure yet</option>
+            <option value="earth">Tier I · Earth ($499/mo)</option>
+            <option value="earth-air">Tier II · Earth + Air ($1,499/mo)</option>
+            <option value="full-engine">Tier III · Full Engine (custom)</option>
+            <option value="partnership">Partnership / press / other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="sector">Sector you'd test the Engine on</label>
+          <input type="text" id="sector" name="sector" placeholder="e.g. independent fertility clinics in the UK" />
+        </div>
+
+        <div class="field">
+          <label for="message">What you're trying to figure out</label>
+          <textarea id="message" name="message" placeholder="Where you're stuck, what you've already tried, and the decision the research would unlock."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; align-items: center; margin-top: 24px; flex-wrap: wrap;">
+          <button type="submit" class="btn btn-primary">
+            Send intake
+            <svg class="btn-arrow" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6h8m0 0L6.5 2.5M10 6L6.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <p class="body-sm" style="color: var(--text-muted);">
+            We respond personally within one business day.
+          </p>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="foot-row">
+      <div class="wordmark">
+        <span class="dot"></span>
+        <span class="name">Alchemical Growth Engine</span>
+      </div>
+      <div class="foot-meta">
+        <a href="#process">Process</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#methodology">Methodology</a>
+        <a href="#contact">Contact</a>
+        <a href="/index.html">Run Mode 1</a>
+      </div>
+    </div>
+    <div style="margin-top: 32px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+      <p class="body-sm" style="color: var(--text-muted);">
+        Built on Tony Ulwick's Outcome-Driven Innovation framework. Mode 1 · Earth · v1.0
+      </p>
+      <p class="body-sm" style="color: var(--text-muted);">
+        © 2026 · all four modes coming
+      </p>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SCROLL-REVEAL JS
+══════════════════════════════════════════════════════════════════════════ -->
+<script>
+  // Reveal-on-scroll using IntersectionObserver. Trips at 25% in viewport.
+  // Respects prefers-reduced-motion: instantly reveals everything.
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const targets = document.querySelectorAll('.reveal');
+  if (reduced) {
+    targets.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.25, rootMargin: '0px 0px -8% 0px' });
+    targets.forEach(el => io.observe(el));
+  }
+</script>
+
+</body>
+</html>
