@@ -6,6 +6,32 @@ the output template version is independent of the React app version.
 
 ---
 
+## Siraj v2 strategy doc — 2026-05-12
+
+Output artifact (not engine code). First doc produced through engine v1.1.
+
+- File: `phase1-strategy-v2.html` at repo root
+- Deployed: `https://siraj-strategy.vercel.app` (replaces v1 at same alias)
+- v1 archived at `https://siraj-strategy.surge.sh` for diff reading
+
+### What changed vs v1
+
+- TOC collapsed from 15 sections to 5: Positioning → Evidence → Value Prop Comparison → Entry Wedge → Methodology
+- Personas moved out of the Phase 1 brief (they belong in Phase 2 / creative production)
+- Creative library (20 swipe ads, 8 TikTok scripts, 4 email flows, 3 landing variants) moved out — same reason
+- 90-day rollout moved out — execution playbook is Phase 3
+- Value-prop comparison rendered as a 5-row structured table with verbatim competitor quotes cited to source URLs
+- Every positioning claim now traces to a numeric outcome score
+- Pass 6 validation gate ran clean before deploy
+
+### Generated alongside the doc
+
+- `siraj-keywords.json` — primary discovery input (130 autocomplete + 24 PAA + 26 Reddit phrases + 4 competitor value props)
+- `run-keyword-discovery-siraj.mjs` — reproducible script for the discovery run
+- `phase1-strategy-v2.html` — the v2 output document
+
+---
+
 ## [1.1.0] — 2026-05-12
 
 Structural realignment. The first version put strategy findings before
