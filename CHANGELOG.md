@@ -6,6 +6,77 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.6] — 2026-05-14
+
+**Pass 16 + Pass 17 · Brand audit + Demand landscape.** Two more v1.7
+backlog items shipped in one drop. Doc grows 16 → 18 sections.
+
+### Pass 16 · `generateBrandAudit` — §15
+- 8-10 brand surfaces audited (Homepage hero, PDP, About, Email opt-in,
+  Social #1, Social #2, Reviews, Cart, FAQ, Press)
+- Each surface: current_state · what_works · what_breaks · anchor job
+  ID · fix_priority (high/medium/low) · recommended_fix (ships in 2 wks)
+- Plus voice_consistency (1-10 score + strongest/weakest surfaces +
+  drift notes) and discoverability (branded/unbranded · good/spotty/weak)
+- Audit anchors to top 5 underserved Ulwick outcomes from Pass 1+2
+- Optional `scrapedContent` arg lets Pass 16 read from the actual brand
+  site if URLs were scraped during ingestion (not wired yet · v1.7
+  enhancement — currently reasons from `projectContext` alone)
+
+### Pass 17 · `generateDemandLandscape` — §16
+- 3-stage funnel mapping (TOFU Awareness · MOFU Consideration · BOFU
+  Purchase) with audience_intent, 5-7 top keywords (vol/comp/wedge per
+  kw), 4-6 question patterns per stage
+- 3-5 white-space keywords (low competition + high intent) with
+  why-now + 2-week first test
+- 2-4 seasonal pulse periods with estimated lift % + lean-in play
+- Category temperature read (Heating/Stable/Cooling) with evidence
+- Seeds from Pass 1+2 search_queries; folds in `searchVolumeData`
+  cache if Pass 3 SerpAPI ran
+
+### Added — `src/lib/compose-strategy.js`
+- `renderBrandAudit` (§15) · 2-col audit cards (priority chips, win/lose
+  splits, dashed fix box w/ anchor job tag) + voice/discoverability
+  bottom strip with big serif score
+- `renderDemandLandscape` (§16) · top temperature panel with colored
+  Heating/Stable/Cooling label · 3-col funnel grid with per-keyword
+  vol/comp/wedge meta · white-space block with gradient cards · seasonal
+  pulse table
+- ~120 lines of new CSS (`.audit-card`, `.audit-voice`, `.audit-discover`,
+  `.dl-temp`, `.funnel-card`, `.fn-kw`, `.ws-card`, `.seasonal-row`)
+- All renderers renumbered to `/ 18`
+- Methodology (§17) + Colophon (§18) shifted down 2 slots
+- Nav adds Audit + Demand links
+
+### Changed — `src/App.jsx`
+- `generateStrategyDoc` runs Pass 16 + Pass 17 after Pass 15, try/catch
+  isolated. Passes `searchVolumeData` into Pass 17 for richer demand reads.
+- All pass log labels updated to `/17`
+
+### Bundle
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.5 | 320 KB | 94 KB |
+| **v1.6.6** | **341.83 KB** | **99.18 KB** |
+
++22 KB for both passes + renderers + CSS.
+
+### Pending v1.7 backlog
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | Ad-Intel wire-in | ✅ v1.6.1 |
+| 2 | Pass 14 creator briefs | ✅ v1.6.2 |
+| 3 | Pass 15 competitive teardown | ✅ v1.6.3 |
+| 4 | **Pass 16 brand audit** | ✅ **v1.6.6** |
+| 5 | **Pass 17 demand landscape** | ✅ **v1.6.6** |
+| 6 | Pass 18 tribe readout | 🔴 next |
+| 7 | Pass 19 seasonal campaign | 🔴 |
+| 20 | Project isolation audit | ✅ v1.6.5 |
+
+3 sections to v5 reference parity (21 sections).
+
+---
+
 ## [1.6.5] — 2026-05-14
 
 **Project isolation audit — engine made brand-agnostic.** Siraj was the

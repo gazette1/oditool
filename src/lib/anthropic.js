@@ -786,6 +786,138 @@ Rules:
   return extractJSON(data);
 }
 
+// ── PASS 16: Brand Audit (Engine v1.6.6) ──
+//
+// Renders as §15 of the strategy doc. A state-of-the-brand checkup
+// across 8-10 public surfaces. Anchored to underserved Ulwick outcomes
+// so the audit knows what "broken" means relative to THIS brand's
+// strategic goal — not generic marketing best practices.
+//
+// Inputs:
+//   - projectContext (Pass 0) — required, gives brand voice + key facts
+//   - mergedJobs (Pass 1+2) — required, gives the outcomes the audit anchors to
+//   - scrapedContent (optional) — raw scrape of brand site from ingestion
+export async function generateBrandAudit(apiKey, projectContext, mergedJobs, scrapedContent = "") {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}\nVoice rules: ${projectContext.brand_voice}\nKey facts:\n${(projectContext.key_facts || []).map(f => `- ${f}`).join("\n")}` : "";
+
+  const topOutcomes = (mergedJobs || []).flatMap(j =>
+    (j.outcomes || []).map(o => ({ job_id: j.id, statement: o.statement, score: o.opportunity_score }))
+  ).sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
+
+  const outcomeBlock = topOutcomes.length
+    ? `Top underserved outcomes the audit must anchor to (a surface is "broken" if it fails one of these):\n${topOutcomes.map(o => `- Job ${o.job_id} (opp ${o.score}): ${o.statement}`).join("\n")}`
+    : "No scored outcomes available — audit based on brand voice + best practices only.";
+
+  const sourcesBlock = scrapedContent && scrapedContent.length
+    ? `\n\nScraped brand site content (use as ground truth · do NOT fabricate copy not present):\n${scrapedContent.slice(0, 8000)}`
+    : "\n\nNo scraped site content provided. Reason about what the brand likely has at each surface based on the project context.";
+
+  const data = await callClaude(apiKey,
+    `You are auditing a brand's public-facing surfaces against its underserved-outcome targets. For each of 8-10 surfaces, return: what they have today, what works, what breaks (specifically against an underserved outcome), the anchor job ID, fix priority, and a concrete fix.
+
+Cover these surfaces (use the ones that apply to this brand · skip irrelevant ones):
+- Homepage hero (the first 2 seconds above the fold)
+- Product detail page (PDP) — hero + benefit copy
+- About / Founder page
+- Email opt-in (the lead magnet + capture form)
+- Primary social channel — content patterns
+- Secondary social channel — content patterns
+- Reviews / UGC presentation
+- Cart / Checkout (friction, trust signals)
+- FAQ / objection handling
+- Press / earned-media surface
+
+For each surface:
+- area_name (one of the surfaces above, exact label)
+- current_state (1-2 sentences describing what's there today — anchored to scraped content if available, else "likely state" inferred from project context)
+- what_works (1-2 sentences on what's already pointing at the right outcome · honest, can be "nothing yet")
+- what_breaks (1-2 sentences on the specific gap measured against an underserved outcome)
+- ulwick_anchor_job_id (number · which top-outcome job this surface should serve)
+- fix_priority ("high" / "medium" / "low")
+- recommended_fix (1 sentence on what to change · concrete, shippable in 2 weeks)
+
+Plus:
+- audit_summary (1-2 sentence top-line verdict)
+- voice_consistency: { score: 1-10, strongest_surface, weakest_surface, drift_notes }
+- discoverability: { branded_search: "good"/"spotty"/"weak", unbranded_search: "good"/"spotty"/"weak", notes }
+
+Return ONLY JSON:
+{
+  "audit_summary": "...",
+  "areas": [{...}, ...],
+  "voice_consistency": {...},
+  "discoverability": {...}
+}
+
+Rules:
+- Every "what_breaks" must reference an underserved outcome or a project-context key fact. No generic marketing complaints.
+- Every "recommended_fix" must be ship-in-2-weeks specific. No "improve brand awareness" filler.
+- Score voice consistency honestly — if the audit doesn't have visibility into a surface, set the score on what IS visible.`,
+    `${ctx}\n\n${outcomeBlock}${sourcesBlock}`,
+    { maxTokens: 7000 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 17: Demand Landscape (Engine v1.6.6) ──
+//
+// Renders as §16 of the strategy doc. Deeper than Pass 3 web validation:
+// Pass 17 maps the CATEGORY's demand by funnel stage (TOFU/MOFU/BOFU)
+// + names white-space keywords + identifies seasonal pulse + reads
+// category temperature.
+//
+// Inputs:
+//   - projectContext (Pass 0)
+//   - positioning (Pass 4 positioning_spine)
+//   - mergedJobs (Pass 1+2) — with search_queries
+//   - searchVolumeData (optional) — SerpAPI cache from Pass 3
+export async function generateDemandLandscape(apiKey, projectContext, positioning, mergedJobs, searchVolumeData = null) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}` : "";
+  const pos = positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"` : "";
+
+  const queryBlock = (mergedJobs || []).flatMap(j => j.search_queries || []).slice(0, 30);
+  const querySeed = queryBlock.length
+    ? `Seed search queries surfaced during job discovery (start here, fan out from these):\n${queryBlock.map(q => `- ${q}`).join("\n")}`
+    : "No seed queries available — derive from the brand context.";
+
+  const volumeBlock = searchVolumeData && Object.keys(searchVolumeData).length
+    ? `\n\nKnown search volume data (use exact numbers when present):\n${Object.values(searchVolumeData).flat().slice(0, 20).map(v => `- "${v.keyword}" · ${v.monthly_volume || "?"}/mo · comp ${v.competition_index || "?"}`).join("\n")}`
+    : "";
+
+  const data = await callClaude(apiKey,
+    `You are a search-demand analyst mapping the category's demand landscape. Produce a 3-stage funnel view (TOFU awareness · MOFU consideration · BOFU purchase) + white-space keywords + seasonal pulse + category temperature read.
+
+For each funnel stage:
+- stage (exact label: "TOFU · Awareness" / "MOFU · Consideration" / "BOFU · Purchase")
+- audience_intent (1 sentence describing the mindset at this stage)
+- top_keywords (5-7 keywords) — each: { kw, volume_estimate: "high"/"medium"/"low", competition: "high"/"medium"/"low", wedge: "what makes this a wedge for our brand specifically · 1 sentence" }
+- question_patterns (4-6 short phrases — what people literally type into Google · "how to ...", "what is ...", "best ... for ...", etc.)
+
+Plus:
+- demand_summary (1-2 sentence read on the category's overall demand temperature + where the wedge is biggest)
+- white_space_keywords (3-5 keywords) — each: { kw, why: "1 sentence on why this is open · low competition + high intent + brand-fit", first_test: "1 sentence on a concrete 2-week test" }
+- seasonal_pulse (2-4 periods) — each: { period (e.g. "Q4 holiday gifting", "Back-to-school"), lift: "estimated % vs baseline · be honest if unknown", play: "1 sentence on how to lean in" }
+- category_temperature: { label: "Heating" / "Stable" / "Cooling", evidence: "1-2 sentences citing trend signals visible in the seed queries or volume data" }
+
+Return ONLY JSON:
+{
+  "demand_summary": "...",
+  "funnel_stages": [{...}, {...}, {...}],
+  "white_space_keywords": [...],
+  "seasonal_pulse": [...],
+  "category_temperature": {...}
+}
+
+Rules:
+- Be honest about volume estimates when uncertain — "low" is a valid answer, not a failure.
+- White-space keywords must score on BOTH dimensions (low competition AND high intent). A high-volume keyword with no competition is suspicious — flag it.
+- Seasonal pulse %s are estimates · always frame as estimates not facts.`,
+    `${ctx}\n\n${pos}\n\n${querySeed}${volumeBlock}`,
+    { maxTokens: 6000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(
