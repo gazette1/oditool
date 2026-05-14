@@ -6,6 +6,76 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.3] — 2026-05-14
+
+**Pass 15 · Competitive teardown.** Third v1.7 backlog item shipped. Doc
+grows 15 → 16 sections. Pass 15 produces a 6-row competitive matrix
+(category position + price anchor + primary promise + creative pattern
++ where we win + where we lose + wedge to attack + first punch) plus
+an axis summary naming the open quadrant.
+
+Different from Pass 5 `comparePositioning`:
+- **Pass 5:** brand vs N incumbents on stated value prop only. Quick,
+  surface-level.
+- **Pass 15:** same N incumbents (or pulled from Ad-Intel Stage A if
+  available) with the full strategic frame · attack plan per
+  competitor + the 2D position map.
+
+### Added — `src/lib/anthropic.js`
+
+- **Pass 15** `generateCompetitiveTeardown(apiKey, projectContext,
+  positioning, valueProp?, adIntelCompetitors?)`
+- Prefers Ad-Intel Stage A competitor data when available (richer ·
+  classification + spend tier + evidence). Falls back to Pass 5
+  comparison rows. If neither, asks Claude to derive 6 plausible
+  competitors from project context key facts.
+- Returns `{ competitive_matrix: [...6], axis_summary: {...} }`.
+- 9 fields per matrix row · 5 fields in axis summary.
+
+### Added — `src/lib/compose-strategy.js`
+
+- **§14 · Competitive teardown** renderer (`renderCompetitive`).
+- New CSS · `.comp-card` 2-col grid · category-position + price chips ·
+  italic primary-promise quote · creative-pattern label · green/red
+  win/lose split · salmon-bordered wedge-to-attack callout · dashed
+  first-punch box.
+- New `.axis-summary` block · gradient salmon-bordered panel with X/Y
+  axis labels · brand position · open-quadrant highlighted in ad-intel
+  purple · large serif strategic-thesis sentence.
+- Section count: **15 → 16.** All renderers renumbered to `/ 16`.
+- Methodology (§15) + Colophon (§16) shifted down one slot.
+- Nav extended with "Competitive" link.
+
+### Changed
+
+- App.jsx `generateStrategyDoc` runs Pass 15 after Pass 14, try/catch
+  isolated. Passes `adIntelData?.competitors` if Ad-Intel has run.
+- All pass log labels updated to `/15`.
+- Cover doc-num + footer stamp → `v1.6.3`.
+
+### Bundle
+
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.2 | 309 KB | 91.9 KB |
+| **v1.6.3** | **320 KB** | **94.4 KB** |
+
++11 KB for Pass 15 + renderer + CSS.
+
+### Pending v1.7 backlog
+
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | Ad-Intel wire-in | ✅ v1.6.1 |
+| 2 | Pass 14 creator briefs | ✅ v1.6.2 |
+| 3 | **Pass 15 competitive teardown** | ✅ **v1.6.3** |
+| 4 | Pass 16 brand audit | 🔴 next |
+| 5 | Pass 17 demand landscape | 🔴 |
+| 6 | Pass 18 tribe readout | 🔴 |
+| 7 | Pass 19 seasonal campaign | 🔴 |
+
+---
+
 ## [1.6.2] — 2026-05-14
 
 **Pass 14 · Creator outreach briefs.** Second v1.7 backlog item. Strategy

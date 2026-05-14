@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
 import { runAdIntel } from "./lib/ad-intel";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
@@ -185,11 +185,11 @@ export default function App() {
     setError(null);
     try {
       setStratDocPhase("Pass 7: generating personas…");
-      log("Pass 7/14: personas");
+      log("Pass 7/15: personas");
       const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
 
       setStratDocPhase("Pass 5: value-prop comparison…");
-      log("Pass 5/14: competitor value-prop comparison");
+      log("Pass 5/15: competitor value-prop comparison");
       // Pull competitor names from positioningHints / context if available; else skip
       const competitors = (projectContext?.key_facts || []).filter(f => /competitor|vs\s/i.test(f)).slice(0, 4).map(name => ({ name, stated_value_prop: "", source_url: "" }));
       let valueProp = { comparisons: [] };
@@ -201,40 +201,48 @@ export default function App() {
       }
 
       setStratDocPhase("Pass 8: swipe file (20 ads)…");
-      log("Pass 8/14: 20 swipe-file ad concepts");
+      log("Pass 8/15: 20 swipe-file ad concepts");
       const { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
 
       setStratDocPhase("Pass 9: TikTok scripts…");
-      log("Pass 9/14: 8 shot-by-shot TikTok scripts");
+      log("Pass 9/15: 8 shot-by-shot TikTok scripts");
       const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
 
       setStratDocPhase("Pass 10: email flows…");
-      log("Pass 10/14: 4 Klaviyo-ready email flows");
+      log("Pass 10/15: 4 Klaviyo-ready email flows");
       const emailFlows = await generateEmailFlows(config.anthropicKey, projectContext, positioningSpine);
 
       setStratDocPhase("Pass 11: channel plan + targeting matrix…");
-      log("Pass 11/14: channel plan + targeting matrix");
+      log("Pass 11/15: channel plan + targeting matrix");
       let channelPlan = { channels: [], targeting_matrix: [] };
       try { channelPlan = await generateChannelPlan(config.anthropicKey, projectContext, positioningSpine, personas); }
       catch (e) { log(`Pass 11 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 12: landing-page variants…");
-      log("Pass 12/14: landing-page variants");
+      log("Pass 12/15: landing-page variants");
       let landing = { variants: [] };
       try { landing = await generateLandingVariants(config.anthropicKey, projectContext, positioningSpine, personas); }
       catch (e) { log(`Pass 12 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 13: 90-day rollout plan…");
-      log("Pass 13/14: 90-day rollout");
+      log("Pass 13/15: 90-day rollout");
       let rollout = { phases: [], weekly_cadence: [], kill_criteria: [] };
       try { rollout = await generateRollout(config.anthropicKey, projectContext, positioningSpine, entryRecs); }
       catch (e) { log(`Pass 13 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 14: creator outreach packets…");
-      log("Pass 14/14: 5 paid-creator briefs");
+      log("Pass 14/15: 5 paid-creator briefs");
       let creators = { creator_briefs: [] };
       try { creators = await generateCreatorBriefs(config.anthropicKey, projectContext, positioningSpine, personas, entryRecs); }
       catch (e) { log(`Pass 14 skipped: ${e.message}`, "error"); }
+
+      setStratDocPhase("Pass 15: competitive teardown…");
+      log("Pass 15/15: 6-row competitive matrix + axis summary");
+      let competitive = { competitive_matrix: [], axis_summary: null };
+      try {
+        const adIntelCompetitors = adIntelData?.competitors || null;
+        competitive = await generateCompetitiveTeardown(config.anthropicKey, projectContext, positioningSpine, valueProp, adIntelCompetitors);
+      } catch (e) { log(`Pass 15 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Composing HTML doc…");
       const html = composeStrategyDoc({
@@ -252,6 +260,7 @@ export default function App() {
         landing,
         rollout,
         creators,
+        competitive,
       });
 
       const filename = `strategy-${(activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${Date.now()}.html`;
@@ -264,7 +273,7 @@ export default function App() {
     } finally {
       setStratDocBusy(false);
     }
-  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, log]);
+  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, log]);
 
   // ── Engine v1.7 · Run Ad-Intel (Stage A → B → C → D) ──
   const runAdIntelHandler = useCallback(async () => {

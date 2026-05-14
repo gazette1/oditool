@@ -707,6 +707,85 @@ Return ONLY JSON: {"creator_briefs": [...5 packets]}`,
   return extractJSON(data);
 }
 
+// ── PASS 15: Competitive Teardown (Engine v1.6.3) ──
+//
+// Renders as §15 of the strategy doc. Deeper than Pass 5's value-prop
+// comparison: Pass 15 produces a 6-row competitive matrix where each row
+// has category position, price anchor, primary promise, creative pattern,
+// where-we-win, where-we-lose, the specific wedge to attack, and a first-
+// punch tactic. Plus an axis summary that names the open quadrant.
+//
+// Inputs:
+//   - projectContext (Pass 0)
+//   - positioning (Pass 4 positioning_spine)
+//   - valueProp (Pass 5 comparisons array — provides competitor names if available)
+//   - adIntelCompetitors (Ad-Intel Stage A — richer competitor data if available)
+//
+// Pass 5 ≠ Pass 15:
+//   - Pass 5: brand vs N incumbents on stated value prop. Quick, surface.
+//   - Pass 15: same N incumbents (or derived if no Pass 5) but with the
+//     full strategic frame: how to attack each one + the empty quadrant.
+export async function generateCompetitiveTeardown(apiKey, projectContext, positioning, valueProp = null, adIntelCompetitors = null) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}\nVoice: ${projectContext.brand_voice}\nKey facts: ${(projectContext.key_facts || []).slice(0, 6).join("; ")}` : "";
+  const pos = positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"\nRationale: ${positioning.primary.rationale || ""}` : "";
+
+  // Prefer ad-intel competitor data (richer · has classification + spend tier).
+  // Fall back to Pass 5 value-prop comparison data. If neither, ask Claude to
+  // derive 6 competitors from projectContext.key_facts (best-effort).
+  const competitorBlock = (() => {
+    if (adIntelCompetitors && adIntelCompetitors.length) {
+      return `Known competitors (from Ad-Intel Stage A — use these exact 6-8):\n${adIntelCompetitors.slice(0, 8).map(c => `- ${c.brand_name} (${c.classification || "direct"}) · ${c.spend_tier || "spend tier unknown"} · ${c.page_url || ""} · ${c.evidence || ""}`).join("\n")}`;
+    }
+    if (valueProp?.comparisons?.length) {
+      return `Known competitors (from Pass 5 value-prop comparison — use these as anchors and add 1-2 more if needed to reach 6):\n${valueProp.comparisons.map(c => `- ${c.competitor_name} · value prop: "${c.their_stated_value_prop || ""}" · ${c.source_url || ""}`).join("\n")}`;
+    }
+    return "No prior competitor list. Identify 6 plausible competitors from the project context key facts (named incumbents in the same category that customers would name-drop). Be honest if the category is sparse.";
+  })();
+
+  const data = await callClaude(apiKey,
+    `You are a competitive strategist producing the deep §15 teardown — the matrix that lets the founder know exactly which incumbent to attack first and why.
+
+For 6 competitors, return:
+- competitor_name (canonical English name)
+- category_position (3-6 words: "established luxury", "DTC challenger", "mass-market incumbent", "aspirational outlier", "trend-cycle native", etc.)
+- price_anchor (USD range with format like "$120-180 per set" or "$45-90 entry")
+- primary_promise (the ONE sentence the brand sells on — verbatim if known, otherwise paraphrased; should be the line their ads or hero copy actually use)
+- creative_pattern (the hook archetype they consistently run — e.g. "founder POV + fabric macro", "before-after + percentage off", "celebrity placement + lifestyle", "UGC testimonial wall")
+- where_we_win (2-3 things our brand does better, anchored to project context · 1 sentence)
+- where_we_lose (2-3 things THEY do better that we have to live with · 1 sentence · be honest)
+- wedge_to_attack (1 sentence: the specific gap in their positioning we can press)
+- first_punch (1 sentence: a concrete tactic — ad concept, channel placement, or content angle — to start the attack within 4 weeks)
+
+Plus an axis summary mapping the 2D competitive landscape:
+- x_axis_label (the spectrum that separates competitors horizontally — e.g. "Price tier" or "Trend-cycle dependent ↔ Heritage")
+- y_axis_label (the spectrum that separates them vertically — e.g. "Aesthetic-led ↔ Sensory-led")
+- brand_position (where our brand lands on both axes · 1 short phrase)
+- open_quadrant (the empty corner of the 2D map · 1 sentence on which incumbent set is absent there)
+- summary_sentence (1 sentence: the strategic thesis · what quadrant we claim and why no one else can take it from us inside 12 months)
+
+Return ONLY JSON:
+{
+  "competitive_matrix": [{...}, {...}, {...}, {...}, {...}, {...}],
+  "axis_summary": {
+    "x_axis_label": "...",
+    "y_axis_label": "...",
+    "brand_position": "...",
+    "open_quadrant": "...",
+    "summary_sentence": "..."
+  }
+}
+
+Rules:
+- 6 competitors. Not 5, not 8. The matrix renders best at exactly 6.
+- where_we_win and where_we_lose must be specific, not generic ("smaller team" is NOT a win — "size inclusivity to 4X" IS).
+- first_punch must be a tactic that can ship in 4 weeks. No "build brand awareness" non-tactics.
+- If the brand is genuinely strongest in one quadrant, name it. If it's contested, say so in summary_sentence.`,
+    `${ctx}\n\n${pos}\n\n${competitorBlock}`,
+    { maxTokens: 6000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

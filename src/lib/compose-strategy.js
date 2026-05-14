@@ -1,6 +1,6 @@
 // src/lib/compose-strategy.js
 //
-// Engine v1.6 — Strategy Doc Composer.
+// Engine v1.6.3 — Strategy Doc Composer.
 // Takes the full set of pass outputs + Pass 0 context and returns a
 // self-contained HTML document matching the v5 strategy-doc template.
 //
@@ -226,6 +226,42 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 @media (max-width:720px){.creator-card .cr-foot{grid-template-columns:1fr}}
 .creator-card .cr-foot .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);margin-bottom:4px}
 .creator-card .cr-foot .val{font-size:11.5px;line-height:1.5}
+.comp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:32px}
+@media (max-width:720px){.comp-grid{grid-template-columns:1fr}}
+.comp-card{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.comp-card .cp-head{padding-bottom:12px;border-bottom:1px solid rgba(215,183,170,.25)}
+.comp-card .cp-name{font-family:"DM Serif Display",serif;font-size:24px;line-height:1.15;margin-bottom:6px}
+.comp-card .cp-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.comp-card .cp-meta .chip{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:var(--bg-warm);color:var(--ink-secondary)}
+.comp-card .cp-meta .chip.price{background:rgba(246,211,141,0.2);color:#8B6F1C}
+.comp-card .cp-promise{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;line-height:1.55;color:var(--ink-primary)}
+.comp-card .cp-promise::before{content:"\"";color:var(--rosy-brown);margin-right:2px}
+.comp-card .cp-promise::after{content:"\"";color:var(--rosy-brown);margin-left:2px}
+.comp-card .cp-creative{font-size:11.5px;line-height:1.55;color:var(--ink-secondary)}
+.comp-card .cp-creative strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted);display:block;margin-bottom:3px}
+.comp-card .cp-winlose{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.comp-card .cp-win,.comp-card .cp-lose{padding:10px 12px;border-radius:6px;font-size:11.5px;line-height:1.55}
+.comp-card .cp-win{background:rgba(34,197,94,0.08);border-left:3px solid #22c55e}
+.comp-card .cp-lose{background:rgba(239,68,68,0.06);border-left:3px solid #ef4444}
+.comp-card .cp-win .lbl,.comp-card .cp-lose .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;margin-bottom:4px;display:block}
+.comp-card .cp-win .lbl{color:#15803d}
+.comp-card .cp-lose .lbl{color:#991b1b}
+.comp-card .cp-wedge{padding:12px 14px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-left:3px solid var(--siraj-salmon);border-radius:0 6px 6px 0;font-size:12.5px;line-height:1.6}
+.comp-card .cp-wedge strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);display:block;margin-bottom:4px}
+.comp-card .cp-punch{padding:10px 12px;border:1px dashed rgba(215,183,170,0.5);border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--ink-primary)}
+.comp-card .cp-punch strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);display:block;margin-bottom:3px}
+.axis-summary{margin-top:48px;padding:32px;background:linear-gradient(135deg,var(--bg-base),var(--bg-card));border-radius:16px;border:2px solid var(--siraj-salmon);position:relative}
+.axis-summary .as-tag{position:absolute;top:-14px;left:32px;background:var(--siraj-salmon);color:var(--ink-primary);padding:5px 14px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
+.axis-summary .as-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;margin-bottom:20px}
+@media (max-width:720px){.axis-summary .as-grid{grid-template-columns:1fr}}
+.axis-summary .as-axis{padding:14px 16px;background:var(--bg-warm);border-radius:8px}
+.axis-summary .as-axis .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px}
+.axis-summary .as-axis .val{font-family:"DM Serif Display",serif;font-size:15px;line-height:1.3}
+.axis-summary .as-position,.axis-summary .as-open{padding:14px 18px;margin-bottom:14px;border-radius:8px;font-size:13px;line-height:1.6}
+.axis-summary .as-position{background:rgba(247,181,164,0.12)}
+.axis-summary .as-open{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3)}
+.axis-summary .as-position .lbl,.axis-summary .as-open .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);display:block;margin-bottom:4px}
+.axis-summary .as-summary{font-family:"DM Serif Display",serif;font-size:clamp(20px,3vw,28px);line-height:1.2;text-align:center;padding:20px 16px;color:var(--ink-primary);background:var(--bg-base);border-radius:8px;margin-top:8px}
 footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(215,183,170,.4);text-align:center}
 .footer-meta{font-size:11px;color:var(--ink-muted);letter-spacing:0.18em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
 `;
@@ -238,7 +274,7 @@ function renderCover(p, project_name) {
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.6.2</span>
+      <span class="doc-num">Phase 1 Strategy · Engine v1.6.3</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -264,7 +300,7 @@ function renderPositioning(p) {
   const alts = p.positioning.alternatives || [];
   return `<section class="section" id="position">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The single sentence<br/>to claim.</h2>
     <div class="position-primary">
       <span class="tag">Primary</span>
@@ -283,7 +319,7 @@ function renderEvidence(p) {
     .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
   return `<section class="section" id="evidence">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The outcomes<br/>behind the numbers.</h2>
     <div class="ev-table">
       <div class="ev-row head"><div>Job</div><div>Outcome (Ulwick format)</div><div>Importance</div><div>Satisfaction</div><div>Opp score</div></div>
@@ -298,7 +334,7 @@ function renderValueProp(p) {
   if (!rows.length) return "";
   return `<section class="section" id="vp">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Brand vs the named<br/>incumbents.</h2>
     <div class="vp-table">
       <div class="vp-row head"><div>Brand</div><div>Stated value prop</div><div>Prices for</div><div>Leaves unserved</div><div>Where brand wins</div></div>
@@ -312,7 +348,7 @@ function renderPersonas(p) {
   if (!(p.personas || []).length) return "";
   return `<section class="section" id="personas">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.personas.length} buyers.<br/>Each at a hinge.</h2>
     ${p.personas.map((per, i) => `<div class="persona">
       <div class="persona-avatar" style="background:linear-gradient(135deg,var(--pillow-pink),var(--siraj-salmon))">${esc((per.name || "?")[0])}</div>
@@ -339,7 +375,7 @@ function renderSwipe(p) {
   if (!(p.swipeFile || []).length) return "";
   return `<section class="section" id="swipe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => `<div class="swipe-card"><div class="ad-mock"><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`).join("")}
@@ -352,7 +388,7 @@ function renderScripts(p) {
   if (!(p.scripts || []).length) return "";
   return `<section class="section" id="scripts">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.scripts.length} shot-by-shot scripts.</h2>
     ${p.scripts.map(s => `<div class="script">
       <div class="script-header">
@@ -374,7 +410,7 @@ function renderEmails(p) {
   if (!(p.emailFlows?.flows || []).length) return "";
   return `<section class="section" id="email">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.emailFlows.flows.length} flows.</h2>
     ${p.emailFlows.flows.map(f => `<div class="email-flow">
       <div class="email-flow-head"><div class="email-flow-name">${esc(f.name || "")}</div><div class="email-flow-trigger">${esc(f.trigger || "")}</div></div>
@@ -390,7 +426,7 @@ function renderEntryWedge(p) {
   const top = p.recommendations.slice(0, 3);
   return `<section class="section" id="wedge">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where to start.</h2>
     ${top.map((r, i) => `<div class="position-alt"><div class="alt-tag">Rank ${r.rank || i+1} · ${esc(r.strategy || "")}</div><div class="claim">${esc(r.target_job || "")}</div><div class="citation">Score <span class="score">${r.citation_score ?? ""}</span> · ${esc(r.estimated_market_signal || "")}/100</div><p class="rationale">${esc(r.rationale || "")}<br/><br/><strong>First move:</strong> ${esc(r.first_move || "")}<br/><strong>Belief shift:</strong> ${esc(r.belief_change_required || "")}<br/><strong>Risk:</strong> ${esc(r.risk || "")}</p></div>`).join("")}
   </div>
@@ -402,7 +438,7 @@ function renderChannels(p) {
   if (!ch.length) return "";
   return `<section class="section" id="channels">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where the money goes.</h2>
     <div class="channel-grid">
       ${ch.map(c => `<div class="channel-card">
@@ -423,7 +459,7 @@ function renderMatrix(p) {
   if (!rows.length) return "";
   return `<section class="section" id="matrix">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Persona × channel grid.</h2>
     <div class="matrix-table">
       <div class="matrix-row head"><div>Persona</div><div>Channel</div><div>Interests / seeds / exclusions</div><div>Creative angle</div><div>Share</div></div>
@@ -448,7 +484,7 @@ function renderLanding(p) {
   if (!vars.length) return "";
   return `<section class="section" id="landing">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${vars.length} landing pages, one per persona.</h2>
     ${vars.map(v => `<div class="landing-variant">
       <div class="lp-head">
@@ -477,7 +513,7 @@ function renderRollout(p) {
   const kills = p.rollout?.kill_criteria || [];
   return `<section class="section" id="rollout">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">90 days, three gates.</h2>
     ${phases.map((ph, i) => `<div class="phase-card">
       <span class="ph-tag">Phase ${i+1}</span>
@@ -509,7 +545,7 @@ function renderCreators(p) {
   if (!briefs.length) return "";
   return `<section class="section" id="creators">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${briefs.length} paid-creator packets.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">Archetypes + sourcing criteria, not handles. A human sourcer matches each to a verified account before outreach.</p>
     ${briefs.map(b => `<div class="creator-card">
@@ -556,13 +592,54 @@ function renderCreators(p) {
 </section>`;
 }
 
+function renderCompetitive(p) {
+  const rows = p.competitive?.competitive_matrix || [];
+  const axis = p.competitive?.axis_summary;
+  if (!rows.length && !axis) return "";
+  return `<section class="section" id="competitive">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 14 · Competitive teardown</span><span class="section-number">14 / 16</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">${rows.length} incumbents.<br/>Where to attack each one.</h2>
+    ${rows.length ? `<div class="comp-grid">
+      ${rows.map(c => `<div class="comp-card">
+        <div class="cp-head">
+          <div class="cp-name">${esc(c.competitor_name || "")}</div>
+          <div class="cp-meta">
+            ${c.category_position ? `<span class="chip">${esc(c.category_position)}</span>` : ""}
+            ${c.price_anchor ? `<span class="chip price">${esc(c.price_anchor)}</span>` : ""}
+          </div>
+          ${c.primary_promise ? `<p class="cp-promise">${esc(c.primary_promise)}</p>` : ""}
+        </div>
+        ${c.creative_pattern ? `<div class="cp-creative"><strong>Creative pattern</strong>${esc(c.creative_pattern)}</div>` : ""}
+        <div class="cp-winlose">
+          ${c.where_we_win ? `<div class="cp-win"><span class="lbl">Where we win</span>${esc(c.where_we_win)}</div>` : ""}
+          ${c.where_we_lose ? `<div class="cp-lose"><span class="lbl">Where we lose</span>${esc(c.where_we_lose)}</div>` : ""}
+        </div>
+        ${c.wedge_to_attack ? `<div class="cp-wedge"><strong>Wedge to attack</strong>${esc(c.wedge_to_attack)}</div>` : ""}
+        ${c.first_punch ? `<div class="cp-punch"><strong>First punch · ship in 4 weeks</strong>${esc(c.first_punch)}</div>` : ""}
+      </div>`).join("")}
+    </div>` : ""}
+    ${axis ? `<div class="axis-summary">
+      <span class="as-tag">Strategic thesis</span>
+      <div class="as-grid">
+        <div class="as-axis"><div class="lbl">X axis</div><div class="val">${esc(axis.x_axis_label || "")}</div></div>
+        <div class="as-axis"><div class="lbl">Y axis</div><div class="val">${esc(axis.y_axis_label || "")}</div></div>
+      </div>
+      ${axis.brand_position ? `<div class="as-position"><span class="lbl">Our position on the 2D map</span>${esc(axis.brand_position)}</div>` : ""}
+      ${axis.open_quadrant ? `<div class="as-open"><span class="lbl">The open quadrant</span>${esc(axis.open_quadrant)}</div>` : ""}
+      ${axis.summary_sentence ? `<p class="as-summary">${esc(axis.summary_sentence)}</p>` : ""}
+    </div>` : ""}
+  </div>
+</section>`;
+}
+
 function renderMethodology(p) {
   const pc = p.project_context || {};
   return `<section class="section" id="method">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 14 · Methodology</span><span class="section-number">14 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 15 · Methodology</span><span class="section-number">15 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.2 · 14 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets.</p>
+    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.3 · 15 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
     <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
     ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#B85C5C">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
@@ -573,7 +650,7 @@ function renderMethodology(p) {
 function renderColophon(p) {
   return `<section class="section" id="colophon">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 15 · Colophon</span><span class="section-number">15 / 15</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 16 · Colophon</span><span class="section-number">16 / 16</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
@@ -600,7 +677,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
-      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#method">Method</a>
+      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -619,9 +696,10 @@ ${renderMatrix(payload)}
 ${renderLanding(payload)}
 ${renderRollout(payload)}
 ${renderCreators(payload)}
+${renderCompetitive(payload)}
 ${renderMethodology(payload)}
 ${renderColophon(payload)}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.2 · Mode 1 Earth</p></div></footer>
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.3 · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }
