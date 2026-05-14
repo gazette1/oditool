@@ -165,8 +165,8 @@ class AirtableClient {
         satisfaction: o.satisfaction || 0,
         opportunity_score: o.opportunity_score || 0,
         search_volume: o.search_volume || null,
-        cpc: o.cpc || null,
-        monthly_searches: o.monthly_searches || null,
+        cpc: typeof o.cpc === "number" && isFinite(o.cpc) ? o.cpc : null,
+        monthly_searches: typeof o.monthly_searches === "number" && isFinite(o.monthly_searches) ? o.monthly_searches : null,
       },
     }));
 
@@ -178,14 +178,20 @@ class AirtableClient {
 
   // ── Search Volume Data ──
   async saveSearchVolumeData(jobAirtableId, keywords) {
+    // Airtable's cpc field is Currency and competition_index is Number.
+    // SerpAPI's google engine returns cpc as "has_ads" / "no_ads" strings —
+    // those won't accept into numeric Airtable fields. Coerce here:
+    //   - cpc: number-only; the has-ads signal lives in competition_index instead
+    //   - competition_index: number-only, 0-100 band
+    const toNum = (v, fallback = 0) => typeof v === "number" && isFinite(v) ? v : fallback;
     const records = keywords.map((kw) => ({
       fields: {
         keyword_id: `kw-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         job_id: [jobAirtableId],
         keyword: kw.keyword,
-        monthly_volume: kw.monthly_volume || 0,
-        cpc: kw.cpc || 0,
-        competition_index: kw.competition_index || 0,
+        monthly_volume: toNum(kw.monthly_volume, 0),
+        cpc: toNum(kw.cpc, 0),
+        competition_index: toNum(kw.competition_index, 0),
         trend_data: JSON.stringify(kw.trend_data || []),
         fetched_at: new Date().toISOString().split("T")[0],
       },
