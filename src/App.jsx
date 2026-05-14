@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning } from "./lib/anthropic";
+import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
 import ProjectSetup from "./ProjectSetup";
 
@@ -104,6 +105,9 @@ export default function App() {
   const [view, setView] = useState("entry");
   const [searchVolumeData, setSearchVolumeData] = useState({});
   const [entryRecs, setEntryRecs] = useState([]);
+  const [positioningSpine, setPositioningSpine] = useState(null);
+  const [stratDocBusy, setStratDocBusy] = useState(false);
+  const [stratDocPhase, setStratDocPhase] = useState("");
   const [debugLog, setDebugLog] = useState([]);
 
   // Engine v1.4: Project Setup flow + active project context
@@ -156,6 +160,67 @@ export default function App() {
     setProjectContext(summary);
     if (summary?.sector) setSector(summary.sector);
   }, []);
+
+  // ── Engine v1.5 · Generate full Strategy Doc ──
+  const generateStrategyDoc = useCallback(async () => {
+    if (!data || !data.length) { setError("Run analysis first"); return; }
+    if (!config.anthropicKey) { setError("Anthropic key required"); return; }
+    setStratDocBusy(true);
+    setError(null);
+    try {
+      setStratDocPhase("Pass 7: generating personas…");
+      log("Pass 7/10: personas");
+      const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
+
+      setStratDocPhase("Pass 5: value-prop comparison…");
+      log("Pass 5/10: competitor value-prop comparison");
+      // Pull competitor names from positioningHints / context if available; else skip
+      const competitors = (projectContext?.key_facts || []).filter(f => /competitor|vs\s/i.test(f)).slice(0, 4).map(name => ({ name, stated_value_prop: "", source_url: "" }));
+      let valueProp = { comparisons: [] };
+      if (competitors.length && positioningSpine?.primary?.sentence) {
+        try {
+          const scoredOutcomes = data.flatMap(j => (j.outcomes || []).map(o => ({ job_id: j.id, statement: o.statement, opportunity_score: o.opportunity_score })));
+          valueProp = await comparePositioning(config.anthropicKey, projectContext?.sector || "the brand", positioningSpine.primary.sentence, competitors, scoredOutcomes);
+        } catch (e) { log(`Pass 5 skipped (non-critical): ${e.message}`, "error"); }
+      }
+
+      setStratDocPhase("Pass 8: swipe file (20 ads)…");
+      log("Pass 8/10: 20 swipe-file ad concepts");
+      const { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
+
+      setStratDocPhase("Pass 9: TikTok scripts…");
+      log("Pass 9/10: 8 shot-by-shot TikTok scripts");
+      const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
+
+      setStratDocPhase("Pass 10: email flows…");
+      log("Pass 10/10: 4 Klaviyo-ready email flows");
+      const emailFlows = await generateEmailFlows(config.anthropicKey, projectContext, positioningSpine);
+
+      setStratDocPhase("Composing HTML doc…");
+      const html = composeStrategyDoc({
+        project_name: activeProject?.name || projectContext?.sector || sector,
+        project_context: projectContext,
+        positioning: positioningSpine,
+        personas,
+        mergedJobs: data,
+        valueProp,
+        swipeFile: swipe_file,
+        scripts,
+        emailFlows,
+        recommendations: entryRecs,
+      });
+
+      const filename = `strategy-${(activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${Date.now()}.html`;
+      downloadStrategyDoc(html, filename);
+      setStratDocPhase(`✓ Downloaded ${filename}`);
+      log(`Strategy doc downloaded: ${filename}`);
+    } catch (e) {
+      setError(e.message);
+      log(`Strategy doc generation failed: ${e.message}`, "error");
+    } finally {
+      setStratDocBusy(false);
+    }
+  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, log]);
 
   const handleProjectReady = useCallback(({ project, contextSummary }) => {
     setProjects((prev) => [project, ...prev]);
@@ -278,6 +343,7 @@ export default function App() {
       try {
         const recResult = await generateEntryRecommendations(config.anthropicKey, merged);
         recs = (recResult.recommendations || []).sort((a, b) => (a.rank || 99) - (b.rank || 99));
+        setPositioningSpine(recResult.positioning_spine || null);
         log(`Pass 4/4 complete: ${recs.length} recommendations generated`);
       } catch (e) {
         log(`Pass 4/4 failed (non-critical): ${e.message}`, "error");
@@ -319,6 +385,7 @@ export default function App() {
       setData(merged);
       setActiveJob(merged[0]?.id || null);
       setActiveSession(sessionRef?.sessionId || `local-${Date.now()}`);
+
       setPhase("");
     } catch (e) {
       setError(e.message);
@@ -389,6 +456,10 @@ export default function App() {
                 className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
                 + New Project
               </button>
+              <button onClick={generateStrategyDoc} disabled={!data || stratDocBusy || loading}
+                className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
+                {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}
+              </button>
               <button onClick={() => setShowConfig(true)}
                 className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
                 ⚙ Config
@@ -443,10 +514,10 @@ export default function App() {
           </div>
 
           {/* Loading */}
-          {loading && (
+          {(loading || stratDocBusy) && (
             <div className="bg-surface-1 border border-[#1e2a3a] rounded-lg px-4 py-3 mb-3 flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-xs text-accent">{phase}</span>
+              <span className="text-xs text-accent">{stratDocBusy ? stratDocPhase : phase}</span>
             </div>
           )}
 

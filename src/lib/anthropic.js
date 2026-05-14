@@ -441,6 +441,123 @@ export function validatePositioning(passFourOutput, mergedJobs) {
   return { valid: errors.length === 0, errors };
 }
 
+// ── PASS 7: Personas (Engine v1.5) ──
+export async function generatePersonas(apiKey, projectContext, mergedJobs) {
+  const ctx = projectContext ? `PROJECT CONTEXT:
+- Sector: ${projectContext.sector || ""}
+- Audience: ${projectContext.audience || ""}
+- Product: ${projectContext.product_context || ""}
+- Brand voice: ${projectContext.brand_voice || ""}
+- Key facts: ${(projectContext.key_facts || []).slice(0,8).join("; ")}` : "";
+
+  const jobsSummary = mergedJobs.map(j => `Job ${j.id}: ${j.job_statement} (executor: ${j.job_executor})`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `You are an ODI analyst. Produce 4 Ulwick-format buyer personas anchored to the Project Context + scored jobs. Each persona is one of the 4 customer-psychology archetypes: Sensory Romantic, Cautious Indulger, Soft-Life Loyalist, Reflective Rewarder.
+
+For each persona return:
+- name (real first name fitting the audience)
+- age
+- archetype (one of 4 above)
+- one_liner (1 italicized sentence in her voice)
+- job_to_be_done (which scored Job she's hiring the brand for; cite Job N)
+- underserved_outcome (1 sentence quoting an outcome from Pass 2)
+- currently_uses (1-2 sentences naming real competitor products / behaviors)
+- trigger_moment (1 sentence)
+- lives_online_at (4-6 named accounts/publications/communities — must fit the audience identity)
+- switch_cost (1 sentence on order economics)
+- first_message (1 italicized line — the first ad headline aimed at her)
+
+Return ONLY valid JSON: {"personas": [{...}, {...}, {...}, {...}]}`,
+    `${ctx}\n\nScored jobs:\n${jobsSummary}`,
+    { maxTokens: 4500 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 8: Swipe File concepts (Engine v1.5) ──
+export async function generateSwipeFile(apiKey, projectContext, positioning, personas) {
+  const ctx = projectContext ? `PROJECT CONTEXT:\n- Sector: ${projectContext.sector}\n- Audience: ${projectContext.audience}\n- Brand voice: ${projectContext.brand_voice}\n- Key facts: ${(projectContext.key_facts || []).slice(0,6).join("; ")}` : "";
+  const pos = positioning?.primary ? `Primary positioning: "${positioning.primary.sentence}" (Job ${positioning.primary.citation_job_id}, score ${positioning.primary.citation_score})` : "";
+  const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype}): ${p.one_liner}`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `You are a senior creative director. Produce a 20-card swipe file — exactly 5 ad concepts per persona — that operationalizes the positioning.
+
+Each card needs:
+- id (e.g., SWP-NAME-01 using persona's first initial)
+- persona_name (which persona this targets)
+- format (one of: Meta 4:5, Meta carousel, TikTok 9:16, TikTok UGC)
+- stage (Unaware / Problem aware / Solution aware / Product aware / Most aware)
+- title (concept name, 2-5 words)
+- headline (the actual scroll-stopping copy, 1-2 lines, no exclamation points, no em-dashes)
+- body (1-2 sentences of body copy in the brand voice)
+- cta (3-5 word phrase)
+- framework (PAS / BAB / AIDA / Compare / Founder POV / UGC testimonial / Trend pivot / Day-in-life / Sensory / etc.)
+- visual_brief (1-2 sentences describing the visual — used later for image generation; specify model casting if a person is shown, otherwise still-life)
+
+Return ONLY JSON: {"swipe_file": [{...}, ...]}  (exactly 20 cards)`,
+    `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
+    { maxTokens: 8000 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 9: TikTok Scripts (Engine v1.5) ──
+export async function generateScripts(apiKey, projectContext, positioning, personas) {
+  const ctx = projectContext ? `Brand voice: ${projectContext.brand_voice || ""}\nKey facts: ${(projectContext.key_facts || []).slice(0,5).join("; ")}` : "";
+  const pos = positioning?.primary?.sentence ? `Primary positioning: "${positioning.primary.sentence}"` : "";
+  const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype})`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `You are a creative director writing TikTok / IG Reels scripts. Produce 8 shot-by-shot scripts — 2 per persona — using a mix of hook patterns (POV / day-in-life / founder confession / fake podcast / trend-jack / before-after / honest review / sensory).
+
+Each script:
+- id (e.g., TT-01 through TT-08)
+- title (4-6 word concept name)
+- persona_name
+- format ("9:16 · Xs · Tier 1 Founder / Tier 2 UGC / Spark Ads")
+- hook (the literal first 1-second line shown on screen)
+- shots: array of {time: "0.0 → 2.0s", cue: "Hook" / "Build" / "Reveal" / "Payoff" / "CTA", detail: "what happens", ost: "on-screen text", vo: "voiceover line if any"} — 5-8 shots per script
+- sound_note (1 line)
+- creator_brief (1 line)
+- kpi (1 line)
+
+Return ONLY JSON: {"scripts": [{...}, ...]} (exactly 8)`,
+    `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
+    { maxTokens: 8000 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 10: Email Flows (Engine v1.5) ──
+export async function generateEmailFlows(apiKey, projectContext, positioning) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nVoice: ${projectContext.brand_voice}\nFounder/audience signals: ${(projectContext.key_facts || []).slice(0,4).join("; ")}` : "";
+  const pos = positioning?.primary?.sentence || "";
+
+  const data = await callClaude(apiKey,
+    `Produce 4 Klaviyo-ready email flows in the brand voice. Sentence-case subject lines, no exclamation points, no em-dashes, slow urgency only.
+
+Flows:
+1. Welcome series (3 emails: Day 0 / Day 2 / Day 5)
+2. Abandoned cart (3 emails: Hour 1 / Day 1 / Day 3)
+3. Post-purchase (3 emails: Day 0 shipped / Day 7 first wear / Day 30 second nudge)
+4. Win-back (2 emails: Day 60 check-in / Day 90 exit offer)
+
+Each email needs:
+- when ("Day 0 · sent immediately")
+- subject (sentence case)
+- preview (1 sentence)
+- body (full email copy, 80-200 words, in voice — paragraphs separated by blank lines)
+- cta_label (button text)
+
+Return ONLY JSON: {"flows": [{"name": "...", "trigger": "...", "description": "1 sentence framing", "emails": [{...}, ...]}, ...]} (4 flows)`,
+    `${ctx}\n\nPositioning: "${pos}"`,
+    { maxTokens: 8000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

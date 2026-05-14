@@ -6,6 +6,79 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.5.0] — 2026-05-13
+
+Strategy Doc parity (Phase A). Four new Anthropic passes plus an HTML
+composer plus a one-click download button. After running analysis +
+clicking "↓ Strategy Doc," the engine produces a self-contained
+v5-shaped HTML file covering 10 sections.
+
+### Added — 4 new passes in `src/lib/anthropic.js`
+
+- **Pass 7 `generatePersonas`** — 4 Ulwick-format personas (archetype-
+  tagged: Sensory Romantic, Cautious Indulger, Soft-Life Loyalist,
+  Reflective Rewarder). Each anchored to a scored Job + a real
+  competitor + cultural-online-presence list.
+- **Pass 8 `generateSwipeFile`** — 20 ad concepts (5 per persona).
+  Format / stage / title / headline / body / cta / framework /
+  visual_brief. Headlines in brand voice (no exclamation points,
+  no em-dashes).
+- **Pass 9 `generateScripts`** — 8 shot-by-shot TikTok/Reel scripts.
+  Time-coded shots with cue + detail + ost + vo. Plus sound note,
+  creator brief, KPI per script.
+- **Pass 10 `generateEmailFlows`** — 4 Klaviyo-ready flows (welcome,
+  abandoned cart, post-purchase, win-back). Each with subject /
+  preview / body / cta_label per email.
+
+All four pull from Pass 0 projectContext + Pass 1 jobs + Pass 4
+positioning_spine, so the outputs are coherent across passes.
+
+### Added — `src/lib/compose-strategy.js`
+
+The HTML composer. Single function:
+
+\`\`\`js
+import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
+const html = composeStrategyDoc({ project_name, project_context,
+  positioning, personas, mergedJobs, valueProp, swipeFile, scripts,
+  emailFlows, recommendations });
+downloadStrategyDoc(html, "strategy.html");
+\`\`\`
+
+Renders 10 sections matching the v5 template (Positioning · Evidence
+· Value-prop comparison · Personas · Swipe file · Scripts · Emails ·
+Entry wedge · Methodology). Inlined CSS, no external assets beyond
+Google Fonts. Self-contained — opens standalone.
+
+### Added — App.jsx integration
+
+- New "↓ Strategy Doc" button in the header (gold-outlined, next to
+  "+ New Project")
+- Disabled until analysis has run
+- On click: runs Pass 5 (if competitors in context) + Pass 7 + Pass 8
+  + Pass 9 + Pass 10 sequentially, composes the HTML, triggers
+  download
+- Phase indicator reuses the existing loading bar
+- Positioning spine + recommendations now persisted in proper React
+  state instead of window globals
+
+### Bundle impact
+
+Main bundle: 254 KB (gzip 79 KB) — +37 KB for the new passes +
+composer. Heavy parsers still code-split. Build clean in 5.4s.
+
+### What's still missing (v1.6+ backlog)
+
+- Pass 11 · Channel Plan + Targeting Matrix
+- Pass 12 · Landing Variants
+- Pass 13 · 90-day Rollout
+- Wire ad-intel stages (engine/ad-intel/stage-*.mjs) into React
+- Wire creator outreach + tribe research into React
+- gpt-image-2 hook for the 20 swipe images (v1.7)
+- Vercel deploy hook from the composer (v1.7)
+
+---
+
 ## [1.4.1] — 2026-05-13
 
 Google Drive folder ingest for the Project Setup flow.
