@@ -6,6 +6,55 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.10] — 2026-05-14
+
+**Hotfix: Pass 0 corpus cap.** Fixes `"prompt is too long"` error when
+the user drops many files or large URL scrapes into Project Setup.
+
+### Root cause
+`summarizeProjectContext` (Pass 0) used to `.join("\n\n")` every file
+text + URL content with no total ceiling. `parse-files.js` caps each
+file at 30 K chars, but with 30+ files that's 900 K+ chars → ~225 K
+tokens → blows past Sonnet 4's 200 K context window. API returns
+`prompt is too long` and the run dies before Pass 0 ever fires.
+
+### Fix
+- New `MAX_CORPUS_CHARS = 120_000` constant in `src/lib/anthropic.js`
+  (≈30 K tokens of English prose · leaves ample room for system
+  prompt + JSON output)
+- When `totalLen > MAX_CORPUS_CHARS`, each block is **proportionally
+  clipped from the front** (brand docs front-load thesis statements,
+  so head > tail). Same fraction lost from every source · no single
+  file gets dropped entirely.
+- Per-block minimum keep of 500 chars (never zero-out a source)
+- Each clipped block gets a `[…truncated · N chars elided…]` marker
+  so the LLM knows the source isn't complete
+- `[ENGINE NOTE — corpus was clipped: …]` appended to the user prompt
+  so the model accounts for missing context
+- `⚑ <truncation summary>` prepended to `red_flags[]` in the result so
+  the user sees on the Project Setup screen that context was elided
+- `console.warn("[Pass 0]", …)` for the debug log
+
+### Example output of the new red_flag
+```
+⚑ Corpus was 487,213 chars · clipped proportionally to fit 120,000 cap.
+  18 sources each kept ~25% of their original length.
+```
+
+### What if a specific source is critical
+If a particular file MUST be fully read (e.g., the master brand-voice
+guide), re-run Project Setup with just that file plus 1-2 others.
+v1.7 will add per-file weight controls so the user can pin sources.
+
+### Touched
+- `src/lib/anthropic.js` only · ~30 lines added to `summarizeProjectContext`
+- No prompt template changes · same downstream pass schema
+
+### Bundle
+361 → 361.57 KB · 104 → 104.75 KB gzip. ~600 bytes for the cap logic.
+
+---
+
 ## [1.6.9] — 2026-05-14
 
 **Hotfix: gpt-image-2 model name + defensive response parsing.**

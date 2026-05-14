@@ -86,17 +86,48 @@ export function extractJSON(data) {
 //
 // `inputs` shape:
 //   { files: [{ fileName, kind, text }, ...], urls: [{ url, content }, ...] }
-export async function summarizeProjectContext(apiKey, inputs) {
-  const fileBlocks = (inputs.files || [])
-    .filter(f => f.text && f.text.length > 0)
-    .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`)
-    .join("\n\n");
-  const urlBlocks = (inputs.urls || [])
-    .filter(u => u.content && u.content.length > 0)
-    .map(u => `── URL: ${u.url} ──\n${u.content}`)
-    .join("\n\n");
+// Engine v1.6.10 · Pass 0 corpus cap.
+//
+// Used to concat every file + URL with no total ceiling. With a folder
+// drop of 30+ files + a scrape, the corpus could exceed ~1M chars
+// (~250K tokens), blowing past Sonnet 4's 200K context window and
+// throwing "prompt is too long" at the API.
+//
+// 120 K chars ≈ 30 K tokens for English prose · leaves ample room for
+// system prompt + JSON output. If the actual corpus exceeds, each
+// source is proportionally clipped (keeps the head — brand docs
+// usually front-load thesis statements). A red_flag is injected to
+// surface that context was elided.
+const MAX_CORPUS_CHARS = 120_000;
 
-  const corpus = [fileBlocks, urlBlocks].filter(Boolean).join("\n\n");
+export async function summarizeProjectContext(apiKey, inputs) {
+  const fileBlocksList = (inputs.files || [])
+    .filter(f => f.text && f.text.length > 0)
+    .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`);
+  const urlBlocksList = (inputs.urls || [])
+    .filter(u => u.content && u.content.length > 0)
+    .map(u => `── URL: ${u.url} ──\n${u.content}`);
+  const allBlocks = [...fileBlocksList, ...urlBlocksList];
+  const totalLen = allBlocks.reduce((s, b) => s + b.length, 0);
+
+  let corpus = "";
+  let truncationNote = "";
+  if (totalLen <= MAX_CORPUS_CHARS) {
+    corpus = allBlocks.join("\n\n");
+  } else {
+    // Proportional clip: each block keeps (MAX_CORPUS_CHARS / totalLen)
+    // of its length from the front. Same fraction lost from every source.
+    const ratio = MAX_CORPUS_CHARS / totalLen;
+    const clipped = allBlocks.map(b => {
+      const keep = Math.max(500, Math.floor(b.length * ratio));
+      return b.length <= keep ? b : `${b.slice(0, keep)}\n[…truncated · ${b.length - keep} chars elided…]`;
+    });
+    corpus = clipped.join("\n\n");
+    truncationNote = `Corpus was ${totalLen.toLocaleString()} chars · clipped proportionally to fit ${MAX_CORPUS_CHARS.toLocaleString()} cap. ${allBlocks.length} sources each kept ~${Math.round(ratio * 100)}% of their original length.`;
+    // eslint-disable-next-line no-console
+    console.warn("[Pass 0]", truncationNote);
+  }
+
   if (!corpus.trim()) {
     return {
       sector: "",
@@ -130,10 +161,15 @@ Rules:
 - Every fact must be defensible against a quote from the input. No invention.
 - If the corpus contradicts itself, surface that in red_flags rather than picking one side silently.
 - If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.`,
-    `Project context corpus:\n\n${corpus}`,
+    `Project context corpus:\n\n${corpus}${truncationNote ? `\n\n[ENGINE NOTE — corpus was clipped: ${truncationNote}]` : ""}`,
     { maxTokens: 4000 }
   );
-  return extractJSON(data);
+  const result = extractJSON(data);
+  // v1.6.10 · prepend truncation red_flag so the user can see context was elided
+  if (truncationNote) {
+    result.red_flags = [`⚑ ${truncationNote}`, ...(result.red_flags || [])];
+  }
+  return result;
 }
 
 // ── PASS 1: Discover Core Functional Jobs ──
