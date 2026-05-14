@@ -6,6 +6,59 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.4] — 2026-05-14
+
+**Moss-and-brick palette swap.** Visual reskin of the Strategy Doc output.
+The salmon/pink/yellow "Siraj" palette is replaced with a forest-green +
+cream + brick palette per
+[coolors.co/palette/386641-6a994e-a7c957-f2e8cf-bc4749](https://coolors.co/palette/386641-6a994e-a7c957-f2e8cf-bc4749).
+
+Cosmetic only — no schema changes, no pass changes, no rendering logic
+changes. Same bundle size (320 KB).
+
+### Color tokens · before → after
+
+| Role | v1.6.3 | v1.6.4 |
+| --- | --- | --- |
+| Primary accent (borders, tags, win states) | `--siraj-salmon` `#F7B5A4` | `--moss-deep` `#386641` |
+| Secondary text (section labels, citations) | `--rosy-brown` `#D7B7AA` | `--moss-mid` `#6a994e` |
+| Soft accent (gradients, light fills) | `--pillow-pink` `#F9D6D2` | `--moss-light` `#a7c957` |
+| Bright highlight | `--smile-yellow` `#F6D38D` | `--moss-lime` `#a7c957` |
+| Warm background | `--bg-warm` `#FBF7F4` | `--bg-warm` `#f2e8cf` |
+| Card background | `--bg-card` `#FCEEEB` | `--bg-card` `#f7ecda` |
+| Underserved / error | `#B85C5C` / `#ef4444` | `--brick` `#bc4749` |
+| Success green | `#22c55e` | `#386641` (moss-deep) |
+| Ad-intel purple (in axis summary) | `#a78bfa` | `#6a994e` (moss-mid) |
+| `--ink-secondary` | `#7A6964` (warm gray) | `#5a6b5d` (green-tinted gray) |
+| `--ink-muted` | `#B5A8A2` (warm gray) | `#9aa68f` (green-tinted gray) |
+
+### Changed — `src/lib/compose-strategy.js` only
+
+- `:root` declaration: 4 var renames + 2 bg value swaps + 1 new `--brick` var
+- All `var(--*)` references updated to new names
+- All hard-coded rgba() and hex literals updated
+- Cover doc-num + footer + methodology line stamped `v1.6.4`
+- Header comment block documents new palette + maps every role
+
+### Untouched
+
+- `src/lib/anthropic.js` ✓
+- `src/App.jsx` ✓
+- All 15 pass functions ✓
+- All 16 renderer functions ✓
+- All section numbering ✓
+
+### Bundle
+
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.3 | 320.17 KB | 94.39 KB |
+| **v1.6.4** | **320.02 KB** | **94.35 KB** |
+
+Negligible — color literals are roughly the same byte count.
+
+---
+
 ## [1.6.3] — 2026-05-14
 
 **Pass 15 · Competitive teardown.** Third v1.7 backlog item shipped. Doc
