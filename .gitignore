@@ -10,3 +10,5 @@ dist
 deploy/
 session-deploy/
 siraj-strategy/.vercel/
+
+.vercel

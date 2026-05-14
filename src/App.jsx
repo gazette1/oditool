@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
 import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
@@ -128,6 +128,16 @@ export default function App() {
     // eslint-disable-next-line no-console
     console.log(`[${ts}] ${msg}`);
   }, []);
+
+  // Airtable client. MUST be declared before any useCallback that has it
+  // in its deps array (otherwise we hit a Temporal Dead Zone error at
+  // render time — App crashes with "Cannot access 'airtable' before
+  // initialization"). useMemo'd so callbacks don't churn on every render.
+  const airtable = useMemo(() => (
+    config.airtableKey && config.airtableBaseId
+      ? new AirtableClient(config.airtableKey, config.airtableBaseId)
+      : null
+  ), [config.airtableKey, config.airtableBaseId]);
 
   // Load sessions + projects from Airtable on mount
   useEffect(() => {
@@ -307,10 +317,6 @@ export default function App() {
   useEffect(() => {
     if (!config.anthropicKey) setShowConfig(true);
   }, []);
-
-  const airtable = config.airtableKey && config.airtableBaseId
-    ? new AirtableClient(config.airtableKey, config.airtableBaseId)
-    : null;
 
   // ── Run ODI Analysis ──
   const runAnalysis = useCallback(async () => {
