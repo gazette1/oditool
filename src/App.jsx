@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
 import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
+import { runAdIntel } from "./lib/ad-intel";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
 import ProjectSetup from "./ProjectSetup";
 
@@ -109,6 +110,11 @@ export default function App() {
   const [stratDocBusy, setStratDocBusy] = useState(false);
   const [stratDocPhase, setStratDocPhase] = useState("");
   const [debugLog, setDebugLog] = useState([]);
+
+  // Engine v1.7: Ad-Intel module
+  const [adIntelBusy, setAdIntelBusy] = useState(false);
+  const [adIntelPhase, setAdIntelPhase] = useState("");
+  const [adIntelData, setAdIntelData] = useState(null); // { competitors, ads, briefs, summary }
 
   // Engine v1.4: Project Setup flow + active project context
   const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
@@ -242,6 +248,45 @@ export default function App() {
       setStratDocBusy(false);
     }
   }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, log]);
+
+  // ── Engine v1.7 · Run Ad-Intel (Stage A → B → C → D) ──
+  const runAdIntelHandler = useCallback(async () => {
+    if (!data || !data.length) { setError("Run ODI analysis first — ad-intel needs Pass 1+2 outcomes for Stage D."); return; }
+    if (!config.anthropicKey) { setError("Anthropic key required"); return; }
+    setAdIntelBusy(true);
+    setError(null);
+    setAdIntelData(null);
+
+    const brand = activeProject?.name || projectContext?.sector?.split(/[—·:]/)[0]?.trim() || sector;
+    const category = projectContext?.sector || sector;
+    const projectId = activeProject?.project_id || `proj_${Date.now()}`;
+
+    try {
+      log(`Ad-Intel · starting · brand="${brand}" · category="${category}"`);
+      const result = await runAdIntel({
+        apiKey: config.anthropicKey,
+        airtable,
+        projectId,
+        projectContext,
+        mergedJobs: data,
+        brand,
+        category,
+        onProgress: (msg) => {
+          setAdIntelPhase(msg);
+          log(`Ad-Intel · ${msg}`);
+        },
+      });
+      setAdIntelData(result);
+      setView("adintel");
+      log(`Ad-Intel · complete · ${result.summary.competitor_count} competitors · ${result.summary.ad_count} ads · ${result.summary.tagged_count} tagged · ${result.summary.brief_count} briefs`);
+      setAdIntelPhase(`✓ ${result.summary.brief_count} briefs ready`);
+    } catch (e) {
+      setError(e.message);
+      log(`Ad-Intel failed: ${e.message}`, "error");
+    } finally {
+      setAdIntelBusy(false);
+    }
+  }, [data, config, projectContext, activeProject, sector, airtable, log]);
 
   const handleProjectReady = useCallback(({ project, contextSummary }) => {
     setProjects((prev) => [project, ...prev]);
@@ -477,6 +522,10 @@ export default function App() {
                 className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
                 + New Project
               </button>
+              <button onClick={runAdIntelHandler} disabled={!data || adIntelBusy || loading || stratDocBusy}
+                className="text-xs border border-[#a78bfa] text-[#a78bfa] px-3 py-2 rounded-lg hover:bg-[#a78bfa] hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#a78bfa]">
+                {adIntelBusy ? "↻ Scoring…" : "🎯 Run Ad-Intel"}
+              </button>
               <button onClick={generateStrategyDoc} disabled={!data || stratDocBusy || loading}
                 className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
                 {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}
@@ -535,10 +584,10 @@ export default function App() {
           </div>
 
           {/* Loading */}
-          {(loading || stratDocBusy) && (
+          {(loading || stratDocBusy || adIntelBusy) && (
             <div className="bg-surface-1 border border-[#1e2a3a] rounded-lg px-4 py-3 mb-3 flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-xs text-accent">{stratDocBusy ? stratDocPhase : phase}</span>
+              <span className="text-xs text-accent">{adIntelBusy ? adIntelPhase : stratDocBusy ? stratDocPhase : phase}</span>
             </div>
           )}
 
@@ -600,6 +649,7 @@ export default function App() {
               <div className="flex gap-2 mb-5 flex-wrap">
                 {[
                   ["entry", "⚡ Market Entry", "#a78bfa"],
+                  ["adintel", "🎯 Ad-Intel", "#a78bfa"],
                   ["landscape", "Opportunity Landscape"],
                   ["jobmap", "Universal Job Map"],
                   ["needs", "All Need Types"],
@@ -727,6 +777,173 @@ export default function App() {
                         </div>
                       );
                     })
+                  )}
+                </div>
+              )}
+
+              {/* ═══ AD-INTEL (Engine v1.7) ═══ */}
+              {view === "adintel" && (
+                <div className="space-y-4">
+                  {!adIntelData ? (
+                    <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl p-8 text-center">
+                      <div className="text-[10px] tracking-widest uppercase mb-2" style={{ color: "#a78bfa" }}>🎯 Ad-Intel</div>
+                      <p className="text-sm text-dim mb-3">
+                        Run the 4-stage ad-intel pipeline to score competitor ads and generate storyboard briefs
+                        anchored to your underserved Ulwick outcomes.
+                      </p>
+                      <p className="text-[11px] text-dim mb-4">
+                        Stage A · find 10 competitors (web_search) · Stage B · ingest active ads · Stage C · score with
+                        Claude on 5 behavioral signals · Stage D · generate storyboard briefs using hook-affinity picker.
+                      </p>
+                      <button
+                        onClick={runAdIntelHandler}
+                        disabled={!data || adIntelBusy || loading}
+                        className="bg-[#a78bfa]/10 border border-[#a78bfa]/40 text-[#a78bfa] px-5 py-2.5 rounded-lg text-xs font-display font-bold tracking-wider uppercase hover:bg-[#a78bfa]/20 transition disabled:opacity-40">
+                        {adIntelBusy ? `↻ ${adIntelPhase}` : "🎯 Run Ad-Intel · 4 stages"}
+                      </button>
+                      {!data && (
+                        <p className="text-[10px] text-dim mt-4">⓵ Run ODI Analysis first — Stage D needs underserved outcomes.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Summary bar */}
+                      <div className="flex items-center gap-6 px-4 py-3 bg-surface-1 border border-[#1e2a3a] rounded-lg">
+                        <Stat label="Competitors" value={adIntelData.summary.competitor_count} color="#a78bfa" />
+                        <Stat label="Ads Ingested" value={adIntelData.summary.ad_count} />
+                        <Stat label="Scored" value={adIntelData.summary.tagged_count} color="#22c55e" />
+                        <Stat label="Briefs" value={adIntelData.summary.brief_count} color="#c8a45c" />
+                        <Stat label="Outcomes Addressed" value={adIntelData.summary.outcomes_addressed} color="#ef4444" />
+                      </div>
+
+                      {/* Stage A · Competitors */}
+                      <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl overflow-hidden">
+                        <div className="px-5 py-3 border-b border-[#1e2a3a] flex items-baseline justify-between">
+                          <h3 className="font-display text-sm font-semibold">Stage A · Competitors ({adIntelData.competitors.length})</h3>
+                          <span className="text-[10px] text-dim tracking-widest uppercase">web_search verified</span>
+                        </div>
+                        <div className="divide-y divide-[#1e2a3a]">
+                          {adIntelData.competitors.map((c, i) => {
+                            const tierColor = c.classification === "direct" ? "#ef4444" : c.classification === "adjacent" ? "#eab308" : "#a78bfa";
+                            return (
+                              <div key={i} className="px-5 py-3 flex items-start gap-3">
+                                <div
+                                  className="text-[9px] tracking-widest uppercase font-display font-bold shrink-0 w-20"
+                                  style={{ color: tierColor }}>
+                                  {c.classification}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-baseline gap-2 mb-1">
+                                    <span className="font-display text-sm font-semibold">{c.brand_name}</span>
+                                    <span className="text-[10px] text-dim">{c.spend_tier || "—"}</span>
+                                  </div>
+                                  <p className="text-[11px] text-dim leading-relaxed">{c.evidence}</p>
+                                  {c.page_url && (
+                                    <a href={c.page_url} target="_blank" rel="noreferrer" className="text-[10px] text-accent hover:underline">{c.page_url}</a>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Stage C · Scored ads (top 8) */}
+                      {adIntelData.ads.filter(a => a.tag_status === "tagged").length > 0 && (
+                        <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl overflow-hidden">
+                          <div className="px-5 py-3 border-b border-[#1e2a3a] flex items-baseline justify-between">
+                            <h3 className="font-display text-sm font-semibold">Stage C · Top Scored Ads</h3>
+                            <span className="text-[10px] text-dim tracking-widest uppercase">5 behavioral signals · text-only eval</span>
+                          </div>
+                          <div className="divide-y divide-[#1e2a3a]">
+                            {adIntelData.ads
+                              .filter(a => a.tag_status === "tagged")
+                              .sort((a, b) => (b.score_total || 0) - (a.score_total || 0))
+                              .slice(0, 8)
+                              .map((ad, i) => (
+                                <div key={i} className="px-5 py-3">
+                                  <div className="flex items-baseline justify-between gap-3 mb-1">
+                                    <div className="flex items-baseline gap-2 min-w-0">
+                                      <span className="font-display text-sm font-semibold truncate">{ad.brand_name}</span>
+                                      <span className="text-[10px] text-dim tracking-widest uppercase">{ad.format}</span>
+                                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#a78bfa]/15 text-[#a78bfa]">{ad.hook_type}</span>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                      <span className="font-display text-lg font-bold text-accent">{ad.score_total}</span>
+                                      <span className="text-[9px] text-dim ml-1">/ 50</span>
+                                    </div>
+                                  </div>
+                                  {ad.headline && <p className="text-[12px] leading-snug text-[#e0ddd5] mb-1">"{ad.headline}"</p>}
+                                  {ad.copy_text && <p className="text-[11px] text-dim leading-relaxed line-clamp-2">{ad.copy_text}</p>}
+                                  <div className="flex gap-3 mt-2 text-[10px] text-dim">
+                                    <span>Aware {ad.awareness_level || "?"}/5</span>
+                                    <span>Attn {ad.attention_capture || "?"}</span>
+                                    <span>Mem {ad.memory_encoding || "?"}</span>
+                                    <span>Brand {ad.brand_recall || "?"}</span>
+                                    <span>Intent {ad.purchase_intent || "?"}</span>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Stage D · Creative Briefs */}
+                      {adIntelData.briefs.length > 0 && (
+                        <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl overflow-hidden">
+                          <div className="px-5 py-3 border-b border-[#1e2a3a] flex items-baseline justify-between">
+                            <h3 className="font-display text-sm font-semibold">Stage D · Creative Briefs ({adIntelData.briefs.filter(b => b.status === "draft").length})</h3>
+                            <span className="text-[10px] text-dim tracking-widest uppercase">hook-affinity picker · ready for Higgsfield</span>
+                          </div>
+                          <div className="divide-y divide-[#1e2a3a]">
+                            {adIntelData.briefs.filter(b => b.status === "draft").map((b, i) => (
+                              <div key={i} className="px-5 py-4">
+                                <div className="flex items-baseline justify-between gap-3 mb-2">
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-[10px] tracking-widest uppercase text-[#a78bfa]">{b.source_angle_code}</span>
+                                    <span className="text-[10px] text-dim">Job {b.source_outcome_job_id} · opp {b.source_outcome_score?.toFixed?.(1) ?? b.source_outcome_score}</span>
+                                  </div>
+                                  <span className="text-[10px] text-dim italic">via {b.linked_swipe_ad_brand} ({b.linked_swipe_ad_score})</span>
+                                </div>
+                                <p className="font-display text-[15px] leading-snug mb-2">"{b.hook}"</p>
+                                <p className="text-[12px] text-dim leading-relaxed mb-3">{b.body}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                  <div className="bg-surface-2 border border-[#1e2a3a] rounded p-2.5">
+                                    <div className="text-[9px] tracking-widest uppercase text-dim mb-1">Belief to shift</div>
+                                    <p className="text-[11px] leading-relaxed">{b.belief_to_shift}</p>
+                                  </div>
+                                  <div className="bg-surface-2 border border-[#1e2a3a] rounded p-2.5">
+                                    <div className="text-[9px] tracking-widest uppercase text-dim mb-1">Evidence to use</div>
+                                    <p className="text-[11px] leading-relaxed">{b.evidence_to_use}</p>
+                                  </div>
+                                </div>
+                                {b.shot_list?.length > 0 && (
+                                  <details className="text-[11px]">
+                                    <summary className="text-[10px] tracking-widest uppercase text-accent cursor-pointer">Shot list ({b.shot_list.length})</summary>
+                                    <ol className="mt-2 space-y-1 pl-3">
+                                      {b.shot_list.map((shot, si) => <li key={si} className="text-dim leading-relaxed">{shot}</li>)}
+                                    </ol>
+                                  </details>
+                                )}
+                                <div className="flex items-center gap-2 mt-3 text-[10px]">
+                                  <span className="px-2 py-0.5 rounded bg-surface-2 text-dim">{b.tool}</span>
+                                  <span className="px-2 py-0.5 rounded bg-surface-2 text-dim">{b.format}</span>
+                                  <span className="px-2 py-0.5 rounded bg-surface-2 text-dim">{b.duration_seconds}s</span>
+                                  <span className="px-2 py-0.5 rounded bg-surface-2 text-accent">CTA · {b.cta}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={runAdIntelHandler}
+                        disabled={adIntelBusy || loading}
+                        className="w-full bg-[#a78bfa]/10 border border-[#a78bfa]/40 text-[#a78bfa] px-5 py-2.5 rounded-lg text-xs font-display font-bold tracking-wider uppercase hover:bg-[#a78bfa]/20 transition disabled:opacity-40">
+                        {adIntelBusy ? "↻ Running…" : "↻ Re-run Ad-Intel"}
+                      </button>
+                    </>
                   )}
                 </div>
               )}

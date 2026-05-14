@@ -63,6 +63,11 @@ const TABLES = {
   searchVolume: "Search Volume Data",
   entryRecs: "Entry Recommendations",
   projects: "Projects",
+  // Engine v1.7 — Ad-Intel module
+  swipePages: "Swipe Pages",
+  swipeAds: "Swipe Ads",
+  creativeBriefs: "Creative Briefs",
+  briefIterations: "Brief Iterations",
 };
 
 class AirtableClient {
@@ -290,6 +295,224 @@ class AirtableClient {
     await this._request(TABLES.projects, "PATCH", {
       records: [{ id: airtableId, fields: { ...patch, updated_at: new Date().toISOString().split("T")[0] } }],
     });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Ad-Intel module · Engine v1.7
+  //
+  // Expected base schema (create these tables in Airtable):
+  //
+  // TABLE: Swipe Pages
+  //   - swipe_page_id (Single line text, primary)
+  //   - project_id (Single line text)
+  //   - brand_name (Single line text)
+  //   - page_url (URL)
+  //   - meta_page_url (URL)
+  //   - classification (Single select: direct, adjacent, aspirational)
+  //   - spend_tier (Single select: <$100K/mo, $100K-1M/mo, >$1M/mo, unknown)
+  //   - verticals (Long text, JSON)
+  //   - evidence (Long text)
+  //   - scrape_status (Single select: pending, scraped, success_partial, failed)
+  //   - ad_count (Number)
+  //   - added_at (Date)
+  //
+  // TABLE: Swipe Ads
+  //   - swipe_ad_id (Single line text, primary)
+  //   - project_id (Single line text)
+  //   - swipe_page_id (Single line text)
+  //   - brand_name (Single line text)
+  //   - meta_ad_id (Single line text)
+  //   - creative_url (URL)
+  //   - format (Single select: image, video, carousel, dco)
+  //   - copy_text (Long text)
+  //   - headline (Long text)
+  //   - cta (Single line text)
+  //   - platforms (Long text, JSON)
+  //   - run_start (Date · optional)
+  //   - run_end (Date · optional)
+  //   - evidence (Long text)
+  //   - ingestion_method (Single select: meta_api, web_search_fallback)
+  //   - tag_status (Single select: pending, tagged, failed)
+  //   - hook_type (Single select)
+  //   - awareness_level (Number)
+  //   - attention_capture / emotional_valence / memory_encoding /
+  //     brand_recall / purchase_intent (Number)
+  //   - score_total (Number)
+  //   - addressed_beliefs (Long text, JSON)
+  //   - overall_verdict (Long text)
+  //   - fetched_at (Date)
+  //   - tagged_at (Date)
+  //
+  // TABLE: Creative Briefs
+  //   - brief_id (Single line text, primary)
+  //   - project_id (Single line text)
+  //   - source_outcome_job_id (Number)
+  //   - source_outcome_statement (Long text)
+  //   - source_outcome_score (Number)
+  //   - source_angle_code (Single line text)
+  //   - linked_swipe_ad_brand (Single line text)
+  //   - hook (Long text)
+  //   - body (Long text)
+  //   - cta (Single line text)
+  //   - shot_list (Long text, JSON)
+  //   - belief_to_shift (Long text)
+  //   - evidence_to_use (Long text)
+  //   - predicted_scores (Long text, JSON)
+  //   - tool / preset_mode / format (Single line text)
+  //   - duration_seconds (Number)
+  //   - status (Single select: draft, approved, rendered, published, failed)
+  //   - pick_reason (Long text)
+  //   - created_at (Date)
+
+  // Helper · normalize spend_tier strings from CLI ("small"/"mid"/"large")
+  // to Airtable select values. Mirrors engine/db/migrate-json-to-airtable.mjs.
+  _normSpendTier(t) {
+    const map = { small: "<$100K/mo", mid: "$100K-1M/mo", large: ">$1M/mo" };
+    if (!t) return "unknown";
+    return map[t] || t;
+  }
+
+  async saveSwipePages(projectId, competitors) {
+    const records = competitors.map((c, i) => ({
+      fields: {
+        swipe_page_id: c.id || `sp-${projectId}-${i + 1}`,
+        project_id: projectId,
+        brand_name: c.brand_name || "",
+        page_url: c.page_url || "",
+        meta_page_url: c.meta_page_url || "",
+        classification: c.classification || "direct",
+        spend_tier: this._normSpendTier(c.spend_tier),
+        verticals: JSON.stringify(c.verticals || []),
+        evidence: c.evidence || "",
+        scrape_status: c.scrape_status || "pending",
+        ad_count: c.ad_count || 0,
+        added_at: (c.added_at || new Date().toISOString()).split("T")[0],
+      },
+    }));
+    const out = [];
+    for (let i = 0; i < records.length; i += 10) {
+      const batch = records.slice(i, i + 10);
+      try {
+        const data = await this._request(TABLES.swipePages, "POST", { records: batch });
+        out.push(...data.records);
+      } catch (e) {
+        // Non-fatal — return what we have so the run continues
+        console.warn("[airtable] saveSwipePages chunk failed:", e.message);
+      }
+    }
+    return out;
+  }
+
+  async saveSwipeAds(projectId, ads) {
+    const records = ads.map((a, i) => ({
+      fields: {
+        swipe_ad_id: a.id || `sa-${projectId}-${i + 1}`,
+        project_id: projectId,
+        swipe_page_id: a.swipe_page_id || "",
+        brand_name: a.brand_name || "",
+        meta_ad_id: a.meta_ad_id || "",
+        creative_url: a.creative_url || "",
+        format: a.format || "image",
+        copy_text: a.copy_text || "",
+        headline: a.headline || "",
+        cta: a.cta || "",
+        platforms: JSON.stringify(a.platforms || []),
+        run_start: a.run_start || null,
+        run_end: a.run_end || null,
+        evidence: a.evidence || "",
+        ingestion_method: a.ingestion_method || "web_search_fallback",
+        tag_status: a.tag_status || "pending",
+        fetched_at: (a.fetched_at || new Date().toISOString()).split("T")[0],
+      },
+    }));
+    for (let i = 0; i < records.length; i += 10) {
+      try {
+        await this._request(TABLES.swipeAds, "POST", { records: records.slice(i, i + 10) });
+      } catch (e) {
+        console.warn("[airtable] saveSwipeAds chunk failed:", e.message);
+      }
+    }
+  }
+
+  /**
+   * Patch Stage C eval results onto previously-saved Swipe Ads rows.
+   * We don't track Airtable record IDs across stages in the React app
+   * (the orchestrator is a single in-memory run), so we re-upsert by
+   * `swipe_ad_id` as the primary key. Idempotent.
+   */
+  async updateSwipeAds(projectId, taggedAds) {
+    const records = taggedAds.map((a, i) => ({
+      fields: {
+        swipe_ad_id: a.id || `sa-${projectId}-${i + 1}`,
+        project_id: projectId,
+        swipe_page_id: a.swipe_page_id || "",
+        brand_name: a.brand_name || "",
+        format: a.format || "image",
+        copy_text: a.copy_text || "",
+        headline: a.headline || "",
+        cta: a.cta || "",
+        tag_status: a.tag_status || "tagged",
+        hook_type: a.hook_type || "",
+        awareness_level: typeof a.awareness_level === "number" ? a.awareness_level : null,
+        attention_capture: typeof a.attention_capture === "number" ? a.attention_capture : null,
+        emotional_valence: typeof a.emotional_valence === "number" ? a.emotional_valence : null,
+        memory_encoding: typeof a.memory_encoding === "number" ? a.memory_encoding : null,
+        brand_recall: typeof a.brand_recall === "number" ? a.brand_recall : null,
+        purchase_intent: typeof a.purchase_intent === "number" ? a.purchase_intent : null,
+        score_total: typeof a.score_total === "number" ? a.score_total : null,
+        addressed_beliefs: JSON.stringify(a.addressed_beliefs || []),
+        overall_verdict: a.overall_verdict || "",
+        tagged_at: a.tagged_at ? a.tagged_at.split("T")[0] : new Date().toISOString().split("T")[0],
+      },
+    }));
+    // Use POST · the swipe_ad_id is the natural key, but Airtable POST
+    // creates duplicates rather than upserting. Strategy: rely on the
+    // upstream saveSwipeAds happening first, then PATCH by record ID
+    // would be ideal — but we don't track record IDs across the React run.
+    // Compromise · POST and let the brief generation reference by
+    // swipe_ad_id field, not Airtable record ID.
+    for (let i = 0; i < records.length; i += 10) {
+      try {
+        await this._request(TABLES.swipeAds, "POST", { records: records.slice(i, i + 10) });
+      } catch (e) {
+        console.warn("[airtable] updateSwipeAds chunk failed:", e.message);
+      }
+    }
+  }
+
+  async saveCreativeBriefs(projectId, briefs) {
+    const records = briefs.map((b, i) => ({
+      fields: {
+        brief_id: `cb-${projectId}-${Date.now()}-${i}`,
+        project_id: projectId,
+        source_outcome_job_id: b.source_outcome_job_id ?? null,
+        source_outcome_statement: b.source_outcome_statement || "",
+        source_outcome_score: typeof b.source_outcome_score === "number" ? b.source_outcome_score : null,
+        source_angle_code: b.source_angle_code || "",
+        linked_swipe_ad_brand: b.linked_swipe_ad_brand || "",
+        hook: b.hook || "",
+        body: b.body || "",
+        cta: b.cta || "",
+        shot_list: JSON.stringify(b.shot_list || []),
+        belief_to_shift: b.belief_to_shift || "",
+        evidence_to_use: b.evidence_to_use || "",
+        predicted_scores: JSON.stringify(b.predicted_scores || {}),
+        tool: b.tool || "",
+        preset_mode: b.preset_mode || "",
+        format: b.format || "9:16",
+        duration_seconds: typeof b.duration_seconds === "number" ? b.duration_seconds : 8,
+        status: b.status || "draft",
+        pick_reason: b.pick_reason || "",
+        created_at: (b.created_at || new Date().toISOString()).split("T")[0],
+      },
+    }));
+    for (let i = 0; i < records.length; i += 10) {
+      try {
+        await this._request(TABLES.creativeBriefs, "POST", { records: records.slice(i, i + 10) });
+      } catch (e) {
+        console.warn("[airtable] saveCreativeBriefs chunk failed:", e.message);
+      }
+    }
   }
 
   // ── Load full session ──

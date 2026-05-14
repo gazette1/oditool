@@ -9,7 +9,7 @@
 const API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-20250514";
 
-async function callClaude(apiKey, system, userMessage, { tools = null, maxTokens = 4000 } = {}) {
+export async function callClaude(apiKey, system, userMessage, { tools = null, maxTokens = 4000 } = {}) {
   const body = {
     model: MODEL,
     max_tokens: maxTokens,
@@ -44,7 +44,7 @@ async function callClaude(apiKey, system, userMessage, { tools = null, maxTokens
   return data;
 }
 
-function extractJSON(data) {
+export function extractJSON(data) {
   const text = data.content?.filter((b) => b.type === "text").map((b) => b.text).join("") || "";
   // Strip markdown code fences if Claude wrapped the JSON in them.
   const clean = text.replace(/```json\s*/gi, "").replace(/```/g, "").trim();

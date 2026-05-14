@@ -6,6 +6,90 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.1] — 2026-05-14
+
+**Ad-Intel React wire-in.** First v1.7-backlog item shipped: the four
+ad-intel CLI stages (Stage A → B → C → D) are now triggerable directly
+from the React UI, persist to Airtable, and surface results in a new
+"🎯 Ad-Intel" tab.
+
+### Added — `src/lib/ad-intel.js` (browser port)
+
+Browser-side ports of the four CLI stages from `engine/ad-intel/*.mjs`,
+re-using `callClaude` + `extractJSON` from `anthropic.js`:
+
+- **Stage A** `stageA` · web_search to find 10 competitors with
+  classification (direct / adjacent / aspirational) + spend_tier + evidence
+- **Stage B** `stageB` · per-competitor web_search ad ingest with
+  best-effort fallback (Meta Ad Library API still pending)
+- **Stage C** `stageC` · per-ad LLM eval on 5 behavioral signals +
+  Schwartz awareness + hook type + addressed beliefs (text-only mode)
+- **Stage D** `stageD` · hook-affinity picker (v1.3 OUTCOME_HOOK_AFFINITY
+  map preserved) + storyboard brief generator
+- **`runAdIntel`** · orchestrator that runs A → B → C → D with progress
+  callbacks and optional Airtable persistence. Derives underserved
+  outcomes (opp_score ≥ 10) automatically from Pass 1+2 data.
+
+### Added — Airtable methods (`src/lib/airtable.js`)
+
+Four new methods + TABLES entries for the ad-intel schema:
+
+- `saveSwipePages(projectId, competitors)` · with `_normSpendTier()`
+  helper that remaps CLI strings (`small`/`mid`/`large`) to Airtable
+  select values (`<$100K/mo` / `$100K-1M/mo` / `>$1M/mo`)
+- `saveSwipeAds(projectId, ads)` · initial pending rows from Stage B
+- `updateSwipeAds(projectId, taggedAds)` · Stage C eval results
+- `saveCreativeBriefs(projectId, briefs)` · Stage D output
+
+All chunked at Airtable's 10-record batch limit. Each chunk wrapped in
+try/catch so a failed batch doesn't abort the run.
+
+### Added — `src/lib/anthropic.js` exports
+
+- `callClaude` and `extractJSON` are now `export`ed so other modules
+  (ad-intel, future TRIBE wiring) can reuse the same Anthropic wrapper
+  with consistent truncation detection.
+
+### Added — UI in `App.jsx`
+
+- New **"🎯 Run Ad-Intel"** purple-outlined header button — disabled
+  until Pass 1-4 has populated `data`.
+- New **"🎯 Ad-Intel"** tab in the view-switcher row.
+- New `runAdIntelHandler` callback that triggers the full A→B→C→D
+  pipeline with progress logged into the debug log.
+- New ad-intel result view with three stacked panels:
+  1. Stage A · competitor list (color-coded by classification)
+  2. Stage C · top-8 scored ads sorted by `score_total`, with all 5
+     behavioral scores + awareness + hook type
+  3. Stage D · creative briefs with hook + body + belief shift + shot
+     list (collapsible) + Higgsfield-ready format/duration chips
+
+### Bundle
+
+| Build | Main bundle | Gzip |
+| --- | --- | --- |
+| v1.6 | 273 KB | 82.5 KB |
+| **v1.6.1** | **299 KB** | **90 KB** |
+
++26 KB for the entire ad-intel module + UI.
+
+### Cost per run
+
+Roughly 22 Anthropic calls (1 Stage A + 10 Stage B + 10 Stage C + ~5
+Stage D) · ~70 K tokens · **~$0.90 in API spend.** Adds ~3 minutes to
+the wall time.
+
+### Pending for v1.7
+
+- Pass 14 `generateCreatorBriefs` · paid-creator outreach packets
+- Pass 15 `generateCompetitiveTeardown` · §15-style competitive matrix
+- gpt-image-2 wire-in for swipe-file images
+- Meta Ad Library API integration when the user's verification token
+  lands (replace the `web_search_fallback` ingestion mode in Stage B)
+- Multimodal Stage C eval once Stage B returns actual creative bytes
+
+---
+
 ## [1.6.0] — 2026-05-13
 
 Strategy Doc parity (Phase B). Three more Anthropic passes plus four new
