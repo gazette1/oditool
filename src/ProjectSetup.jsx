@@ -10,6 +10,7 @@ import { parseFiles } from "./lib/parse-files";
 import { scrapeUrl } from "./lib/scrape-url";
 import { summarizeProjectContext } from "./lib/anthropic";
 import { AirtableClient } from "./lib/airtable";
+import { ingestFolder } from "./lib/google-drive";
 
 export default function ProjectSetup({ config, onProjectReady, onCancel }) {
   const [files, setFiles] = useState([]);
@@ -22,6 +23,8 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [driveUrl, setDriveUrl] = useState("");
+  const [driveSkipped, setDriveSkipped] = useState([]);
 
   // ── Drop / pick handlers ──
   const handleFiles = useCallback(async (fileList) => {
@@ -59,6 +62,43 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
       handleFiles(dt.files);
     }
   }, [handleFiles]);
+
+  // ── Pull from Google Drive folder ──
+  const handleDrivePull = useCallback(async () => {
+    if (!driveUrl.trim()) return;
+    if (!config.googleDriveApiKey) {
+      setError("Google Drive API key required. Paste one into ⚙ Config (see step-by-step in the Drive panel below).");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setDriveSkipped([]);
+    setPhase("Listing folder contents…");
+    try {
+      const { files: driveFiles, skipped } = await ingestFolder(
+        driveUrl,
+        config.googleDriveApiKey,
+        (p) => {
+          if (p.phase === "listing") setPhase(`Listing folder ${p.folderId}…`);
+          else if (p.phase === "descending") setPhase(`Descending into ${p.folder} (depth ${p.depth + 1})…`);
+          else if (p.phase === "found") setPhase(`Found ${p.count} files. Downloading…`);
+          else if (p.phase === "downloading") setPhase(`Downloading ${p.current}/${p.total}: ${p.name}`);
+          else if (p.phase === "done") setPhase(`Downloaded ${p.downloaded} files (${p.skipped} skipped). Parsing…`);
+        }
+      );
+      setDriveSkipped(skipped);
+      if (driveFiles.length > 0) {
+        // Feed straight into the existing parse pipeline
+        await handleFiles(driveFiles);
+      } else {
+        setPhase("No usable files found in folder.");
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }, [driveUrl, config.googleDriveApiKey, handleFiles]);
 
   // ── Scrape URL ──
   const handleScrape = useCallback(async () => {
@@ -217,6 +257,53 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
                 </div>
               ))}
             </div>
+          )}
+        </Section>
+
+        {/* Step 1b: Google Drive folder */}
+        <Section step="01b" title="…or pull from a Google Drive folder">
+          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+            <input
+              type="url"
+              value={driveUrl}
+              onChange={(e) => setDriveUrl(e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/..."
+              disabled={busy}
+              style={{ flex: 1, background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 6, padding: "12px 16px", color: "#e0ddd5", fontFamily: "inherit", fontSize: 13 }}
+            />
+            <button onClick={handleDrivePull} disabled={busy || !driveUrl.trim()}
+              style={{ background: "transparent", border: "1px solid #1e2a3a", color: "#e0ddd5", padding: "12px 20px", borderRadius: 6, fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: busy || !driveUrl.trim() ? "not-allowed" : "pointer", opacity: busy || !driveUrl.trim() ? 0.4 : 1 }}>
+              Pull from Drive
+            </button>
+          </div>
+
+          {driveSkipped.length > 0 && (
+            <div style={{ padding: "10px 14px", background: "rgba(201,122,61,0.1)", border: "1px solid rgba(201,122,61,0.3)", borderRadius: 6, fontSize: 11, color: "#C97A3D", marginBottom: 12 }}>
+              {driveSkipped.length} file{driveSkipped.length !== 1 ? "s" : ""} skipped:
+              <ul style={{ marginTop: 6, paddingLeft: 16, listStyle: "disc", color: "#a09989" }}>
+                {driveSkipped.slice(0, 8).map((s, i) => <li key={i}>{s.name} — {s.reason}</li>)}
+                {driveSkipped.length > 8 && <li>…and {driveSkipped.length - 8} more</li>}
+              </ul>
+            </div>
+          )}
+
+          {!config.googleDriveApiKey && (
+            <details style={{ marginTop: 8, padding: "12px 16px", background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 6, fontSize: 11 }}>
+              <summary style={{ cursor: "pointer", color: "#c8a45c", fontWeight: 600, letterSpacing: "0.05em" }}>
+                ⚙ Drive setup steps (one-time, ~3 minutes)
+              </summary>
+              <ol style={{ marginTop: 10, paddingLeft: 18, color: "#a09989", lineHeight: 1.8 }}>
+                <li>Go to <a href="https://console.cloud.google.com" target="_blank" style={{ color: "#c8a45c" }}>console.cloud.google.com</a> and create a project (or pick existing)</li>
+                <li>APIs &amp; Services → Library → search "Google Drive API" → click <strong>Enable</strong></li>
+                <li>APIs &amp; Services → Credentials → <strong>Create Credentials</strong> → API key</li>
+                <li>Copy the key, paste it into ⚙ Config in this app as <code style={{ background: "#1c2536", padding: "1px 5px", borderRadius: 3 }}>GOOGLE_DRIVE_API_KEY</code></li>
+                <li>In Drive, right-click the folder you want to ingest → Share → <strong>Anyone with the link can view</strong></li>
+                <li>Copy the folder URL, paste here, click Pull</li>
+              </ol>
+              <p style={{ marginTop: 10, color: "#6a7585", fontSize: 10 }}>
+                Limits: depth 3 recursion, 25MB per file, Google Docs / Sheets / Slides export automatically (to DOCX / XLSX / PDF respectively). Private folders need OAuth — v1.5 work.
+              </p>
+            </details>
           )}
         </Section>
 

@@ -6,6 +6,50 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.4.1] — 2026-05-13
+
+Google Drive folder ingest for the Project Setup flow.
+
+### Added — `src/lib/google-drive.js`
+
+Public-folder ingest via the Drive API v3:
+
+- `extractFolderId(url)` — handles `/folders/ID`, `?id=ID`, and bare-ID inputs
+- `ingestFolder(url, apiKey, onProgress)` — recursive walk (depth 3 max),
+  paginated listing (100 per page), per-file download with auto-export for
+  Google-native types (Docs → DOCX, Sheets → XLSX, Slides → PDF,
+  Drawings → PNG)
+- Files > 25 MB are skipped to keep browser-side parse budgets sane
+- Progress callbacks for: listing · descending · found · downloading · done
+
+Auth model: **API key only** (no OAuth this round). User shares folder
+as "Anyone with the link can view" and pastes the URL. Private-folder
+OAuth is v1.5 work.
+
+### Added — ConfigPanel field
+
+`GOOGLE_DRIVE_API_KEY` field in the ⚙ Config modal. Stored in localStorage
+under `googleDriveApiKey`. `.env.example` updated.
+
+### Added — ProjectSetup Drive section
+
+New "Step 01b · …or pull from a Google Drive folder" block. Pastes URL,
+clicks Pull, files flow through the existing `parseFiles` pipeline.
+Expandable Drive-setup help panel (visible when no API key is set) walks
+the user through Cloud Console → enable Drive API → create key → share
+folder publicly → paste URL.
+
+Skipped-file list rendered if any files couldn't download (forbidden,
+oversized, unsupported native type) so the user knows what wasn't
+ingested.
+
+### Bundle impact
+
+Main bundle: 217 KB (gzip 69 KB) — +6 KB vs v1.4 for the new lib. Build
+clean in 5.3s.
+
+---
+
 ## [1.4.0] — 2026-05-13
 
 Project Setup ingestion flow. Replaces the per-pass "type a sector

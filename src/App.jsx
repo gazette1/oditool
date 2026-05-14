@@ -41,6 +41,7 @@ function ConfigPanel({ config, setConfig, onClose }) {
           ["AIRTABLE_API_KEY", "airtableKey", "password", "Optional — Airtable personal access token"],
           ["AIRTABLE_BASE_ID", "airtableBaseId", "text", "Optional — starts with 'app'"],
           ["SERPAPI_KEY", "serpApiKey", "password", "Optional — for real Google search volume ($50/mo)"],
+          ["GOOGLE_DRIVE_API_KEY", "googleDriveApiKey", "password", "Optional — for Project Setup Drive folder ingest"],
         ].map(([label, key, type, hint]) => (
           <div key={key} className="mb-4">
             <label className="text-[10px] text-dim tracking-widest uppercase block mb-1">{label}</label>
