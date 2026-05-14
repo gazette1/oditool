@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
+import { deployStrategyDoc, isVercelDeployConfigured } from "./lib/vercel-deploy";
+import { generateSwipeImagery } from "./lib/image-gen";
 import { runAdIntel } from "./lib/ad-intel";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
 import ProjectSetup from "./ProjectSetup";
@@ -44,6 +46,7 @@ function ConfigPanel({ config, setConfig, onClose }) {
           ["AIRTABLE_BASE_ID", "airtableBaseId", "text", "Optional — starts with 'app'"],
           ["SERPAPI_KEY", "serpApiKey", "password", "Optional — for real Google search volume ($50/mo)"],
           ["GOOGLE_DRIVE_API_KEY", "googleDriveApiKey", "password", "Optional — for Project Setup Drive folder ingest"],
+          ["OPENAI_API_KEY", "openaiKey", "password", "Optional — gpt-image-1 swipe imagery (~$0.80/run)"],
         ].map(([label, key, type, hint]) => (
           <div key={key} className="mb-4">
             <label className="text-[10px] text-dim tracking-widest uppercase block mb-1">{label}</label>
@@ -99,6 +102,7 @@ const ENV_DEFAULTS = {
   airtableBaseId:    import.meta.env.VITE_AIRTABLE_BASE_ID      || "",
   serpApiKey:        import.meta.env.VITE_SERPAPI_KEY           || "",
   googleDriveApiKey: import.meta.env.VITE_GOOGLE_DRIVE_API_KEY  || "",
+  openaiKey:         import.meta.env.VITE_OPENAI_API_KEY        || "",
 };
 
 // ── Main App ──
@@ -133,6 +137,9 @@ export default function App() {
   const [adIntelBusy, setAdIntelBusy] = useState(false);
   const [adIntelPhase, setAdIntelPhase] = useState("");
   const [adIntelData, setAdIntelData] = useState(null); // { competitors, ads, briefs, summary }
+
+  // Engine v1.6.8: opt-in swipe imagery toggle (gpt-image-1 per card)
+  const [generateImagery, setGenerateImagery] = useState(false);
 
   // Engine v1.4: Project Setup flow + active project context
   const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
@@ -241,7 +248,27 @@ export default function App() {
 
       setStratDocPhase("Pass 8: swipe file (20 ads)…");
       log("Pass 8/18: 20 swipe-file ad concepts");
-      const { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
+      let { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
+
+      // v1.6.8 · optional Pass 8.5 · gpt-image-1 per swipe card
+      if (generateImagery && swipe_file.length && config.openaiKey) {
+        setStratDocPhase(`Pass 8.5: generating ${swipe_file.length} ad images (gpt-image-1, slow + costs)…`);
+        log(`Pass 8.5: generating ${swipe_file.length} swipe images via gpt-image-1 (~$${(swipe_file.length * 0.04).toFixed(2)}, ~${Math.round(swipe_file.length * 8)}s)`);
+        try {
+          const imgResult = await generateSwipeImagery({
+            openaiKey: config.openaiKey,
+            swipeFile: swipe_file,
+            projectContext,
+            onProgress: (msg) => { setStratDocPhase(`Pass 8.5: ${msg}`); log(`  ${msg}`); },
+          });
+          swipe_file = imgResult.swipeFile;
+          log(`Pass 8.5 complete · ${imgResult.summary.ok}/${imgResult.summary.total} images generated · ${imgResult.summary.failed} failed`, "ok");
+        } catch (e) {
+          log(`Pass 8.5 skipped: ${e.message} · falling back to gradient mocks`, "warn");
+        }
+      } else if (generateImagery && !config.openaiKey) {
+        log("Pass 8.5 skipped: imagery toggle ON but no OPENAI_API_KEY in config · falling back to gradient mocks", "warn");
+      }
 
       setStratDocPhase("Pass 9: TikTok scripts…");
       log("Pass 9/18: 8 shot-by-shot TikTok scripts");
@@ -254,8 +281,14 @@ export default function App() {
       setStratDocPhase("Pass 11: channel plan + targeting matrix…");
       log("Pass 11/18: channel plan + targeting matrix");
       let channelPlan = { channels: [], targeting_matrix: [] };
-      try { channelPlan = await generateChannelPlan(config.anthropicKey, projectContext, positioningSpine, personas); }
-      catch (e) { log(`Pass 11 skipped: ${e.message}`, "error"); }
+      try {
+        channelPlan = await generateChannelPlan(config.anthropicKey, projectContext, positioningSpine, personas);
+        // v1.6.8 · normalize budget_pct so it sums to exactly 100
+        channelPlan = validateAndNormalizeChannelPlan(channelPlan);
+        if (channelPlan._validation?.applied) {
+          log(`Pass 11 budget rebalanced · original sum ${channelPlan._validation.original_sum}% → 100%`, "warn");
+        }
+      } catch (e) { log(`Pass 11 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 12: landing-page variants…");
       log("Pass 12/18: landing-page variants");
@@ -328,17 +361,37 @@ export default function App() {
         tribe,
       });
 
-      const filename = `strategy-${(activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${Date.now()}.html`;
+      const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      const filename = `strategy-${slug}-${Date.now()}.html`;
       downloadStrategyDoc(html, filename);
       setStratDocPhase(`✓ Downloaded ${filename}`);
       log(`Strategy doc downloaded: ${filename}`);
+
+      // Engine v1.6.8 · optional Vercel deploy. Silently skipped when
+      // VITE_VERCEL_TOKEN isn't set in .env.local.
+      if (isVercelDeployConfigured()) {
+        setStratDocPhase("Deploying to Vercel for share URL…");
+        try {
+          const projectName = `oditool-${slug.slice(0, 40)}`;
+          const result = await deployStrategyDoc(html, { projectName, slug });
+          if (result.url) {
+            setStratDocPhase(`✓ ${filename} · share: ${result.url}`);
+            log(`Vercel share URL: ${result.url}`, "ok");
+            // Stash on window for one-click copy from devtools
+            // eslint-disable-next-line no-console
+            console.log("📎 Strategy doc share URL:", result.url);
+          }
+        } catch (e) {
+          log(`Vercel deploy skipped: ${e.message}`, "warn");
+        }
+      }
     } catch (e) {
       setError(e.message);
       log(`Strategy doc generation failed: ${e.message}`, "error");
     } finally {
       setStratDocBusy(false);
     }
-  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, log]);
+  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, generateImagery, log]);
 
   // ── Engine v1.7 · Run Ad-Intel (Stage A → B → C → D) ──
   const runAdIntelHandler = useCallback(async () => {
@@ -613,6 +666,19 @@ export default function App() {
                 className="text-xs border border-[#a78bfa] text-[#a78bfa] px-3 py-2 rounded-lg hover:bg-[#a78bfa] hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#a78bfa]">
                 {adIntelBusy ? "↻ Scoring…" : "🎯 Run Ad-Intel"}
               </button>
+              <label
+                className="text-[10px] text-dim border border-[#1e2a3a] px-2 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer hover:border-accent hover:text-accent transition select-none"
+                title={config.openaiKey ? "Generate one gpt-image-1 image per swipe-file card (~$0.80, +3 min)" : "Add OPENAI_API_KEY in ⚙ Config to enable"}
+              >
+                <input
+                  type="checkbox"
+                  checked={generateImagery}
+                  onChange={(e) => setGenerateImagery(e.target.checked)}
+                  disabled={!config.openaiKey || stratDocBusy || loading}
+                  className="accent-accent"
+                />
+                🖼 imagery
+              </label>
               <button onClick={generateStrategyDoc} disabled={!data || stratDocBusy || loading}
                 className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
                 {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}

@@ -70,6 +70,14 @@ const TABLES = {
   briefIterations: "Brief Iterations",
 };
 
+// Engine v1.6.8 · throttle helper. Airtable rate-limit is 5 req/sec per base.
+// We chunk at 10 records per request, so back-to-back chunks plus the
+// preceding session/project writes routinely 429 on a heavy run. 200ms
+// between chunks keeps us comfortably under the limit and is invisible
+// in wall time (a 30-chunk save adds 6s total — acceptable).
+const _sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const CHUNK_THROTTLE_MS = 200;
+
 class AirtableClient {
   constructor(apiKey, baseId) {
     this.apiKey = apiKey;
@@ -154,6 +162,7 @@ class AirtableClient {
       const batch = records.slice(i, i + 10);
       const data = await this._request(TABLES.jobs, "POST", { records: batch });
       results.push(...data.records);
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
     return results;
   }
@@ -178,6 +187,7 @@ class AirtableClient {
     for (let i = 0; i < records.length; i += 10) {
       const batch = records.slice(i, i + 10);
       await this._request(TABLES.outcomes, "POST", { records: batch });
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 
@@ -205,6 +215,7 @@ class AirtableClient {
     for (let i = 0; i < records.length; i += 10) {
       const batch = records.slice(i, i + 10);
       await this._request(TABLES.searchVolume, "POST", { records: batch });
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 
@@ -246,6 +257,7 @@ class AirtableClient {
     for (let i = 0; i < records.length; i += 10) {
       const batch = records.slice(i, i + 10);
       await this._request(TABLES.entryRecs, "POST", { records: batch });
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 
@@ -399,6 +411,7 @@ class AirtableClient {
         // Non-fatal — return what we have so the run continues
         console.warn("[airtable] saveSwipePages chunk failed:", e.message);
       }
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
     return out;
   }
@@ -431,6 +444,7 @@ class AirtableClient {
       } catch (e) {
         console.warn("[airtable] saveSwipeAds chunk failed:", e.message);
       }
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 
@@ -477,6 +491,7 @@ class AirtableClient {
       } catch (e) {
         console.warn("[airtable] updateSwipeAds chunk failed:", e.message);
       }
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 
@@ -512,6 +527,7 @@ class AirtableClient {
       } catch (e) {
         console.warn("[airtable] saveCreativeBriefs chunk failed:", e.message);
       }
+      if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
     }
   }
 

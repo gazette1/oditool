@@ -918,6 +918,40 @@ Rules:
   return extractJSON(data);
 }
 
+// ── Budget validator (Engine v1.6.8 · pure JS, no LLM call) ──
+//
+// Pass 11 sometimes emits a `channels[]` whose `budget_pct` values don't
+// sum to 100 (LLM rounding drift). This validator normalizes proportionally
+// to 100 and surfaces the original sum so the user knows it happened.
+// Idempotent · safe to call multiple times.
+export function validateAndNormalizeChannelPlan(channelPlan) {
+  if (!channelPlan?.channels?.length) {
+    return { ...(channelPlan || {}), _validation: { ok: true, applied: false } };
+  }
+  const channels = channelPlan.channels.map(c => ({ ...c }));
+  const originalSum = channels.reduce((acc, c) => acc + (Number(c.budget_pct) || 0), 0);
+  // Accept 99-101 as already-good (rounding tolerance)
+  if (Math.abs(originalSum - 100) <= 1 || originalSum === 0) {
+    return { ...channelPlan, channels, _validation: { ok: true, applied: false, original_sum: originalSum } };
+  }
+  const factor = 100 / originalSum;
+  channels.forEach(c => {
+    c.budget_pct = Math.round((Number(c.budget_pct) || 0) * factor);
+  });
+  // Rounding remainder lands on the largest channel
+  const newSum = channels.reduce((a, c) => a + c.budget_pct, 0);
+  if (newSum !== 100 && channels.length) {
+    const largest = channels.reduce((max, c, i) =>
+      c.budget_pct > channels[max].budget_pct ? i : max, 0);
+    channels[largest].budget_pct += (100 - newSum);
+  }
+  return {
+    ...channelPlan,
+    channels,
+    _validation: { ok: true, applied: true, original_sum: originalSum, final_sum: 100 },
+  };
+}
+
 // ── PASS 18: Tribe Readout (Engine v1.6.7) ──
 //
 // Renders as §17. Finds and VERIFIES creators via web_search.

@@ -6,6 +6,109 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.8] — 2026-05-14
+
+**Five-item reliability + features batch.** Quick fixes + two opt-in
+features. No new passes · no section count change · doc stays at 19.
+
+### #3 Budget validator · `validateAndNormalizeChannelPlan`
+Pure-JS post-processor for Pass 11 output. Normalizes
+`channels[].budget_pct` so it sums to exactly 100 even when the LLM
+drifts (rounding errors). Wired into App.jsx — runs immediately after
+Pass 11. Logs `Pass 11 budget rebalanced · original sum X% → 100%`
+when rebalancing fires. Idempotent.
+
+### #4 Airtable throttle · 200ms between chunks
+Airtable rate-limit is 5 req/sec per base. Heavy runs (many outcomes
++ many keywords + ad-intel records) routinely 429. Added `_sleep`
+helper at module level + a `CHUNK_THROTTLE_MS = 200` guard between
+every 10-record chunk in all 8 chunked save methods. Adds ~6s on a
+30-chunk save · invisible vs the API time itself.
+
+### #5 Multimodal Stage C eval · gracefully upgrades when image bytes available
+`evaluateAd()` in `ad-intel.js` now tries to fetch the `creative_url`
+when it looks like a direct image (`.jpg/.png/.webp/.gif` suffix
+check). On success: base64-encodes + sends to Claude as a multimodal
+`{ type: "image" }` content block. On CORS failure (which Meta URLs
+will hit): falls back to text-only eval with `data_caveat: "text_only"`.
+The path activates automatically when Stage B starts returning real
+image URLs (e.g. when Meta Ad Library API lands) — no further code
+change needed.
+
+### #2 Vercel deploy hook · `src/lib/vercel-deploy.js`
+New module · POSTs the finished strategy-doc HTML to Vercel's
+`/v13/deployments` endpoint as a single-file static deploy. Returns
+the `*.vercel.app` URL. Configured via `.env.local`:
+
+| Env var | Required | Notes |
+| --- | --- | --- |
+| `VITE_VERCEL_TOKEN` | yes | Your Vercel API token |
+| `VITE_VERCEL_TEAM_ID` | optional | Set if deploying under a team account |
+
+When token is missing: hook is silently skipped, local-download
+path remains the default. When token is present: every `↓ Strategy
+Doc` click also pushes to Vercel and logs the URL.
+
+> ⚠️ Hobby-tier deploys are public URL · only the random slug
+> protects access. Upgrade Vercel to Pro for password protection.
+
+### #1 Swipe imagery · `src/lib/image-gen.js` + opt-in checkbox
+New module · generates one image per Pass 8 swipe-file card via
+OpenAI `gpt-image-1` model (note: `gpt-image-2` was deprecated by
+OpenAI · `gpt-image-1` is current production). Wired into App.jsx
+as **Pass 8.5** — runs only when the user checks the new `🖼 imagery`
+header checkbox AND has an `OPENAI_API_KEY` set.
+
+- Per-card prompt = `visual_brief` + format hint + project context +
+  hard-coded quality / safety bumpers (editorial photography aesthetic,
+  natural soft lighting, realistic skin tones across body types and
+  ethnicities, no on-image text/logos/watermarks)
+- Generates 1024x1024 PNG, base64-inlines as `background-image` on
+  the `.ad-mock` div in `renderSwipe`
+- Cost: ~$0.04/image × 20 cards = **~$0.80 extra per run**
+- Time: ~8s/image × 20 = **+2-3 minutes wall time**
+- Failures (per-image): logged as `image_error` on that card, the
+  card falls back to gradient mock, run continues
+- Doc HTML grows from ~215 KB to ~4 MB when imagery is on
+
+OPENAI_API_KEY also accessible via Config panel and `VITE_OPENAI_API_KEY`
+env var.
+
+### Touched files
+- `src/lib/anthropic.js` · `validateAndNormalizeChannelPlan` export
+- `src/lib/airtable.js` · `_sleep` + throttle in 8 chunked save methods
+- `src/lib/ad-intel.js` · `tryFetchImageAsBase64` + multimodal `evaluateAd`
+- `src/lib/vercel-deploy.js` · **new** · 86 lines
+- `src/lib/image-gen.js` · **new** · 117 lines
+- `src/lib/compose-strategy.js` · `renderSwipe` uses `image_b64` when present
+- `src/App.jsx` · ENV_DEFAULTS adds openaiKey · ConfigPanel adds OPENAI_API_KEY row · `generateImagery` state + checkbox · Pass 8.5 step · Vercel deploy hook
+- `.env.local` · adds optional VITE_VERCEL_TOKEN + VITE_VERCEL_TEAM_ID
+
+### Bundle
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.7 | 353.26 KB | 101.72 KB |
+| **v1.6.8** | **360.30 KB** | **104.24 KB** |
+
++7 KB. Imagery itself goes into the user's doc HTML at runtime, not
+the bundle.
+
+### v1.7 backlog status
+| # | Item | Status |
+| --- | --- | --- |
+| 1–6 | Ad-Intel + Pass 14-18 | ✅ all shipped |
+| 7 | Pass 19 seasonal campaign | 🔴 last to v5 parity |
+| 8 | **gpt-image-2 hook** | ✅ **v1.6.8** (as gpt-image-1, current model) |
+| 9 | **Vercel deploy hook** | ✅ **v1.6.8** |
+| 10 | **Budget % validator** | ✅ **v1.6.8** |
+| 11 | **Airtable throttle** | ✅ **v1.6.8** |
+| 12 | **Multimodal Stage C** | ✅ **v1.6.8** (auto-upgrades when bytes available) |
+| 13 | Meta Ad Library API | 🟡 awaiting user's Meta verification token |
+
+**Only Pass 19 + Meta API remaining in v1.7.**
+
+---
+
 ## [1.6.7] — 2026-05-14
 
 **Pass 18 · Tribe readout + `.env.local` API-key fallback.** Doc grows

@@ -172,6 +172,44 @@ Return ONLY JSON, no markdown:
   "overall_verdict": "one sentence"
 }`;
 
+// Engine v1.6.8 · multimodal upgrade.
+//
+// If creative_url points at a direct image file (jpg/png/webp/gif) AND
+// CORS allows the fetch, download it and base64-encode it into a
+// multimodal content block sent to Claude. Falls back to text-only with
+// data_caveat: "text_only" otherwise — Stage B's web_search fallback
+// usually returns Meta Ad Library page URLs which won't fetch CORS-safely.
+//
+// When Stage B finally has Meta API access and returns real image bytes
+// directly, this path activates automatically — no further code change.
+async function tryFetchImageAsBase64(url) {
+  if (!url) return null;
+  // Quick filename check — skip URLs that don't look like images
+  if (!/\.(jpe?g|png|webp|gif)(\?|$|#)/i.test(url)) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.startsWith("image/")) return null;
+    const blob = await res.blob();
+    // Anthropic supports images ≤5 MB · skip giant files
+    if (blob.size > 5 * 1024 * 1024) return null;
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    return {
+      media_type: contentType.split(";")[0],   // strip charset suffix if any
+      data: dataUrl.split(",")[1],             // strip data: URL prefix
+    };
+  } catch (e) {
+    // CORS errors land here · expected on most Meta URLs · return null
+    return null;
+  }
+}
+
 export async function evaluateAd({ apiKey, ad, projectContext = "" }) {
   const userText = `Ad data:
 brand: ${ad.brand_name}
@@ -187,8 +225,45 @@ Project context: ${projectContext}
 
 Score this ad.`;
 
-  const data = await callClaude(apiKey, STAGE_C_SYSTEM, userText, { maxTokens: 2000 });
-  return extractJSON(data);
+  // v1.6.8 · attempt multimodal · graceful fallback to text-only
+  const imageData = await tryFetchImageAsBase64(ad.creative_url);
+  const content = imageData
+    ? [
+        { type: "image", source: { type: "base64", media_type: imageData.media_type, data: imageData.data } },
+        { type: "text", text: userText },
+      ]
+    : [{ type: "text", text: userText }];
+
+  // We can't pass `content` array through callClaude (which only takes a string),
+  // so we make the API call directly here with the multimodal shape.
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      system: STAGE_C_SYSTEM,
+      messages: [{ role: "user", content }],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(`Claude API error (${res.status}): ${err.error?.message || res.statusText}`);
+  }
+  const data = await res.json();
+  if (data.stop_reason === "max_tokens") {
+    throw new Error("TRUNCATED: Stage C eval hit max_tokens.");
+  }
+  const result = extractJSON(data);
+  // Surface whether multimodal actually fired
+  if (!imageData && !result.data_caveat) result.data_caveat = "text_only";
+  if (imageData) result.data_caveat = null;
+  return result;
 }
 
 export async function stageC({ apiKey, ads, projectContext, onProgress }) {
