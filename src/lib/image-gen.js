@@ -1,53 +1,101 @@
 // src/lib/image-gen.js
 //
-// Engine v1.6.8 · gpt-image-1 swipe-imagery generator.
+// Engine v1.6.9 · gpt-image-2 swipe-imagery generator.
 //
 // For each of the 20 cards in the Pass 8 swipe_file, generate one image
-// via OpenAI's gpt-image-1 model using the card's `visual_brief` as the
+// via OpenAI's gpt-image-2 model using the card's `visual_brief` as the
 // prompt seed. Inlines results as base64 onto each card so the strategy
 // doc composer can render them as `background-image: url(data:...)` on
 // the .ad-mock div — replacing the gradient mock placeholders.
 //
+// Model selection (May 14, 2026):
+//   - PRIMARY: gpt-image-2 (OpenAI · current production)
+//   - ALTERNATIVE (future wire-in): Gemini 2.5 Flash Image, internal
+//     codename "Nano Banana" (Google). Faster + cheaper, but requires
+//     a separate Google AI Studio key. Not wired here yet.
+//
 // Opt-in only · gated behind a checkbox in App.jsx because:
-//   - $0.04 per image × 20 = $0.80 in extra OpenAI spend
+//   - ~$0.04 per image × 20 = ~$0.80 in extra OpenAI spend
 //   - Adds ~3 minutes wall time
 //   - Doc HTML grows ~4 MB
 //
 // The user's OPENAI_API_KEY in config.openaiKey is the auth source.
-// (Same key already used by the legacy DALL-E 3 / gpt-image-2 paths
-// in the engine/ image-generate scripts.)
 
 const OPENAI_IMAGES_URL = "https://api.openai.com/v1/images/generations";
-const MODEL = "gpt-image-1";   // current OpenAI image model. gpt-image-2 was deprecated.
-const DEFAULT_SIZE = "1024x1024";    // square works for Meta 4:5 with crop
+const MODEL = "gpt-image-2";          // OpenAI's current image model as of May 2026
+const DEFAULT_SIZE = "1024x1024";     // square works for Meta 4:5 with crop
 
 /**
- * Generate one image. Returns base64 string (PNG) or null on failure.
+ * Generate one image. Returns base64 string or null on failure.
+ *
+ * Response handling is defensive: gpt-image-2's body may include either
+ * `b64_json` (preferred · when response_format requested) or `url`
+ * (returned image is fetched + base64-encoded client-side). Both paths
+ * resolve to a base64 string the renderer can inline.
  */
 export async function generateSingleImage({ openaiKey, prompt, size = DEFAULT_SIZE, quality = "medium" }) {
   if (!openaiKey) throw new Error("OPENAI_API_KEY required");
+  const body = {
+    model: MODEL,
+    prompt,
+    size,
+    quality,
+    n: 1,
+    response_format: "b64_json",
+  };
   const res = await fetch(OPENAI_IMAGES_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${openaiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: MODEL,
-      prompt,
-      size,
-      quality,
-      n: 1,
-      // gpt-image-1 returns b64 by default · response_format param is
-      // not supported and will 400 if included.
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
+    // If response_format isn't supported by this exact model version,
+    // OpenAI returns a 400. Retry once without it (server then returns
+    // a URL we'll fetch + encode client-side).
+    if (res.status === 400) {
+      const retryRes = await fetch(OPENAI_IMAGES_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: MODEL, prompt, size, quality, n: 1 }),
+      });
+      if (!retryRes.ok) {
+        const err = await retryRes.json().catch(() => ({}));
+        throw new Error(`OpenAI image ${retryRes.status}: ${err.error?.message || retryRes.statusText}`);
+      }
+      const retryData = await retryRes.json();
+      return await _extractBase64(retryData);
+    }
     const err = await res.json().catch(() => ({}));
     throw new Error(`OpenAI image ${res.status}: ${err.error?.message || res.statusText}`);
   }
   const data = await res.json();
-  return data.data?.[0]?.b64_json || null;
+  return await _extractBase64(data);
+}
+
+// Pull base64 out of either {data:[{b64_json}]} or {data:[{url}]} shapes.
+async function _extractBase64(data) {
+  const first = data?.data?.[0];
+  if (!first) return null;
+  if (first.b64_json) return first.b64_json;
+  if (first.url) {
+    try {
+      const imgRes = await fetch(first.url);
+      if (!imgRes.ok) return null;
+      const blob = await imgRes.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result || "").split(",")[1] || null);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /**

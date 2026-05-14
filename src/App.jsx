@@ -46,7 +46,7 @@ function ConfigPanel({ config, setConfig, onClose }) {
           ["AIRTABLE_BASE_ID", "airtableBaseId", "text", "Optional — starts with 'app'"],
           ["SERPAPI_KEY", "serpApiKey", "password", "Optional — for real Google search volume ($50/mo)"],
           ["GOOGLE_DRIVE_API_KEY", "googleDriveApiKey", "password", "Optional — for Project Setup Drive folder ingest"],
-          ["OPENAI_API_KEY", "openaiKey", "password", "Optional — gpt-image-1 swipe imagery (~$0.80/run)"],
+          ["OPENAI_API_KEY", "openaiKey", "password", "Optional — gpt-image-2 swipe imagery (~$0.80/run)"],
         ].map(([label, key, type, hint]) => (
           <div key={key} className="mb-4">
             <label className="text-[10px] text-dim tracking-widest uppercase block mb-1">{label}</label>
@@ -252,8 +252,8 @@ export default function App() {
 
       // v1.6.8 · optional Pass 8.5 · gpt-image-1 per swipe card
       if (generateImagery && swipe_file.length && config.openaiKey) {
-        setStratDocPhase(`Pass 8.5: generating ${swipe_file.length} ad images (gpt-image-1, slow + costs)…`);
-        log(`Pass 8.5: generating ${swipe_file.length} swipe images via gpt-image-1 (~$${(swipe_file.length * 0.04).toFixed(2)}, ~${Math.round(swipe_file.length * 8)}s)`);
+        setStratDocPhase(`Pass 8.5: generating ${swipe_file.length} ad images (gpt-image-2, slow + costs)…`);
+        log(`Pass 8.5: generating ${swipe_file.length} swipe images via gpt-image-2 (~$${(swipe_file.length * 0.04).toFixed(2)}, ~${Math.round(swipe_file.length * 8)}s)`);
         try {
           const imgResult = await generateSwipeImagery({
             openaiKey: config.openaiKey,
@@ -668,7 +668,7 @@ export default function App() {
               </button>
               <label
                 className="text-[10px] text-dim border border-[#1e2a3a] px-2 py-2 rounded-lg flex items-center gap-1.5 cursor-pointer hover:border-accent hover:text-accent transition select-none"
-                title={config.openaiKey ? "Generate one gpt-image-1 image per swipe-file card (~$0.80, +3 min)" : "Add OPENAI_API_KEY in ⚙ Config to enable"}
+                title={config.openaiKey ? "Generate one gpt-image-2 image per swipe-file card (~$0.80, +3 min)" : "Add OPENAI_API_KEY in ⚙ Config to enable"}
               >
                 <input
                   type="checkbox"

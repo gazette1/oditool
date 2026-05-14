@@ -6,6 +6,42 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.9] — 2026-05-14
+
+**Hotfix: gpt-image-2 model name + defensive response parsing.**
+
+v1.6.8 shipped with `MODEL = "gpt-image-1"` and a comment claiming
+gpt-image-2 was deprecated — that was wrong. As of May 14, 2026,
+**gpt-image-2 is OpenAI's current production image model.** Reverted.
+
+### Changed — `src/lib/image-gen.js`
+
+- `MODEL` constant: `"gpt-image-1"` → `"gpt-image-2"`
+- Removed the incorrect "gpt-image-2 was deprecated" comment
+- Added defensive response parsing: tries `{ data:[{b64_json}] }` first,
+  falls back to `{ data:[{url}] }` and fetches+encodes client-side
+- If `response_format: "b64_json"` is rejected with 400, retries once
+  without the parameter
+- Added Nano Banana (Gemini 2.5 Flash Image) as documented future
+  alternative · not wired here yet · would need separate Google AI
+  Studio key
+
+### Changed — log labels in `src/App.jsx`
+- Pass 8.5 phase + log labels say "gpt-image-2" (not "gpt-image-1")
+- ConfigPanel OPENAI_API_KEY hint says "gpt-image-2 swipe imagery"
+- 🖼 imagery checkbox tooltip says "gpt-image-2"
+
+### Why this matters
+v1.6.8's `gpt-image-1` call would have returned the previous-gen model
+output — older lighting, more uncanny-valley faces on diverse skin
+tones, weaker text comprehension. gpt-image-2 fixes all three. Same
+~$0.04/image cost.
+
+### Bundle
+Same 360 KB / 104 KB gzip. Comment + string + one constant change.
+
+---
+
 ## [1.6.8] — 2026-05-14
 
 **Five-item reliability + features batch.** Quick fixes + two opt-in
@@ -98,7 +134,7 @@ the bundle.
 | --- | --- | --- |
 | 1–6 | Ad-Intel + Pass 14-18 | ✅ all shipped |
 | 7 | Pass 19 seasonal campaign | 🔴 last to v5 parity |
-| 8 | **gpt-image-2 hook** | ✅ **v1.6.8** (as gpt-image-1, current model) |
+| 8 | **gpt-image-2 hook** | ✅ **v1.6.8** · model name fixed in v1.6.9 |
 | 9 | **Vercel deploy hook** | ✅ **v1.6.8** |
 | 10 | **Budget % validator** | ✅ **v1.6.8** |
 | 11 | **Airtable throttle** | ✅ **v1.6.8** |
