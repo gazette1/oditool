@@ -62,6 +62,7 @@ const TABLES = {
   outcomes: "Desired Outcomes",
   searchVolume: "Search Volume Data",
   entryRecs: "Entry Recommendations",
+  projects: "Projects",
 };
 
 class AirtableClient {
@@ -235,6 +236,54 @@ class AirtableClient {
       const batch = records.slice(i, i + 10);
       await this._request(TABLES.entryRecs, "POST", { records: batch });
     }
+  }
+
+  // ── Projects (Engine v1.4 add) ──
+  //
+  // The Projects table is the brand-agnostic container for a context.
+  // Set up via the Project Setup flow (drop files + URL → Pass 0 summary
+  // → save here). Existing analysis flows read from this record so
+  // sector/audience/product_context never need to be retyped.
+  async listProjects() {
+    const data = await this._request(TABLES.projects, "GET", null, {
+      sort: encodeURIComponent('[{"field":"updated_at","direction":"desc"}]'),
+      maxRecords: "100",
+    });
+    return data.records.map(r => ({ airtableId: r.id, ...r.fields }));
+  }
+
+  async loadProject(airtableId) {
+    const data = await this._request(`${TABLES.projects}/${airtableId}`, "GET");
+    return { airtableId: data.id, ...data.fields };
+  }
+
+  async createProject({ name, projectId, sector, audience, productContext, contextSummary, sourceUrls }) {
+    const fields = {
+      project_id: projectId || `proj_${Date.now()}`,
+      user_id: "engine_internal",
+      name,
+      sector: sector || "",
+      audience: audience || "",
+      product_context: productContext || "",
+      status: "active",
+      created_at: new Date().toISOString().split("T")[0],
+      updated_at: new Date().toISOString().split("T")[0],
+    };
+    // Stash the full Pass 0 summary + source list in product_context if
+    // contextSummary was provided. Keeps everything searchable in Airtable.
+    if (contextSummary) {
+      fields.product_context = `${productContext || ""}\n\n── PASS 0 CONTEXT SUMMARY ──\n${typeof contextSummary === "string" ? contextSummary : JSON.stringify(contextSummary, null, 2)}\n\n── SOURCES ──\n${(sourceUrls || []).join("\n")}`;
+    }
+    const data = await this._request(TABLES.projects, "POST", {
+      records: [{ fields }],
+    });
+    return { airtableId: data.records[0].id, ...data.records[0].fields };
+  }
+
+  async updateProject(airtableId, patch) {
+    await this._request(TABLES.projects, "PATCH", {
+      records: [{ id: airtableId, fields: { ...patch, updated_at: new Date().toISOString().split("T")[0] } }],
+    });
   }
 
   // ── Load full session ──

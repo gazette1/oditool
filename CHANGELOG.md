@@ -6,6 +6,130 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.4.0] — 2026-05-13
+
+Project Setup ingestion flow. Replaces the per-pass "type a sector
+string" UX with "drop a folder of files + paste a URL, ingest once,
+all phases pull from the same context."
+
+### Added — Pass 0 (`summarizeProjectContext`)
+
+New `engine/src/lib/anthropic.js` function. Takes raw text extracted
+from uploaded files + scraped URL content, returns a structured
+Project Context JSON:
+
+```
+{
+  sector, audience, product_context, brand_voice,
+  key_facts: [...], sources: [...],
+  positioning_hints: [...], red_flags: [...]
+}
+```
+
+The summarizer is opinionated: every key_fact must be defensible
+against a quoted input. Contradictions surface in red_flags rather
+than getting picked silently.
+
+### Added — browser file parsers (`src/lib/parse-files.js`)
+
+Lazy-loaded heavy libs (pdfjs-dist, mammoth.browser, xlsx) so the
+main bundle stays at 210 KB. Supports PDF · DOCX · XLSX/CSV/TSV ·
+TXT/MD/JSON. Images stored as references with metadata only — OCR
+deferred to v1.5. Per-file text capped at 30K chars; URL content
+capped at 60K chars to keep the summarizer prompt in budget.
+
+### Added — URL scraper (`src/lib/scrape-url.js`)
+
+Uses Jina AI Reader (`https://r.jina.ai/<url>`) which returns clean
+markdown and is CORS-friendly from browser. Free up to 1M tokens/mo.
+Anthropic's web_fetch tool is the long-term swap.
+
+### Added — Project Setup view (`src/ProjectSetup.jsx`)
+
+New full-screen view in the React app, gated by `viewMode === "setup"`
+state. Four steps:
+
+1. Drop files (drag-drop, multi-file picker, folder picker via
+   webkitdirectory) — parses each in browser
+2. Paste URL — scrapes via Jina Reader, shows byte count + truncation
+3. Click "Ingest Context" — runs Pass 0, surfaces all 8 context fields
+4. Name the project, click "Save & Continue" — writes to Airtable
+   Projects table, hands control back to the analyze view with
+   context loaded
+
+Status bar pinned to bottom shows current phase / progress / errors.
+
+### Added — Airtable Project CRUD (`src/lib/airtable.js`)
+
+New `AirtableClient` methods:
+- `listProjects()` — picker source for the main UI
+- `loadProject(airtableId)` — full fetch when picked
+- `createProject({ name, sector, audience, productContext,
+   contextSummary, sourceUrls })` — writes the Pass 0 JSON into the
+   `product_context` field under a `── PASS 0 CONTEXT SUMMARY ──`
+   marker so it's both human-readable in Airtable and parseable in code
+- `updateProject(airtableId, patch)` — patch by id
+
+The Projects table schema (already in place) carries the field shape;
+this layer just maps to it.
+
+### Changed — Pass 1 (`discoverJobs`)
+
+Signature extended to `discoverJobs(apiKey, sector, keywords, projectContext)`.
+When `projectContext` is provided, the system prompt receives a
+PROJECT CONTEXT block with audience, product context, brand voice,
+key facts, and positioning hints. Pass 1 anchors job statements to
+these specifics and is required to cite at least 2 key_facts per job
+in evidence_quotes.
+
+Backward-compatible: callers passing only `(apiKey, sector)` still work.
+
+### Changed — `App.jsx`
+
+- New state: `viewMode`, `projects`, `activeProject`, `projectContext`
+- View-switch early-return when `viewMode === "setup"` renders
+  `<ProjectSetup>` full-screen
+- Project picker UI in the analyze view: dropdown over all Airtable
+  Projects, auto-loads Pass 0 summary out of the `product_context`
+  marker, shows red-flag count if any
+- "+ New Project" button next to Config opens the Setup view
+- `runAnalysis` now passes `projectContext` to Pass 1
+
+### Bundle impact
+
+Heavy parsers code-split into separate chunks (only load when files
+drop):
+- `pdf-DeWlx49F.js` 458 KB (gzip 136 KB)
+- `mammoth.browser-CT_ZbjvI.js` 499 KB (gzip 126 KB)
+- `xlsx-D_0l8YDs.js` 429 KB (gzip 143 KB)
+- `pdf.worker-B1D2UnXD.mjs` 2.1 MB (loads only during PDF parse)
+
+Main bundle: 210 KB (gzip 67 KB). Build clean in 5.8s.
+
+### Test plan
+
+1. `npm run dev` opens at localhost:3000
+2. Click "+ New Project" — Project Setup view loads
+3. Drop the `Siraj Beauty/` folder + paste `https://sirajbeauty.com`
+4. Click "Scrape" — verify Jina returns markdown
+5. Click "Ingest Context" — verify Pass 0 returns structured JSON
+6. Name + Save — verify a new row in Airtable Projects table
+7. Return to analyze view — project should be pre-selected
+8. Run analysis — debug log should show "Pass 1/4: discovering core
+   functional jobs for ... (with Pass 0 project context)"
+
+### Migration notes
+
+- v1.3 callers of `discoverJobs(apiKey, sector)` still work; new
+  fourth arg is optional.
+- Existing Project records (the Siraj `siraj_001` record created in
+  v1.2.1) don't have an embedded Pass 0 summary, so the picker falls
+  back to using the project's `sector`/`audience`/`product_context`
+  fields directly. Re-ingest via the setup flow to get the full
+  context.
+
+---
+
 ## [1.3.0] — 2026-05-13
 
 Stage D hook-matching fix + Summer Flex Campaign integration.

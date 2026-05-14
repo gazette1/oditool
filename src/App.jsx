@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
 import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations } from "./lib/anthropic";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
+import ProjectSetup from "./ProjectSetup";
 
 // ── Constants ──
 const STEPS = ["Define", "Locate", "Prepare", "Confirm", "Execute", "Monitor", "Modify", "Conclude"];
@@ -104,6 +105,12 @@ export default function App() {
   const [entryRecs, setEntryRecs] = useState([]);
   const [debugLog, setDebugLog] = useState([]);
 
+  // Engine v1.4: Project Setup flow + active project context
+  const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
+  const [projects, setProjects] = useState([]);
+  const [activeProject, setActiveProject] = useState(null);
+  const [projectContext, setProjectContext] = useState(null);
+
   const log = useCallback((msg, level = "info") => {
     const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
     setDebugLog((prev) => [...prev, { ts, msg, level }].slice(-200));
@@ -111,13 +118,51 @@ export default function App() {
     console.log(`[${ts}] ${msg}`);
   }, []);
 
-  // Load sessions from Airtable on mount
+  // Load sessions + projects from Airtable on mount
   useEffect(() => {
     if (config.airtableKey && config.airtableBaseId) {
       const client = new AirtableClient(config.airtableKey, config.airtableBaseId);
       client.listSessions().then(setSessions).catch(console.error);
+      client.listProjects().then(setProjects).catch(() => {});
     }
   }, [config.airtableKey, config.airtableBaseId]);
+
+  // When user picks a Project, parse its embedded Pass 0 context summary
+  // out of the product_context field (the createProject persists it there
+  // under "── PASS 0 CONTEXT SUMMARY ──").
+  const loadProjectAsContext = useCallback((project) => {
+    setActiveProject(project);
+    let summary = null;
+    const pc = project?.product_context || "";
+    const marker = "── PASS 0 CONTEXT SUMMARY ──";
+    if (pc.includes(marker)) {
+      const json = pc.split(marker)[1]?.split("── SOURCES ──")[0]?.trim();
+      try { summary = JSON.parse(json); } catch { /* leave null */ }
+    }
+    // If we couldn't parse a summary, build a minimal one from the fields.
+    if (!summary && project) {
+      summary = {
+        sector: project.sector || "",
+        audience: project.audience || "",
+        product_context: pc,
+        brand_voice: "",
+        key_facts: [],
+        sources: [],
+        positioning_hints: [],
+        red_flags: ["No Pass 0 summary found on this project — context is fields-only."],
+      };
+    }
+    setProjectContext(summary);
+    if (summary?.sector) setSector(summary.sector);
+  }, []);
+
+  const handleProjectReady = useCallback(({ project, contextSummary }) => {
+    setProjects((prev) => [project, ...prev]);
+    setActiveProject(project);
+    setProjectContext(contextSummary);
+    if (contextSummary?.sector) setSector(contextSummary.sector);
+    setViewMode("analyze");
+  }, []);
 
   // Show config on first load if no API key
   useEffect(() => {
@@ -145,10 +190,11 @@ export default function App() {
         setSessions((prev) => [{ session_id: sessionRef.sessionId, sector: sector.trim(), status: "running", created_at: new Date().toISOString().split("T")[0] }, ...prev]);
       }
 
-      // Pass 1: Discover jobs
+      // Pass 1: Discover jobs (Engine v1.4 — pass projectContext if available)
       setPhase("Pass 1/4 — Discovering core functional jobs...");
-      log(`Pass 1/4: discovering core functional jobs for "${sector.trim()}"`);
-      const jobsResult = await discoverJobs(config.anthropicKey, sector.trim());
+      const ctxNote = projectContext ? ` (with Pass 0 project context)` : ` (no project context)`;
+      log(`Pass 1/4: discovering core functional jobs for "${sector.trim()}"${ctxNote}`);
+      const jobsResult = await discoverJobs(config.anthropicKey, sector.trim(), null, projectContext);
       if (!jobsResult.core_jobs?.length) throw new Error("No jobs discovered.");
       log(`Pass 1/4 complete: ${jobsResult.core_jobs.length} jobs discovered`);
 
@@ -306,6 +352,11 @@ export default function App() {
   const allOutcomes = data?.flatMap((j) => (j.outcomes || []).map((o) => ({ ...o, jobName: j.job_statement }))) || [];
   const underservedCount = allOutcomes.filter((o) => (o.opportunity_score || 0) >= 10).length;
 
+  // Engine v1.4: when in Project Setup mode, render that view full-screen.
+  if (viewMode === "setup") {
+    return <ProjectSetup config={config} onProjectReady={handleProjectReady} onCancel={() => setViewMode("analyze")} />;
+  }
+
   return (
     <div className="flex h-screen bg-[#06080c] text-[#e0ddd5] font-mono">
       {showConfig && <ConfigPanel config={config} setConfig={setConfig} onClose={() => setShowConfig(false)} />}
@@ -332,11 +383,51 @@ export default function App() {
                 {airtable && <span className="text-accent ml-2">· Airtable connected</span>}
               </p>
             </div>
-            <button onClick={() => setShowConfig(true)}
-              className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
-              ⚙ Config
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => setViewMode("setup")}
+                className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
+                + New Project
+              </button>
+              <button onClick={() => setShowConfig(true)}
+                className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
+                ⚙ Config
+              </button>
+            </div>
           </div>
+
+          {/* Project picker (Engine v1.4) */}
+          {projects.length > 0 && (
+            <div className="bg-surface-1 border border-[#1e2a3a] rounded-lg p-4 mb-5">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-[10px] font-display font-bold tracking-widest uppercase text-dim">Project context</span>
+                {projectContext && <span className="text-[10px] text-accent">✓ Pass 0 loaded · {projectContext.key_facts?.length || 0} key facts</span>}
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <select
+                  value={activeProject?.airtableId || ""}
+                  onChange={(e) => {
+                    const p = projects.find(x => x.airtableId === e.target.value);
+                    if (p) loadProjectAsContext(p);
+                    else { setActiveProject(null); setProjectContext(null); }
+                  }}
+                  className="flex-1 min-w-[200px] bg-surface-2 border border-[#1e2a3a] rounded-lg px-3 py-2 text-xs text-[#e0ddd5] focus:border-accent outline-none"
+                >
+                  <option value="">— No project loaded · running with sector text only —</option>
+                  {projects.map(p => <option key={p.airtableId} value={p.airtableId}>{p.name} · {p.sector || "(no sector)"}</option>)}
+                </select>
+                {activeProject && (
+                  <button
+                    onClick={() => { setActiveProject(null); setProjectContext(null); }}
+                    className="text-[10px] text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:text-red-400 hover:border-red-400 transition">
+                    Clear
+                  </button>
+                )}
+              </div>
+              {projectContext?.red_flags?.length > 0 && (
+                <div className="mt-2 text-[10px] text-red-400">⚑ {projectContext.red_flags.length} red flag{projectContext.red_flags.length !== 1 ? "s" : ""} in Pass 0 output — see project record</div>
+              )}
+            </div>
+          )}
 
           {/* Search */}
           <div className="flex gap-3 mb-6">

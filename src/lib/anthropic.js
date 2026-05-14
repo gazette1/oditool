@@ -67,6 +67,75 @@ function extractJSON(data) {
   }
 }
 
+// ── PASS 0: Project Context Summarizer ──
+//
+// Engine v1.4 add. Consumes raw text from uploaded files + scraped URLs,
+// produces a structured Project Context object that downstream passes
+// (Pass 1 discovery, Pass 4 positioning, Pass 5 value-prop) read from.
+//
+// Replaces the "type a sector string" UX with "drop a folder + paste a URL
+// and the engine figures out the sector, audience, product context, voice,
+// and key facts on its own."
+//
+// Returns the shape:
+//   {
+//     sector, audience, product_context, brand_voice,
+//     key_facts: [...], sources: [...],
+//     positioning_hints: [...], red_flags: [...]
+//   }
+//
+// `inputs` shape:
+//   { files: [{ fileName, kind, text }, ...], urls: [{ url, content }, ...] }
+export async function summarizeProjectContext(apiKey, inputs) {
+  const fileBlocks = (inputs.files || [])
+    .filter(f => f.text && f.text.length > 0)
+    .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`)
+    .join("\n\n");
+  const urlBlocks = (inputs.urls || [])
+    .filter(u => u.content && u.content.length > 0)
+    .map(u => `── URL: ${u.url} ──\n${u.content}`)
+    .join("\n\n");
+
+  const corpus = [fileBlocks, urlBlocks].filter(Boolean).join("\n\n");
+  if (!corpus.trim()) {
+    return {
+      sector: "",
+      audience: "",
+      product_context: "",
+      brand_voice: "",
+      key_facts: [],
+      sources: [],
+      positioning_hints: [],
+      red_flags: ["No usable content extracted from inputs."],
+    };
+  }
+
+  const data = await callClaude(
+    apiKey,
+    `You are an Outcome-Driven Innovation analyst preparing a Project Context for a Mode 1 Earth engine run. Given raw text extracted from a brand's uploaded documents (PDFs, decks, agreements, shot lists, brand briefs) and from a scrape of the brand's homepage, produce a single structured Project Context that downstream passes (job discovery, positioning, value-prop comparison) will read.
+
+Return ONLY valid JSON (no markdown):
+{
+  "sector": "One sentence naming the customer + category + price tier",
+  "audience": "1-3 sentence description of who this serves, anchored to specifics from the inputs (geography, life stage, identity)",
+  "product_context": "2-4 sentence description of what is sold, with named SKUs, materials, price points, and any product roadmap signals visible in the inputs",
+  "brand_voice": "1-2 sentence description of voice rules — tone, forbidden words, signature phrases — pulled verbatim from voice guides or inferred from copy samples",
+  "key_facts": ["6-12 specific facts that any downstream pass should anchor to (founder name, SKU details, price points, social-proof counts, key sentiments)"],
+  "sources": ["fileName or url for each input that contributed a fact"],
+  "positioning_hints": ["3-5 candidate positioning angles surfaced by the corpus, in priority order"],
+  "red_flags": ["any contradictions, inconsistencies, or gaps you spotted in the corpus"]
+}
+
+Rules:
+- Every fact must be defensible against a quote from the input. No invention.
+- If the corpus contradicts itself, surface that in red_flags rather than picking one side silently.
+- If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.`,
+    `Project context corpus:\n\n${corpus}`,
+    { maxTokens: 4000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 1: Discover Core Functional Jobs ──
 //
 // Engine v1.1: customer keywords are now the PRIMARY input source.
@@ -75,7 +144,30 @@ function extractJSON(data) {
 //
 // `keywords` shape: { autocomplete: string[], peopleAlsoAsk: string[],
 //   redditPhrases: string[], pdpReviews: { source: string, quote: string }[] }
-export async function discoverJobs(apiKey, sector, keywords = null) {
+// `projectContext` shape (Engine v1.4+, from Pass 0 summarizeProjectContext):
+//   { sector, audience, product_context, brand_voice, key_facts,
+//     sources, positioning_hints, red_flags }
+export async function discoverJobs(apiKey, sector, keywords = null, projectContext = null) {
+  // Engine v1.4: prefer projectContext.sector/audience over the sector arg
+  // when both are present. Sector arg stays for backward compatibility.
+  const effectiveSector = projectContext?.sector || sector;
+  const audience = projectContext?.audience || null;
+  const productContext = projectContext?.product_context || null;
+  const brandVoice = projectContext?.brand_voice || null;
+  const keyFacts = (projectContext?.key_facts || []);
+  const positioningHints = (projectContext?.positioning_hints || []);
+
+  const contextBlock = projectContext ? `
+
+PROJECT CONTEXT (Pass 0 summary — anchor your job statements to these specifics):
+- Audience: ${audience || "(not specified)"}
+- Product context: ${productContext || "(not specified)"}
+- Brand voice rules: ${brandVoice || "(not specified)"}
+- Key facts (cite at least 2 in evidence_quotes per job):
+${keyFacts.map(f => `  - ${f}`).join("\n") || "  (none)"}
+- Candidate positioning hints (use to validate Pass 4 later, not Pass 1):
+${positioningHints.map(h => `  - ${h}`).join("\n") || "  (none)"}` : "";
+
   const hasKeywords = keywords && (
     (keywords.autocomplete?.length || 0) +
     (keywords.peopleAlsoAsk?.length || 0) +
@@ -123,13 +215,14 @@ For each job, also identify:
 - 3 consumption chain jobs (purchase, setup, learn to use, maintain, upgrade, dispose)
 - 2-3 search queries real people would type when trying to get this job done
 - evidence_quotes: 1-3 verbatim phrases from the keyword input that anchor this job (REQUIRED when keyword input is provided)
+${contextBlock}
 ${keywordBlock}
 
 Return ONLY valid JSON, no markdown:
 {"discovery_warning": "..." or null, "core_jobs": [{"id": 1, "job_statement": "verb + object + context", "job_executor": "who", "related_jobs": ["..."], "emotional_jobs": ["..."], "social_jobs": ["..."], "consumption_chain_jobs": ["..."], "search_queries": ["..."], "evidence_quotes": ["..."]}]}
 
 Find exactly 5 core functional jobs. Be exhaustive — find jobs incumbents miss.`,
-    `Sector: ${sector}`,
+    `Sector: ${effectiveSector}`,
     { maxTokens: 5000 }
   );
   return extractJSON(data);
