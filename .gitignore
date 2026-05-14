@@ -8,4 +8,5 @@ dist
 .vscode
 .idea
 deploy/
+session-deploy/
 siraj-strategy/.vercel/

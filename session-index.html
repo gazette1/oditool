@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alchemical Growth Engine · Session Index</title>
+  <meta name="description" content="Everything built across this session. Live URLs, doc versions, engine state, generated artifacts, Airtable base, what's next." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-base: #06080c;
+      --bg-surface-1: #0d1117;
+      --bg-surface-2: #151c28;
+      --bg-surface-3: #1c2536;
+      --border-default: #1e2a3a;
+      --border-strong: #2a3a4f;
+      --text-primary: #e0ddd5;
+      --text-secondary: #a09989;
+      --text-muted: #6a7585;
+      --accent-gold: #c8a45c;
+      --accent-gold-bright: #d9b878;
+      --accent-gold-dim: #9c7e44;
+      --status-live: #6E8C5B;
+      --status-archive: #6a7585;
+      --status-local: #C97A3D;
+      --enter: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      letter-spacing: 0.005em;
+      font-feature-settings: "ss01", "tnum";
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      background-image: radial-gradient(circle, rgba(200,164,92,0.04) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    a { color: inherit; text-decoration: none; }
+    code { font-family: "IBM Plex Mono", monospace; font-size: 11px; }
+
+    /* ── Typography ─────────────────────────────────────────────── */
+    .display-xl { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: clamp(40px, 7vw, 88px); line-height: 0.95; letter-spacing: -0.035em; color: var(--text-primary); }
+    .display-lg { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: clamp(28px, 4vw, 48px); line-height: 1.05; letter-spacing: -0.025em; }
+    .display { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 28px; line-height: 1.15; letter-spacing: -0.015em; }
+    .h2 { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 20px; line-height: 1.3; }
+    .h3 { font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 14px; line-height: 1.4; }
+    .caption {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 10px; font-weight: 600; line-height: 1.4;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+    }
+    .caption-muted { color: var(--text-muted); }
+    em { color: var(--text-secondary); font-style: italic; font-family: "Space Grotesk", sans-serif; font-weight: 400; }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+    .section { padding: 96px 0; position: relative; }
+    .section-tag-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 14px 0; margin-bottom: 32px;
+      border-top: 1px solid var(--border-default);
+      border-bottom: 1px solid var(--border-default);
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .hero {
+      padding: 120px 0 80px;
+      position: relative;
+      background: linear-gradient(180deg, var(--bg-base) 0%, var(--bg-surface-1) 100%);
+    }
+    .hero-tag {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 32px;
+    }
+    .brand-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent-gold);
+      box-shadow: 0 0 14px rgba(200, 164, 92, 0.6);
+      animation: pulse 1800ms infinite cubic-bezier(0.65, 0, 0.35, 1);
+    }
+    @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .brand-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--accent-gold);
+    }
+    .hero-meta {
+      display: flex; gap: 32px;
+      margin-top: 56px; padding-top: 32px;
+      border-top: 1px solid var(--border-default);
+      flex-wrap: wrap;
+    }
+    .meta-item .label {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .meta-item .value {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 18px; font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* ── Link cards ─────────────────────────────────────────────── */
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .link-card {
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 24px;
+      transition: border-color 200ms var(--enter), background 200ms var(--enter);
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+    .link-card.primary {
+      border-color: var(--accent-gold);
+      background: linear-gradient(135deg, rgba(200, 164, 92, 0.08), rgba(200, 164, 92, 0.02));
+    }
+    .link-card:hover {
+      border-color: var(--accent-gold);
+      background: rgba(200, 164, 92, 0.04);
+    }
+    .link-card .status {
+      position: absolute; top: 16px; right: 16px;
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 8px; font-weight: 600;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 3px;
+    }
+    .status.live { background: rgba(110, 140, 91, 0.2); color: var(--status-live); }
+    .status.archive { background: rgba(106, 117, 133, 0.2); color: var(--status-archive); }
+    .status.local { background: rgba(201, 122, 61, 0.2); color: var(--status-local); }
+    .status.tagged { background: rgba(200, 164, 92, 0.15); color: var(--accent-gold); }
+
+    .link-card .icon {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 22px; font-weight: 700;
+      color: var(--accent-gold);
+      margin-bottom: 12px;
+    }
+    .link-card .title {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 18px; font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.005em;
+    }
+    .link-card .url {
+      font-size: 11px;
+      color: var(--accent-gold);
+      margin-bottom: 14px;
+      word-break: break-all;
+    }
+    .link-card .desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+    .link-card .meta-line {
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid var(--border-default);
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* ── Version timeline ───────────────────────────────────────── */
+    .timeline { position: relative; margin-top: 32px; padding-left: 32px; }
+    .timeline::before {
+      content: "";
+      position: absolute; left: 8px; top: 12px; bottom: 12px;
+      width: 1px; background: var(--border-default);
+    }
+    .ver-item {
+      position: relative; padding: 16px 0 16px 32px;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .ver-item:last-child { border-bottom: 0; }
+    .ver-item::before {
+      content: "";
+      position: absolute; left: -32px; top: 24px;
+      width: 16px; height: 16px;
+      border: 2px solid var(--accent-gold);
+      border-radius: 50%;
+      background: var(--bg-base);
+    }
+    .ver-item.current::before { background: var(--accent-gold); }
+    .ver-row { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+    .ver-tag {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+      min-width: 60px;
+    }
+    .ver-title {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 18px; font-weight: 600;
+      color: var(--text-primary);
+    }
+    .ver-link {
+      font-size: 11px;
+      color: var(--accent-gold);
+      margin-left: auto;
+    }
+    .ver-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      line-height: 1.65;
+    }
+    .ver-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      letter-spacing: 0.05em;
+    }
+    .ver-meta code {
+      background: var(--bg-surface-2);
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: var(--text-primary);
+    }
+
+    /* ── Repo / git ─────────────────────────────────────────────── */
+    .repo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    @media (max-width: 720px) { .repo-grid { grid-template-columns: 1fr; } }
+    .repo-card {
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 24px;
+    }
+    .repo-card .h3 { margin-bottom: 16px; }
+    .tag-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 12px;
+    }
+    .tag-row:last-child { border: 0; }
+    .tag-row .tag-name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--accent-gold);
+    }
+    .tag-row .tag-desc {
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    /* ── Stats bar ──────────────────────────────────────────────── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1px;
+      background: var(--border-default);
+      border: 1px solid var(--border-default);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 32px;
+    }
+    .stat {
+      background: var(--bg-surface-1);
+      padding: 24px;
+    }
+    .stat .stat-num {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 36px; font-weight: 700;
+      color: var(--accent-gold);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .stat .stat-label {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    /* ── File path list ─────────────────────────────────────────── */
+    .file-list {
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      padding: 8px 0;
+      margin-top: 16px;
+    }
+    .file-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      padding: 10px 24px;
+      align-items: center;
+      border-bottom: 1px solid var(--border-default);
+      font-size: 12px;
+    }
+    .file-row:last-child { border: 0; }
+    .file-row .path {
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--text-primary);
+      font-size: 11px;
+    }
+    .file-row .path .dir { color: var(--text-muted); }
+    .file-row .desc {
+      color: var(--text-secondary);
+      font-size: 11px;
+      max-width: 50%;
+      text-align: right;
+    }
+
+    /* ── Airtable table list ────────────────────────────────────── */
+    .at-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .at-table {
+      background: var(--bg-surface-1);
+      border: 1px solid var(--border-default);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .at-table.populated { border-color: var(--accent-gold); }
+    .at-table .name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 13px; font-weight: 600;
+      color: var(--text-primary);
+    }
+    .at-table .count {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 18px; font-weight: 700;
+      color: var(--accent-gold);
+      line-height: 1;
+    }
+    .at-table .label {
+      font-size: 9px;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Sub-nav ───────────────────────────────────────────────── */
+    nav.top {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(6, 8, 12, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-default);
+    }
+    nav.top .container {
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    nav.top .wordmark { display: flex; align-items: center; gap: 10px; }
+    nav.top .wordmark .name {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--accent-gold);
+    }
+    nav.top .links {
+      display: flex; gap: 24px;
+      flex-wrap: wrap;
+    }
+    nav.top .links a {
+      font-size: 10px; font-weight: 500;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-muted);
+      transition: color 200ms var(--enter);
+      font-family: "Space Grotesk", sans-serif;
+    }
+    nav.top .links a:hover { color: var(--accent-gold); }
+
+    /* ── Quote / honest callouts ────────────────────────────────── */
+    .pull {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(20px, 3vw, 28px);
+      line-height: 1.4;
+      font-weight: 600;
+      color: var(--text-primary);
+      max-width: 800px;
+      margin: 32px 0;
+      letter-spacing: -0.01em;
+    }
+    .pull em { color: var(--accent-gold); font-style: italic; font-weight: 500; font-family: "Space Grotesk", sans-serif; }
+
+    .footnote {
+      font-size: 11px;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin-top: 24px;
+      line-height: 1.7;
+    }
+
+    footer {
+      padding: 64px 0 48px;
+      border-top: 1px solid var(--border-default);
+      text-align: center;
+    }
+    footer .brand-name { font-size: 14px; }
+    footer .session-id {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      letter-spacing: 0.22em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     NAV
+══════════════════════════════════════════════════════════════════════ -->
+<nav class="top">
+  <div class="container">
+    <a href="#cover" class="wordmark">
+      <span class="brand-dot"></span>
+      <span class="name">Alchemical Growth Engine · Session Index</span>
+    </a>
+    <div class="links">
+      <a href="#live">Live</a>
+      <a href="#docs">Docs</a>
+      <a href="#engine">Engine</a>
+      <a href="#assets">Assets</a>
+      <a href="#airtable">Airtable</a>
+      <a href="#next">Next</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     HERO
+══════════════════════════════════════════════════════════════════════ -->
+<section class="hero" id="cover">
+  <div class="container">
+    <div class="hero-tag">
+      <span class="brand-dot"></span>
+      <span class="brand-name">Alchemical Growth Engine · Mode 1 · Earth · v1.3.0</span>
+    </div>
+
+    <h1 class="display-xl" style="margin-bottom: 32px;">
+      Everything built<br/>
+      across this session.
+    </h1>
+
+    <p style="font-size: 17px; line-height: 1.65; color: var(--text-secondary); max-width: 720px; margin-bottom: 16px;">
+      Single index of the work. Live URLs, doc versions, engine code state, generated
+      artifacts, Airtable records, and what's still pending. Engine work started as
+      an ODI research tool; ended as a versioned ad-intel pipeline with a Siraj
+      Phase 1 deliverable in market.
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.65; color: var(--text-muted); max-width: 720px;">
+      The brand the engine ran on: <span style="color: var(--accent-gold);">Siraj Beauty</span>,
+      Black-founder-led luxury sleepwear. May 25 drop · Summer Flex Collection.
+    </p>
+
+    <div class="hero-meta">
+      <div class="meta-item">
+        <div class="label">Engine</div>
+        <div class="value">v1.3.0</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Strategy doc</div>
+        <div class="value">v5 · 21 sections</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Live URLs</div>
+        <div class="value">3</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Git tags</div>
+        <div class="value">4</div>
+      </div>
+      <div class="meta-item">
+        <div class="label">Airtable records</div>
+        <div class="value">36 across 5 tables</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §01 · LIVE URLS
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="live">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 01 · Live URLs</span>
+      <span class="caption caption-muted">Production · Archive · Local</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 16px;">Three URLs.<br/>One current.</h2>
+
+    <div class="link-grid">
+
+      <a href="https://siraj-strategy.vercel.app" target="_blank" class="link-card primary">
+        <span class="status live">Live · Production</span>
+        <div class="icon">→</div>
+        <div class="title">Siraj Phase 1 Strategy · v5</div>
+        <div class="url">siraj-strategy.vercel.app</div>
+        <div class="desc">
+          Current production deliverable. 21 sections across 4 parts: The Brief · The Production Layer · The Ad-Intel Module · The May 25 Drop. Engine v1.2.1 output, 270KB. Auto-deploys via Vercel CLI.
+        </div>
+        <div class="meta-line">Last deploy · 2026-05-13</div>
+      </a>
+
+      <a href="https://siraj-strategy.surge.sh" target="_blank" class="link-card">
+        <span class="status archive">Archive · v1</span>
+        <div class="icon">→</div>
+        <div class="title">Siraj Strategy · v1</div>
+        <div class="url">siraj-strategy.surge.sh</div>
+        <div class="desc">
+          Original 15-section strategy deliverable on Surge. Kept for diff reading against v5. Includes the 20 swipe ads with gpt-image-2 generations, 8 TikTok scripts (incl. TT-09 fake podcast), 4 email flows, 3 landing page variants.
+        </div>
+        <div class="meta-line">Deployed · 2026-05-11</div>
+      </a>
+
+      <a href="http://localhost:3000" target="_blank" class="link-card">
+        <span class="status local">Local Only</span>
+        <div class="icon">⚙</div>
+        <div class="title">ODI Research Tool</div>
+        <div class="url">localhost:3000</div>
+        <div class="desc">
+          The Mode 1 Earth React app. Runs the 5-pass ODI pipeline live with Anthropic + SerpAPI. Run via <code>npm run dev</code> in the repo. Was the original session deliverable; the engine grew around it.
+        </div>
+        <div class="meta-line">Local dev · Vite</div>
+      </a>
+
+      <a href="https://airtable.com/app5cDUEPiTglZMga" target="_blank" class="link-card">
+        <span class="status live">Live · Backend</span>
+        <div class="icon">▦</div>
+        <div class="title">Airtable Base</div>
+        <div class="url">app5cDUEPiTglZMga</div>
+        <div class="desc">
+          16 tables. Siraj project record <code>rec7IzlX1X4VHM2WN</code>. 10 Swipe Pages · 8 Swipe Ads · 12 Creative Briefs · 5 Brief Iterations. Backend for the engine when STORAGE_BACKEND=airtable.
+        </div>
+        <div class="meta-line">Schema · 16 tables</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §02 · STRATEGY DOC VERSIONS
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="docs">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 02 · Strategy document · five versions</span>
+      <span class="caption caption-muted">v1 → v5</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 16px;">Doc evolution.<br/>Each version a real upgrade.</h2>
+
+    <p style="color: var(--text-secondary); font-size: 14px; max-width: 720px; margin-bottom: 16px;">
+      Five iterations across two days. Each one fixed a specific failure mode in the previous. v5 is the current production; v1 is archived for diff reading.
+    </p>
+
+    <div class="timeline">
+
+      <div class="ver-item">
+        <div class="ver-row">
+          <span class="ver-tag">v1</span>
+          <span class="ver-title">Initial strategy · 15 sections</span>
+          <a class="ver-link" href="https://siraj-strategy.surge.sh" target="_blank">siraj-strategy.surge.sh →</a>
+        </div>
+        <p class="ver-desc">Brand audit · 4 Ulwick-format personas · ODI sector framing · Meta+TikTok channel plan · targeting matrix · swipe file (20 ads) · 8 TikTok scripts · 4 email flows · 3 landing variants · 90-day rollout · §11-14 search demand + viral tribe + creators + competitive.</p>
+        <div class="ver-meta">Generated via competitor ad teardowns. Critiqued later for being competitor-mirror rather than customer-pull.</div>
+      </div>
+
+      <div class="ver-item">
+        <div class="ver-row">
+          <span class="ver-tag">v2</span>
+          <span class="ver-title">Positioning-first rewrite · 5 sections</span>
+          <a class="ver-link" href="#" style="color: var(--text-muted);">Archived in git · de8d5be</a>
+        </div>
+        <p class="ver-desc">Stripped to the spine: Positioning · Evidence · Value-prop Comparison · Entry Wedge · Methodology. Every claim cited to a numeric outcome score. Customer keywords (Google autocomplete + PAA + Reddit + competitor PDP) became primary discovery input. Engine v1.1 output.</p>
+        <div class="ver-meta">Reviewer feedback: too lean. Lost the personas + creative library that v1 had.</div>
+      </div>
+
+      <div class="ver-item">
+        <div class="ver-row">
+          <span class="ver-tag">v3</span>
+          <span class="ver-title">Unified brief + production · 15 sections + TT-09</span>
+          <a class="ver-link" href="#" style="color: var(--text-muted);">Archived in git · 16641d6</a>
+        </div>
+        <p class="ver-desc">Reconciled v1 + v2. Part I = the brief (v2's 5 sections), Part II = the production layer (v1's 10 sections). Added TT-09 fake podcast script — 42s scripted podcast clip where the "host" asks the guest what she's wearing.</p>
+        <div class="ver-meta">2-part visual structure made the brief-informs-production logic legible.</div>
+      </div>
+
+      <div class="ver-item">
+        <div class="ver-row">
+          <span class="ver-tag">v4</span>
+          <span class="ver-title">Ad-intel module live · 20 sections</span>
+          <a class="ver-link" href="#" style="color: var(--text-muted);">Archived in git · f228f91</a>
+        </div>
+        <p class="ver-desc">Engine v1.2 add. Part III: §20 Ad-Intel output. First Siraj run: 10 competitors identified, 8 ads ingested via Meta Ad Library best-effort, all 8 evaluated via Claude vision (5 behavioral scores + Schwartz awareness + hook type), 5 storyboard briefs generated.</p>
+        <div class="ver-meta">Honest flag: all 5 briefs leaned on Skims's seasonal-deal hook because Stage D picked top-1 by raw score. Fixed in v1.3.</div>
+      </div>
+
+      <div class="ver-item current">
+        <div class="ver-row">
+          <span class="ver-tag">v5 · CURRENT</span>
+          <span class="ver-title">Summer Flex Campaign integrated · 21 sections</span>
+          <a class="ver-link" href="https://siraj-strategy.vercel.app" target="_blank">siraj-strategy.vercel.app →</a>
+        </div>
+        <p class="ver-desc">Engine v1.3 add. Part IV: §21 Summer Flex Campaign. The May 25 drop named explicitly (EveryWear Flex Set + Flex Robe in Matcha). 7 campaign concepts authored by Jael Harris mapped to all 5 underserved outcomes. Production stack + 3-tier influencer pipeline + MyQueen $3K contract. v1.3 hook-matching fix: 4 of 5 briefs now affinity-matched instead of all Skims-deal-anchor.</p>
+        <div class="ver-meta">Production wrap (May 2) predates engine §02 evidence (May 12). Brand judgement + engine output converged independently on the same answer.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §03 · ENGINE
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="engine">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 03 · Engine repo · 4 tags</span>
+      <span class="caption caption-muted">Mode 1 Earth · ODI + ad-intel</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 24px;">Engine code state.</h2>
+
+    <div class="repo-grid">
+      <div class="repo-card">
+        <div class="h3" style="color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Tags shipped</div>
+
+        <div class="tag-row">
+          <div class="tag-name">v1.1.0</div>
+          <div class="tag-desc">Positioning-first template, customer keywords primary, Pass 5 comparePositioning, Pass 6 validatePositioning gate.</div>
+        </div>
+        <div class="tag-row">
+          <div class="tag-name">v1.2.0</div>
+          <div class="tag-desc">Ad-intel module. 4 stages (competitors → ads → eval → storyboards) + TRIBE/BrainLM Python scaffold + R&D doc.</div>
+        </div>
+        <div class="tag-row">
+          <div class="tag-name">v1.2.1</div>
+          <div class="tag-desc">JSON → Airtable migration. Same code, two backends. Idempotent on re-run.</div>
+        </div>
+        <div class="tag-row">
+          <div class="tag-name">v1.3.0</div>
+          <div class="tag-desc">Stage D hook-matching fix + Summer Flex Campaign integration. 7 concept briefs pushed to Airtable.</div>
+        </div>
+      </div>
+
+      <div class="repo-card">
+        <div class="h3" style="color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Repo structure</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.9; color: var(--text-secondary); margin-top: 8px;">
+          <div><span style="color: var(--accent-gold);">odi-research-tool/</span></div>
+          <div>├─ engine/</div>
+          <div>│&nbsp;&nbsp;├─ db/storage.mjs</div>
+          <div>│&nbsp;&nbsp;├─ ad-intel/stage-a-competitors.mjs</div>
+          <div>│&nbsp;&nbsp;├─ ad-intel/stage-b-ad-ingest.mjs</div>
+          <div>│&nbsp;&nbsp;├─ ad-intel/stage-d-storyboards.mjs</div>
+          <div>│&nbsp;&nbsp;├─ eval/ad_eval_llm.mjs</div>
+          <div>│&nbsp;&nbsp;├─ eval/tribe_brainlm.py</div>
+          <div>│&nbsp;&nbsp;└─ research/TRIBE-BRAINLM-RND.md</div>
+          <div>├─ src/lib/anthropic.js</div>
+          <div>├─ db/*.json</div>
+          <div>├─ phase1-strategy-v[1-5].html</div>
+          <div>├─ design.md  ·  siraj-design.md</div>
+          <div>└─ CHANGELOG.md</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-num">4</div><div class="stat-label">Pipeline stages</div></div>
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">Anthropic passes</div></div>
+      <div class="stat"><div class="stat-num">2</div><div class="stat-label">Storage backends</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-label">Git commits</div></div>
+      <div class="stat"><div class="stat-num">~5000</div><div class="stat-label">Lines of engine code</div></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §04 · GENERATED ASSETS
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="assets">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 04 · Generated assets · all in repo</span>
+      <span class="caption caption-muted">Brand · Research · Creative · Docs</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 16px;">What the engine produced.</h2>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Brand kits</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path"><span class="dir">odi-research-tool/</span>design.md</div>
+        <div class="desc">Alchemical Growth Engine brand · dark/gold tokens</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">odi-research-tool/</span>siraj-design.md</div>
+        <div class="desc">Siraj Beauty brand · pink/salmon tokens + gpt-image-2 casting rules</div>
+      </div>
+    </div>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Research artifacts</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>siraj-keywords.json</div>
+        <div class="desc">130 autocomplete + 24 PAA + 26 Reddit + 4 competitor PDPs</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>tribe-research.json</div>
+        <div class="desc">v1 input data (deprecated)</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>creator-verification.json</div>
+        <div class="desc">8 creator handles audited · 2 verified live · 5 not found · 1 ambiguous</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>serpapi-siraj-results.json</div>
+        <div class="desc">9 SerpAPI probes against Google US</div>
+      </div>
+    </div>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Engine output data</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>swipe_pages.json</div>
+        <div class="desc">10 competitor pages with classification</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>swipe_ads.json</div>
+        <div class="desc">8 Meta ads · all tagged · 5 behavioral scores + Schwartz + hook + beliefs</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>creative_briefs.json</div>
+        <div class="desc">5 engine-generated briefs · hook-matched per outcome (v1.3)</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>brief_iterations.json</div>
+        <div class="desc">5 iterations · Higgsfield shell commands ready</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">db/</span>audit.json</div>
+        <div class="desc">Append-only event log · stage_a_start, stage_a_complete, etc.</div>
+      </div>
+    </div>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Creative · 20 swipe ads (Siraj surge archive)</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path"><span class="dir">siraj-strategy.surge.sh/img/</span>SWP-N-[01-05].jpg</div>
+        <div class="desc">Imani / Sensory Romantic · 5 ad concepts · gpt-image-2 medium</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">siraj-strategy.surge.sh/img/</span>SWP-A-[01-05].jpg</div>
+        <div class="desc">Amira / Cautious Indulger · 5 ad concepts · postpartum-coded</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">siraj-strategy.surge.sh/img/</span>SWP-S-[01-05].jpg</div>
+        <div class="desc">Simone / Soft-Life Loyalist · 5 ad concepts · bridal-coded</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">siraj-strategy.surge.sh/img/</span>SWP-M-[01-05].jpg</div>
+        <div class="desc">Maya / Reflective Rewarder · 5 ad concepts · slow-return-coded</div>
+      </div>
+    </div>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Documentation</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path"><span class="dir">odi-research-tool/</span>CHANGELOG.md</div>
+        <div class="desc">Engine version history · v1.0 → v1.3</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">engine/research/</span>TRIBE-BRAINLM-RND.md</div>
+        <div class="desc">Phase-2 evaluator architecture · TRIBE v2 → Glasser 360 → BrainLM → MLP head</div>
+      </div>
+      <div class="file-row">
+        <div class="path"><span class="dir">engine/eval/</span>tribe_brainlm.py</div>
+        <div class="desc">Phase-2 AD_EVAL contract scaffold · NOT implemented</div>
+      </div>
+    </div>
+
+    <h3 class="h3" style="margin-top: 32px; color: var(--accent-gold); letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px;">Generation scripts</h3>
+    <div class="file-list">
+      <div class="file-row">
+        <div class="path">generate-swipe-images-v3.mjs</div>
+        <div class="desc">gpt-image-2 parallel generation · 20 ads in ~110s</div>
+      </div>
+      <div class="file-row">
+        <div class="path">run-keyword-discovery-siraj.mjs</div>
+        <div class="desc">SerpAPI + Reddit + competitor PDP discovery pipeline</div>
+      </div>
+      <div class="file-row">
+        <div class="path">engine/ad-intel/push-flex-concepts.mjs</div>
+        <div class="desc">One-shot push of 7 Summer Flex concepts to Airtable</div>
+      </div>
+      <div class="file-row">
+        <div class="path">engine/db/migrate-json-to-airtable.mjs</div>
+        <div class="desc">Idempotent JSON → Airtable migration with field-name mapping</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §05 · AIRTABLE
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="airtable">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 05 · Airtable base · 16 tables · 5 populated</span>
+      <span class="caption caption-muted">app5cDUEPiTglZMga</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 16px;">Schema state.</h2>
+    <p style="color: var(--text-secondary); font-size: 14px; max-width: 720px;">
+      The base has 16 tables. The 5 highlighted gold below were populated by the engine this session. The rest exist in schema but weren't touched.
+    </p>
+
+    <div class="at-grid">
+      <div class="at-table populated">
+        <span class="label">populated · 1</span>
+        <span class="count">1</span>
+        <span class="name">Projects</span>
+      </div>
+      <div class="at-table populated">
+        <span class="label">populated · 10</span>
+        <span class="count">10</span>
+        <span class="name">Swipe Pages</span>
+      </div>
+      <div class="at-table populated">
+        <span class="label">populated · 8</span>
+        <span class="count">8</span>
+        <span class="name">Swipe Ads</span>
+      </div>
+      <div class="at-table populated">
+        <span class="label">populated · 12</span>
+        <span class="count">12</span>
+        <span class="name">Creative Briefs</span>
+      </div>
+      <div class="at-table populated">
+        <span class="label">populated · 5</span>
+        <span class="count">5</span>
+        <span class="name">Brief Iterations</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Research Sessions</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Core Jobs</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Desired Outcomes</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Search Volume Data</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Entry Recommendations</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Belief Sessions</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Belief Cells</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Belief Records</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Competitive Analysis</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Media Plans</span>
+      </div>
+      <div class="at-table">
+        <span class="label">schema only</span>
+        <span class="count">—</span>
+        <span class="name">Plan Keywords</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     §06 · WHAT'S PENDING
+══════════════════════════════════════════════════════════════════════ -->
+<section class="section" id="next">
+  <div class="container">
+    <div class="section-tag-row">
+      <span class="caption">§ 06 · What's pending</span>
+      <span class="caption caption-muted">Honest open items</span>
+    </div>
+
+    <h2 class="display-lg" style="margin-bottom: 24px;">Three open items.</h2>
+
+    <div class="link-grid">
+
+      <div class="link-card" style="cursor: default;">
+        <span class="status local">Pending · external</span>
+        <div class="icon">⚑</div>
+        <div class="title">Meta Ad Library API token</div>
+        <div class="url">developers.facebook.com → Ad Library API</div>
+        <div class="desc">
+          Best-effort web_search fallback only returned ads from Lunya + Skims. Real coverage needs <code>ads_archive</code> permission. ~24h Meta identity verification turnaround. Once provisioned, Stage B re-runs against all 10 competitors with full data, Stage C re-evaluates against real creative images (not text-only), Stage D hook-matching expands to founder_pov + category_pivot pool which closes the Job 05 fallback flag.
+        </div>
+        <div class="meta-line">Blocks v1.4 hook diversification</div>
+      </div>
+
+      <div class="link-card" style="cursor: default;">
+        <span class="status local">v1.4 · engine roadmap</span>
+        <div class="icon">⚙</div>
+        <div class="title">Self-tuning hook affinity</div>
+        <div class="url">engine/ad-intel/stage-d-storyboards.mjs</div>
+        <div class="desc">
+          v1.3 hook-matching uses a hand-coded <code>OUTCOME_HOOK_AFFINITY</code> map. v1.4 swaps that for affinity inferred from real engagement data once paid spend runs against each Summer Flex concept. The map self-corrects from observed performance.
+        </div>
+        <div class="meta-line">Gated on first 30d of post-May-25 paid spend</div>
+      </div>
+
+      <div class="link-card" style="cursor: default;">
+        <span class="status local">Phase 2 · research-gated</span>
+        <div class="icon">🧠</div>
+        <div class="title">TRIBE v2 + BrainLM evaluator</div>
+        <div class="url">engine/eval/tribe_brainlm.py</div>
+        <div class="desc">
+          Architecture scaffolded in <code>TRIBE-BRAINLM-RND.md</code>. Pipeline: creative → TRIBE v2 → fsaverage5 → Glasser 360 ROI pool → BrainLM encoder → 3-layer MLP head → 5 behavioral scores. Gated on: R&D doc review · Meta API access · ≥ 200 labeled (creative, outcome) pairs · TRIBE v2 license confirmation.
+        </div>
+        <div class="meta-line">Phase 2A → 2D · 18-week roadmap</div>
+      </div>
+
+    </div>
+
+    <p class="pull">
+      <em>The engine is a thesis, not a product.</em> Mode 1 Earth is the substance layer (research + positioning + creative briefs). Modes 2-4 (Air · Fire · Water) are the distribution / conversion / retention layers. Mode 1 is now mature enough to inform a real launch — Siraj's Summer Flex Collection on May 25.
+    </p>
+
+    <p class="footnote">
+      All session work lives in the local repo at <code style="background: var(--bg-surface-1); padding: 2px 6px; border-radius: 3px;">C:\Users\harri\Documents\Marketing Bot\odi-research-tool</code> with git tags <code>v1.1.0</code> through <code>v1.3.0</code>. The Airtable base, Vercel deploy, and Surge archive are independent of the local repo and continue to exist after the session ends. The v3 strategy doc PDF version was discussed but not built — say the word and I'll generate it. The Higgsfield CLI commands in <code>brief_iterations.json</code> are ready to render but need the Higgsfield API key and a render budget commitment before they go live.
+    </p>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <div class="brand-name" style="margin-bottom: 8px;">Alchemical Growth Engine · Mode 1 · Earth · v1.3.0</div>
+    <div class="session-id">Session index · 2026-05-13</div>
+  </div>
+</footer>
+
+</body>
+</html>
