@@ -95,9 +95,15 @@ export async function runStageA({ brand, category, project_id }) {
 // ── CLI entry ──────────────────────────────────────────────────────────
 import { pathToFileURL } from "node:url";
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const brand = process.argv[2] || "Siraj Beauty";
-  const category = process.argv[3] || "luxury sleepwear and loungewear for Black women, US market";
-  const project_id = process.argv[4] || "siraj_001";
+  const brand = process.argv[2];
+  const category = process.argv[3];
+  const project_id = process.argv[4];
+
+  if (!brand || !category || !project_id) {
+    console.error("Usage: node stage-a-competitors.mjs <brand-name> <category-description> <project_id>");
+    console.error('Example: node stage-a-competitors.mjs "Acme Apparel" "premium DTC athleisure for women, US" "acme_001"');
+    process.exit(1);
+  }
 
   runStageA({ brand, category, project_id })
     .then(records => {

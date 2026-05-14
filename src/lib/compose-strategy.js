@@ -13,10 +13,9 @@
 //   --bg-card    #f7ecda  card-tinted variant
 //   --brick      #bc4749  underserved / error / lose-states
 //
-// Replaces v1.6.3 "Siraj salmon" palette. Variables renamed from
-// {pillow-pink, siraj-salmon, rosy-brown, smile-yellow} → {moss-light,
-// moss-deep, moss-mid, moss-lime}. Same number of tokens, same usage
-// roles, so no template changes required — just a visual reskin.
+// Palette is engine-wide default. To customize per project, fork the
+// TOKENS string at runtime and pass `customTokens` into composeStrategyDoc.
+// (Per-project palette override is a v1.7+ enhancement — not yet wired.)
 //
 // Input shape:
 //   {

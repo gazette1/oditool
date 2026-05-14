@@ -314,7 +314,7 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://sirajbeauty.com"
+              placeholder="https://yourbrand.com"
               disabled={busy}
               style={{ flex: 1, background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 6, padding: "12px 16px", color: "#e0ddd5", fontFamily: "inherit", fontSize: 13 }}
             />

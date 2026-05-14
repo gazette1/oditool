@@ -31,7 +31,8 @@ Architecture (per Perplexity research output, May 2026):
                 |
                 v
     3-layer MLP head — supervised on (creative, score) pairs from
-    historical Siraj + competitor ads with measured outcomes
+    historical brand + competitor ads with measured outcomes
+    (training data is project-scoped per Project Isolation Invariant #5)
                 |
                 v
     Five behavioral scores (1-10):

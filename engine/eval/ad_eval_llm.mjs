@@ -155,8 +155,20 @@ export async function runStageC({ project_id, project_context }) {
 // ── CLI ─────────────────────────────────────────────────────────────
 import { pathToFileURL } from "node:url";
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const project_id = process.argv[2] || "siraj_001";
-  const context = "Siraj Beauty — luxury sleepwear and loungewear by Shantay for Black women in the soft-life movement. Primary positioning: 'Sleepwear made by a Black woman, for the bodies the category never built for.' (Job 05 outcome score 12.2). TENCEL Modal three-piece sets in Petal / Daisy / Oat at $78. Velour/terrycloth Signature Robe + Black Is Love variant.";
+  // Brand-agnostic CLI · project context is now read from
+  // PROJECT_CONTEXT env var (or first stdin line if env unset).
+  // No baked-in brand defaults — pass the full project context string.
+  const project_id = process.argv[2];
+  const context = process.env.PROJECT_CONTEXT || process.argv[3] || "";
+
+  if (!project_id) {
+    console.error("Usage: node ad_eval_llm.mjs <project_id> [project_context]");
+    console.error('Or: PROJECT_CONTEXT="..." node ad_eval_llm.mjs <project_id>');
+    process.exit(1);
+  }
+  if (!context) {
+    console.error("Warning: no project_context provided · eval will be context-free and lower-quality.");
+  }
   runStageC({ project_id, project_context: context })
     .then(r => console.log(JSON.stringify(r, null, 2)))
     .catch(err => { console.error("Stage C failed:", err.message); process.exit(1); });

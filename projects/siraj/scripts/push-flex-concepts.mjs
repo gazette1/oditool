@@ -1,11 +1,20 @@
-// engine/ad-intel/push-flex-concepts.mjs
+// projects/siraj/scripts/push-flex-concepts.mjs
 //
-// One-shot push of the 7 named Summer Flex Campaign concepts into the
-// Airtable Creative Briefs table. Each concept is authored by Jael Harris
-// (Creative Director) and corresponds to a specific shoot block from
-// May 2 production. Maps each to its §02 outcome + §13 persona.
+// PROJECT-SPECIFIC ONE-OFF — not part of the engine surface.
+// Moved out of engine/ad-intel/ in v1.6.5 isolation audit.
 //
-// Run: AIRTABLE_KEY=... AIRTABLE_BASE=... node engine/ad-intel/push-flex-concepts.mjs
+// One-shot push of the 7 named Summer Flex Campaign concepts (Siraj
+// project, May 2 production) into the Airtable Creative Briefs table.
+// Each concept is authored by Jael Harris (Creative Director) and
+// corresponds to a specific shoot block. Maps each to its §02 outcome
+// + §13 persona.
+//
+// This script will only work against an Airtable base that contains
+// the `siraj_001` project record. Do not adapt for other brands — for
+// any new project, generate concepts via the engine's Pass 14
+// (generateCreatorBriefs) + Stage D (generateBrief) flows instead.
+//
+// Run: AIRTABLE_KEY=... AIRTABLE_BASE=... node projects/siraj/scripts/push-flex-concepts.mjs
 
 const KEY = process.env.AIRTABLE_KEY;
 const BASE = process.env.AIRTABLE_BASE;

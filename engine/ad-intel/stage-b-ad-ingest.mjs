@@ -136,7 +136,11 @@ export async function runStageB({ project_id }) {
 // ── CLI ─────────────────────────────────────────────────────────
 import { pathToFileURL } from "node:url";
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const project_id = process.argv[2] || "siraj_001";
+  const project_id = process.argv[2];
+  if (!project_id) {
+    console.error("Usage: node stage-b-ad-ingest.mjs <project_id>");
+    process.exit(1);
+  }
   runStageB({ project_id })
     .then(r => console.log(JSON.stringify(r, null, 2)))
     .catch(err => { console.error("Stage B failed:", err.message); process.exit(1); });

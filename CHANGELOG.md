@@ -6,6 +6,84 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.5] — 2026-05-14
+
+**Project isolation audit — engine made brand-agnostic.** Siraj was the
+test brand through v1.6.4; v1.6.5 strips every Siraj-specific default
+from the engine surface and fixes a state-leakage bug where switching
+projects in the dashboard kept the previous project's analysis visible.
+
+Mandate: *"every output will not be of Siraj and that singular brand
+identity — the only thing i want to keep from Siraj is have the same
+quality of output consistently across the tool."*
+
+Full audit at `docs/ISOLATION_AUDIT.md`.
+
+### Fixed — state leakage on project switch (React)
+
+`loadProjectAsContext` previously only set `activeProject` + `projectContext`
++ `sector`. Twelve other pieces of project-scoped state survived the
+switch, so the new project's dashboard showed the previous brand's data
+until the user clicked Run Analysis.
+
+New `resetProjectScopedState()` callback in `App.jsx` clears all of:
+`data`, `activeJob`, `entryRecs`, `positioningSpine`, `searchVolumeData`,
+`adIntelData`, `adIntelPhase`, `stratDocPhase`, `debugLog`, `error`,
+`view`, `phase`. Called from three entry points:
+- `loadProjectAsContext(project)` — pre-applies before new context loads
+- Project picker `Clear` button — full reset
+- Sidebar `+ New Research` button — full reset
+
+User-scoped state (`config` API keys, `projects` list, `sessions` list)
+intentionally survives.
+
+### Fixed — code defaults
+
+| Where | Before | After |
+| --- | --- | --- |
+| `src/ProjectSetup.jsx` URL placeholder | `https://sirajbeauty.com` | `https://yourbrand.com` |
+| `src/lib/compose-strategy.js` header comment | references "Siraj salmon" v1.6.3→v1.6.4 migration | brand-neutral note about per-project palette override |
+| `engine/db/migrate-json-to-airtable.mjs` | literals `PROJECT_NAME = "Siraj Beauty"` + `PROJECT_ID = "siraj_001"` | required env vars w/ error if missing |
+| `engine/ad-intel/stage-a-competitors.mjs` | argv defaults `"Siraj Beauty"` + `"siraj_001"` | required args + usage message |
+| `engine/ad-intel/stage-b-ad-ingest.mjs` | argv default `"siraj_001"` | required arg + usage message |
+| `engine/eval/ad_eval_llm.mjs` | argv default + hardcoded Siraj context string | required `project_id`; optional `PROJECT_CONTEXT` env var |
+| `engine/ad-intel/stage-d-storyboards.mjs` | 6 separate Siraj-specific places (PROJECT_DEFAULTS, prompt template, shell command, argv defaults) | all parameterized — `GENERIC_PROJECT_DEFAULTS` read from `PROJECT_TOOL` / `PROJECT_PRESET_MODE` / `PROJECT_FORMAT` / `PROJECT_DURATION` / `PROJECT_BRAND_VOICE` / `PROJECT_PALETTE` env vars · prompt now says "this brand" not "Siraj" · shell command uses `${brand_name \|\| project_id}` |
+| `engine/eval/tribe_brainlm.py` comment | "historical Siraj + competitor ads" | "historical brand + competitor ads (project-scoped)" |
+
+### Moved — project-specific one-off out of engine surface
+
+- `engine/ad-intel/push-flex-concepts.mjs` → `projects/siraj/scripts/push-flex-concepts.mjs`
+- Header comment updated to flag it as Siraj-only · directs new
+  projects to use Pass 14 / Stage D flows instead
+
+### Added — `docs/ISOLATION_AUDIT.md`
+
+Comprehensive audit report covering localStorage inventory, every
+Siraj-reference found + fix applied, the state-leakage bug + fix, and
+the 10 Project Isolation Invariants for forward-looking development.
+
+### Added — vault `13 - Roadmap & Backlog.md` → `## 🔒 Project Isolation Invariants`
+
+Codified the 10 invariants alongside the v1.7 backlog. Future passes +
+features MUST honor.
+
+### Verification
+
+```bash
+$ grep -rn 'siraj\|Siraj' src/ engine/ | grep -v node_modules | grep -v '\.md:'
+(no results)
+```
+
+Zero Siraj references remain in executable code paths. Historical
+artifacts (CHANGELOG, deliverable HTMLs, R&D docs) untouched.
+
+### Bundle
+
+Same 320 KB / 94 KB gzip. Pure logic + comment changes, no template
+or asset modifications.
+
+---
+
 ## [1.6.4] — 2026-05-14
 
 **Moss-and-brick palette swap.** Visual reskin of the Strategy Doc output.

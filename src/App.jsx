@@ -151,7 +151,28 @@ export default function App() {
   // When user picks a Project, parse its embedded Pass 0 context summary
   // out of the product_context field (the createProject persists it there
   // under "── PASS 0 CONTEXT SUMMARY ──").
+  // Engine v1.6.5 · Project isolation: when switching projects, RESET
+  // every piece of project-scoped state so the new project starts cold.
+  // Without this, the previous brand's outcomes/personas/ad-intel/etc.
+  // would persist in the dashboard until the user clicks Run Analysis.
+  // The only state that survives is user-scoped (API keys in config).
+  const resetProjectScopedState = useCallback(() => {
+    setData(null);
+    setActiveJob(null);
+    setEntryRecs([]);
+    setPositioningSpine(null);
+    setSearchVolumeData({});
+    setAdIntelData(null);
+    setAdIntelPhase("");
+    setStratDocPhase("");
+    setDebugLog([]);
+    setError(null);
+    setView("entry");
+    setPhase("");
+  }, []);
+
   const loadProjectAsContext = useCallback((project) => {
+    resetProjectScopedState();         // ← clear previous project's data first
     setActiveProject(project);
     let summary = null;
     const pc = project?.product_context || "";
@@ -175,7 +196,7 @@ export default function App() {
     }
     setProjectContext(summary);
     if (summary?.sector) setSector(summary.sector);
-  }, []);
+  }, [resetProjectScopedState]);
 
   // ── Engine v1.5 · Generate full Strategy Doc ──
   const generateStrategyDoc = useCallback(async () => {
@@ -520,7 +541,7 @@ export default function App() {
       {/* Sidebar */}
       <SessionList sessions={sessions} activeId={activeSession}
         onSelect={loadSession}
-        onNew={() => { setData(null); setSector(""); setActiveSession(null); }} />
+        onNew={() => { resetProjectScopedState(); setSector(""); setActiveSession(null); setActiveProject(null); setProjectContext(null); }} />
 
       {/* Main */}
       <div className="flex-1 overflow-y-auto">
@@ -572,7 +593,7 @@ export default function App() {
                   onChange={(e) => {
                     const p = projects.find(x => x.airtableId === e.target.value);
                     if (p) loadProjectAsContext(p);
-                    else { setActiveProject(null); setProjectContext(null); }
+                    else { resetProjectScopedState(); setActiveProject(null); setProjectContext(null); setSector(""); }
                   }}
                   className="flex-1 min-w-[200px] bg-surface-2 border border-[#1e2a3a] rounded-lg px-3 py-2 text-xs text-[#e0ddd5] focus:border-accent outline-none"
                 >
@@ -581,7 +602,7 @@ export default function App() {
                 </select>
                 {activeProject && (
                   <button
-                    onClick={() => { setActiveProject(null); setProjectContext(null); }}
+                    onClick={() => { resetProjectScopedState(); setActiveProject(null); setProjectContext(null); setSector(""); }}
                     className="text-[10px] text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:text-red-400 hover:border-red-400 transition">
                     Clear
                   </button>

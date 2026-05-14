@@ -15,10 +15,15 @@ import path from "node:path";
 
 const KEY = process.env.AIRTABLE_KEY;
 const BASE = process.env.AIRTABLE_BASE;
-if (!KEY || !BASE) { console.error("Set AIRTABLE_KEY + AIRTABLE_BASE"); process.exit(1); }
+const PROJECT_NAME = process.env.PROJECT_NAME;
+const PROJECT_ID = process.env.PROJECT_ID;
 
-const PROJECT_NAME = "Siraj Beauty";
-const PROJECT_ID = "siraj_001";
+if (!KEY || !BASE) { console.error("Set AIRTABLE_KEY + AIRTABLE_BASE"); process.exit(1); }
+if (!PROJECT_NAME || !PROJECT_ID) {
+  console.error("Set PROJECT_NAME + PROJECT_ID env vars.");
+  console.error('Example: PROJECT_NAME="Acme Apparel" PROJECT_ID="acme_001" AIRTABLE_KEY=... AIRTABLE_BASE=... node migrate-json-to-airtable.mjs');
+  process.exit(1);
+}
 
 const USER_ID = "engine_internal"; // single-user mode for now
 

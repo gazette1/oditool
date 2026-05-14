@@ -26,16 +26,18 @@ import fs from "node:fs/promises";
 const ANTHROPIC_KEY = process.env.ANTHROPIC_KEY;
 const OPP_THRESHOLD = 10; // opportunity score gate
 
-// Project defaults (would live on the Project record once Projects table exists)
-const PROJECT_DEFAULTS = {
-  siraj_001: {
-    tool: "higgsfield",
-    preset_mode: "soul-id-portrait",
-    format: "9:16",
-    duration_seconds: 8,
-    brand_voice: "founder-as-friend, sis-coded, sensory-forward, no exclamation points, no em-dashes",
-    palette: "pillow-pink #F9D6D2, siraj-salmon #F7B5A4, smile-yellow #F6D38D, warm cream",
-  },
+// Generic project defaults. Override at call time via the
+// PROJECT_DEFAULTS env vars (PROJECT_TOOL, PROJECT_PRESET_MODE,
+// PROJECT_FORMAT, PROJECT_DURATION, PROJECT_BRAND_VOICE,
+// PROJECT_PALETTE) or by passing your own `project_defaults` arg
+// into runStageD when importing this module.
+const GENERIC_PROJECT_DEFAULTS = {
+  tool: process.env.PROJECT_TOOL || "higgsfield",
+  preset_mode: process.env.PROJECT_PRESET_MODE || "default",
+  format: process.env.PROJECT_FORMAT || "9:16",
+  duration_seconds: Number(process.env.PROJECT_DURATION) || 8,
+  brand_voice: process.env.PROJECT_BRAND_VOICE || "(pass project_defaults.brand_voice or set PROJECT_BRAND_VOICE env var)",
+  palette: process.env.PROJECT_PALETTE || "(pass project_defaults.palette or set PROJECT_PALETTE env var)",
 };
 
 const SYSTEM = `You are an ODI-trained creative director. Given (a) one underserved Desired Outcome scored under Ulwick's opportunity formula, and (b) a winning ad pattern from a competitor with its evaluated scores and hook type, write a storyboard brief that:
@@ -84,7 +86,7 @@ Headline: ${winning_ad.headline}
 Copy: ${winning_ad.copy_text}
 What worked: ${winning_ad.attention_capture_evidence || ""} | ${winning_ad.memory_encoding_evidence || ""}
 
-Write a brief for Siraj that targets the Desired Outcome and uses the winning pattern's mechanic, in Siraj's voice.` }],
+Write a brief for THIS brand (per the Project context above) that targets the Desired Outcome and uses the winning pattern's mechanic, in the brand's own voice.` }],
     }),
   });
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
@@ -109,7 +111,7 @@ async function loadOutcomes() {
   ];
 }
 
-export async function runStageD({ project_id, project_context }) {
+export async function runStageD({ project_id, project_context, brand_name = "", project_defaults = null }) {
   console.log(`\n── Stage D · Storyboard generation ──`);
   console.log(`Project: ${project_id} · threshold: opp ≥ ${OPP_THRESHOLD}`);
 
@@ -152,7 +154,7 @@ export async function runStageD({ project_id, project_context }) {
     return { ad: fallback, reason: "fallback · no affinity match in pool · flag for v1.4 hook diversification" };
   }
 
-  const defaults = PROJECT_DEFAULTS[project_id] || PROJECT_DEFAULTS.siraj_001;
+  const defaults = { ...GENERIC_PROJECT_DEFAULTS, ...(project_defaults || {}) };
   console.log(`\nGenerating ${outcomes.length} briefs (one per underserved outcome)…\n`);
 
   let count = 0;
@@ -191,7 +193,8 @@ export async function runStageD({ project_id, project_context }) {
 
       // Initial iteration with a shell command ready for Higgsfield CLI
       const editPrompt = `${brief.hook}\n\n${brief.body}\n\nCTA: ${brief.cta}\n\nShot list:\n${brief.shot_list.join("\n")}`;
-      const shellCommand = `# Higgsfield Soul-ID brief ${briefRecord.id}\nhiggsfield generate \\\n  --preset "${defaults.preset_mode}" \\\n  --format "${defaults.format}" \\\n  --duration ${defaults.duration_seconds} \\\n  --brand "Siraj Beauty" \\\n  --prompt-file briefs/${briefRecord.id}.txt`;
+      const brandForCli = brand_name || project_id;
+      const shellCommand = `# ${defaults.tool} brief ${briefRecord.id}\n${defaults.tool} generate \\\n  --preset "${defaults.preset_mode}" \\\n  --format "${defaults.format}" \\\n  --duration ${defaults.duration_seconds} \\\n  --brand "${brandForCli}" \\\n  --prompt-file briefs/${briefRecord.id}.txt`;
 
       await insert("brief_iterations", {
         project_id,
@@ -220,9 +223,19 @@ export async function runStageD({ project_id, project_context }) {
 
 import { pathToFileURL } from "node:url";
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const project_id = process.argv[2] || "siraj_001";
-  const context = "Siraj Beauty — luxury sleepwear for Black women in the soft-life movement. Primary positioning: 'Sleepwear made by a Black woman, for the bodies the category never built for' (Job 05, opp 12.2). TENCEL Modal three-piece sets in Petal / Daisy / Oat at $78. Founder: Shantay.";
-  runStageD({ project_id, project_context: context })
+  // Brand-agnostic CLI. project_id REQUIRED. project_context + brand_name
+  // optional but strongly recommended (eval quality drops without them).
+  const project_id = process.argv[2];
+  const context = process.env.PROJECT_CONTEXT || process.argv[3] || "";
+  const brand_name = process.env.PROJECT_BRAND_NAME || process.argv[4] || "";
+
+  if (!project_id) {
+    console.error("Usage: node stage-d-storyboards.mjs <project_id> [project_context] [brand_name]");
+    console.error('Or: PROJECT_CONTEXT="..." PROJECT_BRAND_NAME="..." node stage-d-storyboards.mjs <project_id>');
+    console.error("Also honors: PROJECT_TOOL, PROJECT_PRESET_MODE, PROJECT_FORMAT, PROJECT_DURATION, PROJECT_BRAND_VOICE, PROJECT_PALETTE");
+    process.exit(1);
+  }
+  runStageD({ project_id, project_context: context, brand_name })
     .then(r => console.log(JSON.stringify(r, null, 2)))
     .catch(err => { console.error("Stage D failed:", err.message); process.exit(1); });
 }
