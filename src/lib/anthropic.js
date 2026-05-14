@@ -86,7 +86,11 @@ export function extractJSON(data) {
 //
 // `inputs` shape:
 //   { files: [{ fileName, kind, text }, ...], urls: [{ url, content }, ...] }
-export async function summarizeProjectContext(apiKey, inputs) {
+// Engine v1.7: optional `refocusGuidance` lets the user re-run Pass 0 with a
+// natural-language nudge ("focus more on pricing", "ignore the founder bio",
+// etc.). Passed as a named option to preserve backward compatibility with the
+// existing 2-arg callers.
+export async function summarizeProjectContext(apiKey, inputs, { refocusGuidance = "" } = {}) {
   const fileBlocks = (inputs.files || [])
     .filter(f => f.text && f.text.length > 0)
     .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`)
@@ -110,9 +114,13 @@ export async function summarizeProjectContext(apiKey, inputs) {
     };
   }
 
+  const refocusPrefix = refocusGuidance && refocusGuidance.trim()
+    ? `REFOCUS GUIDANCE: ${refocusGuidance.trim()}\n\n`
+    : "";
+
   const data = await callClaude(
     apiKey,
-    `You are an Outcome-Driven Innovation analyst preparing a Project Context for a Mode 1 Earth engine run. Given raw text extracted from a brand's uploaded documents (PDFs, decks, agreements, shot lists, brand briefs) and from a scrape of the brand's homepage, produce a single structured Project Context that downstream passes (job discovery, positioning, value-prop comparison) will read.
+    `${refocusPrefix}You are an Outcome-Driven Innovation analyst preparing a Project Context for a Mode 1 Earth engine run. Given raw text extracted from a brand's uploaded documents (PDFs, decks, agreements, shot lists, brand briefs) and from a scrape of the brand's homepage, produce a single structured Project Context that downstream passes (job discovery, positioning, value-prop comparison) will read.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -129,7 +137,7 @@ Return ONLY valid JSON (no markdown):
 Rules:
 - Every fact must be defensible against a quote from the input. No invention.
 - If the corpus contradicts itself, surface that in red_flags rather than picking one side silently.
-- If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.`,
+- If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.${refocusPrefix ? "\n- Honor the REFOCUS GUIDANCE at the top of this prompt: re-weight your reading of the corpus accordingly while still obeying the no-invention rule." : ""}`,
     `Project context corpus:\n\n${corpus}`,
     { maxTokens: 4000 }
   );
