@@ -6,6 +6,86 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.3.0] — 2026-05-13
+
+Stage D hook-matching fix + Summer Flex Campaign integration.
+
+### Fixed — Stage D hook diversification
+
+The v1.2 generator picked the single highest-scoring tagged ad as the
+"winning pattern" and applied its mechanic to every outcome. With Skims
+dominating raw score (32/50), all 5 generated briefs leaned on Skims's
+seasonal-deal-anchor hook even where the outcome didn't fit.
+
+v1.3 adds `OUTCOME_HOOK_AFFINITY` — a map from job_id to preferred
+hook types. Stage D now does a two-pass match:
+
+1. Pick the highest-scoring tagged ad whose `hook_type` is in the
+   outcome's affinity list.
+2. If no match (pool too thin), fall back to top-score and log the
+   mismatch as `flag for v1.4 hook diversification`.
+
+Result on Siraj re-run:
+- Job 03 (recovery) → Lunya/problem_statement (27/50) — affinity match
+- Job 01 (reclaim body) → Skims/before_after (28/50) — affinity match
+- Job 04 (transition) → Skims/before_after — affinity match
+- Job 05 (cultural permission) → Skims/deal_anchor — FALLBACK
+  (pool lacks founder_pov + category_pivot ads; need Meta API token)
+- Job 02 (public/private) → Skims/before_after — affinity match
+
+4 of 5 briefs now affinity-matched. The one fallback is honest data
+limitation, not algorithm failure.
+
+### Added — Summer Flex Campaign integration
+
+The May 25 drop is the Summer Flex Collection (EveryWear Flex Set +
+Flex Robe in Matcha; companion Black Is Love Signature Robe).
+Production wrapped May 2 in Washington DC.
+
+7 named concepts authored by Jael Harris pushed to Airtable Creative
+Briefs via `engine/ad-intel/push-flex-concepts.mjs`:
+
+- The Village (Mom's Night In) · Sabia + Kiaan → Job 03 / opp 14.4
+- My Time, His Time, Our Time · Sabia + Kiaan → Job 03 + Job 02
+- Still. Here. · Sabrina → Job 01 / opp 13.6
+- Be Anxious for Nothing · Sabrina → Job 01 / opp 13.6
+- The Art of Dilly Dallying · Yana → Job 05 / opp 12.2
+- Grounding the Village · Yana → Job 04 / opp 12.6
+- Fly Girl at Home · Adaeze + Bria → Job 02 / opp 11.8
+
+The brand independently arrived at narrative coverage of all 5
+underserved outcomes. Production wrap (May 2) predates engine v1.1's
+§02 Evidence table (May 12). The alignment is the validation.
+
+Airtable Creative Briefs table now has 12 records: 5 from initial
+Stage D + 7 Summer Flex concepts.
+
+### Added — v5 strategy doc
+
+- Part IV divider · "The May 25 Drop"
+- §21 · Summer Flex Campaign with:
+  - Concept → outcome map (7 concepts × 5 outcomes)
+  - Production stack (shoot details, crew, budget breakdown $2,121)
+  - Influencer pipeline (3 tiers: T1 founder · T2 gifting · T3 anchor)
+  - Real creator names from outreach docs (Alana Abigail · Tobi Smith ·
+    Sudaine · Coriyanna · Brit Bruni · MyQueen Dickens)
+  - MyQueen contract terms: $3,000 flat fee · 50/50 split · QUEEN15 code ·
+    extended paid-ad usage rights · Reel due June 11
+- §04 Entry Wedge updated: "May 25 drop — Summer Flex Collection"
+  with explicit product names (replaces previous TBD placeholder)
+- Doc grows to 21 sections, /21 indicators throughout
+- 270KB, 5 Part dividers, 9 Flex references
+
+### Migration notes for callers
+
+- v1.2 callers of Stage D get the same return shape; the picker is
+  the only thing that changed. No code update required.
+- The `OUTCOME_HOOK_AFFINITY` map is configurable in
+  `engine/ad-intel/stage-d-storyboards.mjs`. Per-project overrides
+  go in a future `project-defaults` payload (v1.4 work).
+
+---
+
 ## [1.2.0] — 2026-05-12
 
 Ad-intel module add. Four new pipeline stages plus a TRIBE+BrainLM

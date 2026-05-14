@@ -118,14 +118,39 @@ export async function runStageD({ project_id, project_context }) {
   const outcomes = (await loadOutcomes()).filter(o => o.score >= OPP_THRESHOLD);
   const taggedAds = await list("swipe_ads", a => a.project_id === project_id && a.tag_status === "tagged");
 
-  // Pick the highest-scoring tagged ad as the winning pattern. In a richer
-  // version, match per-outcome by hook_type + addressed_beliefs.
-  const winning = [...taggedAds].sort((a, b) => (b.score_total || 0) - (a.score_total || 0))[0];
-  if (!winning) {
+  // v1.3 hook-matching fix.
+  //
+  // Replaces "pick top-1 by raw score" with affinity matching: each
+  // outcome carries a preferred-hook profile (the hook types that
+  // historically work for that customer-job pattern). Pick the
+  // highest-scoring ad whose hook_type appears in the outcome's
+  // preference list. If no match, fall back to top score for outcome.
+  // Bonus: log which ad was picked per outcome so the human can sanity-check.
+  if (!taggedAds.length) {
     console.log("✗ No tagged ads available to model. Aborting Stage D.");
     return { briefs: 0 };
   }
-  console.log(`Winning ad pattern: ${winning.brand_name} · ${winning.hook_type} · ${winning.score_total}/50`);
+  console.log(`Tagged ad pool: ${taggedAds.length}`);
+  console.log(`Top 3 by raw score: ${taggedAds.slice().sort((a,b)=>(b.score_total||0)-(a.score_total||0)).slice(0,3).map(a=>`${a.brand_name}/${a.hook_type}/${a.score_total}`).join(", ")}`);
+
+  // Outcome → preferred hook profile. Encoded from the §02 evidence
+  // table + verified §13 personas + customer-psychology PDF.
+  const OUTCOME_HOOK_AFFINITY = {
+    3: ["problem_statement", "founder_pov", "ugc_testimonial", "demonstration"], // recovery
+    1: ["ritual_pov", "before_after", "founder_pov", "demonstration"],            // reclaim body
+    4: ["social_proof", "ugc_testimonial", "before_after", "founder_pov"],        // transition / gift
+    5: ["founder_pov", "category_pivot", "pattern_interrupt", "list"],            // cultural permission
+    2: ["before_after", "category_pivot", "comparison", "demonstration"],         // public/private
+  };
+  function pickAdForOutcome(outcome) {
+    const affinity = OUTCOME_HOOK_AFFINITY[outcome.job_id] || [];
+    // Pass 1: ads whose hook_type appears in affinity list, ranked by raw score
+    const matches = taggedAds.filter(a => affinity.includes(a.hook_type)).sort((x,y)=>(y.score_total||0)-(x.score_total||0));
+    if (matches.length) return { ad: matches[0], reason: "hook_type affinity match" };
+    // Pass 2: fall back to highest-scoring overall, flag the mismatch
+    const fallback = taggedAds.slice().sort((x,y)=>(y.score_total||0)-(x.score_total||0))[0];
+    return { ad: fallback, reason: "fallback · no affinity match in pool · flag for v1.4 hook diversification" };
+  }
 
   const defaults = PROJECT_DEFAULTS[project_id] || PROJECT_DEFAULTS.siraj_001;
   console.log(`\nGenerating ${outcomes.length} briefs (one per underserved outcome)…\n`);
@@ -133,7 +158,9 @@ export async function runStageD({ project_id, project_context }) {
   let count = 0;
   for (const outcome of outcomes) {
     const t0 = Date.now();
+    const { ad: winning, reason } = pickAdForOutcome(outcome);
     console.log(`  → Job ${outcome.job_id} · ${outcome.label} (opp ${outcome.score})`);
+    console.log(`    pattern: ${winning.brand_name}/${winning.hook_type}/${winning.score_total} · ${reason}`);
     try {
       const brief = await generateBrief(outcome, winning, defaults, project_context);
 
