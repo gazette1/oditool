@@ -6,6 +6,79 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.2] — 2026-05-14
+
+**Pass 14 · Creator outreach briefs.** Second v1.7 backlog item. Strategy
+doc grows from 14 → 15 sections. Adds 5 paid-creator outreach packets,
+one per persona, with archetype + sourcing criteria + content concept +
+deliverables + DM template + comp range + usage rights + dos/donts +
+success metric.
+
+### Added — `src/lib/anthropic.js`
+
+- **Pass 14** `generateCreatorBriefs(apiKey, projectContext, positioning,
+  personas, recommendations)` · returns `{creator_briefs: [...5]}`. Each
+  packet: `packet_id`, `target_persona_name`, `creator_archetype`,
+  `platform`, `audience_fit`, `sourcing_criteria` (4-6 filter rules),
+  `content_concept`, `deliverables`, `talking_points`, `cta`, `dos`,
+  `donts`, `usage_rights`, `comp_range`, `outreach_dm` (3-5 sentence
+  template), `success_metric`.
+- **Deliberate constraint:** Pass 14 does NOT output real creator
+  handles. v1.3 `verify-creators.mjs` established the rule that
+  handles must be human-verified to avoid hallucinated accounts. Pass
+  14 outputs archetype + sourcing criteria; a human sourcer matches.
+
+### Added — `src/lib/compose-strategy.js`
+
+- **§13 · Creator outreach** renderer · creator card with smile-yellow
+  packet ID tag, persona pill, archetype + platform header, italic
+  audience-fit line, gradient content-concept block, deliverable chips,
+  2-col sourcing-criteria + talking-points grid, green/red dos+donts
+  blocks, salmon-bordered DM template card, 3-col footer (CTA / comp /
+  rights), italic success-metric closer.
+- CSS additions: `.creator-card` + all subcomponents (~40 lines).
+- Section count: **14 → 15.** All renderers renumbered to `/ 15`.
+- Methodology (§14) + Colophon (§15) shifted down one slot.
+- Nav extended with "Creators" link.
+
+### Changed
+
+- App.jsx `generateStrategyDoc` handler runs Pass 14 after Pass 13.
+  Try/catch isolated so a Pass 14 failure doesn't block the download.
+- All pass log labels updated from `/13` → `/14`.
+- Cover doc-num + footer stamp updated to `v1.6.2`.
+- Methodology line reports v1.6.2 + creator packet count.
+
+### Bundle
+
+| Build | Main bundle | Gzip |
+| --- | --- | --- |
+| v1.6.1 | 299 KB | 90 KB |
+| **v1.6.2** | **309 KB** | **91.9 KB** |
+
++10 KB for Pass 14 + the §13 renderer + ~40 lines of creator-card CSS.
+
+### Cost per full strategy doc run
+
+| Engine | Calls | Wall time | API cost |
+| --- | --- | --- | --- |
+| v1.6 | 14 | ~3m 15s | ~$0.80 |
+| **v1.6.2** | **15** | **~3m 30s** | **~$0.85** |
+
+### Pending v1.7 backlog
+
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | Ad-Intel wire-in | ✅ v1.6.1 |
+| 2 | **Pass 14 creator briefs** | ✅ **v1.6.2** |
+| 3 | Pass 15 competitive teardown | 🔴 next |
+| 4 | Pass 16 brand audit | 🔴 |
+| 5 | Pass 17 demand landscape | 🔴 |
+| 6 | Pass 18 tribe readout | 🔴 |
+| 7 | Pass 19 seasonal campaign | 🔴 |
+
+---
+
 ## [1.6.1] — 2026-05-14
 
 **Ad-Intel React wire-in.** First v1.7-backlog item shipped: the four

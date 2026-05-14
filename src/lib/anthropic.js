@@ -653,6 +653,60 @@ Return ONLY JSON:
   return extractJSON(data);
 }
 
+// ── PASS 14: Creator Outreach Briefs (Engine v1.6.2) ──
+//
+// Produces 5 paid-creator outreach packets — one per persona (or top
+// hypothesis if more personas than budget allows). Each packet is
+// copy-paste ready: archetype + audience fit + concept + format +
+// talking points + DM template + comp range + usage rights + guardrails.
+//
+// Anchors:
+//   - persona.lives_online_at → platform inference
+//   - persona.first_message → DM voice
+//   - positioning.primary.sentence → talking points
+//   - top entry rec → CTA wedge
+//
+// We DON'T return real creator handles. v1.3 verify-creators.mjs
+// established the rule that handles must be human-verified to avoid
+// hallucinated accounts. Pass 14 outputs the ARCHETYPE we'd hire and
+// the BRIEF we'd hand them — the human sourcer matches to a real handle.
+export async function generateCreatorBriefs(apiKey, projectContext, positioning, personas, recommendations) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}\nVoice: ${projectContext.brand_voice}` : "";
+  const pos = positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"` : "";
+  const personaList = (personas || []).slice(0, 5).map(p => `- ${p.name} (${p.archetype}) · lives at: ${p.lives_online_at || "?"} · trigger: ${p.trigger_moment || "?"} · first message: "${p.first_message || ""}"`).join("\n");
+  const topRec = (recommendations || [])[0];
+  const recLine = topRec ? `Top entry wedge: ${topRec.target_job} (${topRec.strategy}) · first move: ${topRec.first_move}` : "";
+
+  const data = await callClaude(apiKey,
+    `You are a paid-influencer producer briefing 5 creators. Produce 5 outreach packets — one per persona — each anchoring a different creator archetype to the persona's online habitat. We do NOT have real creator handles yet; output the archetype + sourcing criteria so a human sourcer can match a real account.
+
+Brand voice rules: sentence case, no exclamation points, no em-dashes, slow urgency.
+
+Each packet:
+- packet_id (CR-01 .. CR-05)
+- target_persona_name (one of the personas)
+- creator_archetype (3-6 word descriptor: e.g. "Soft-life Black wellness creator 10k-100k", "Sleep journalist with newsletter 20k+")
+- platform (TikTok / IG / Substack / YouTube / Podcast)
+- audience_fit (1-2 sentences on the overlap between the creator's audience and the persona)
+- sourcing_criteria (array of 4-6 specific filter rules a sourcer would apply: follower band, content vertical, posting cadence, audience demographics, brand-safety notes)
+- content_concept (2-3 sentences describing what we'd ask them to make)
+- deliverables (array of concrete deliverable lines: e.g. "1 hero 9:16 video 30-45s", "3 IG stories", "1 carousel of 5 slides", "1 newsletter mention 150 words")
+- talking_points (4-6 short bullets in brand voice — the creator picks 2-3 to weave in)
+- cta (the action the creator's audience should take, 3-7 words)
+- dos (3-5 short phrases — what we WANT them to do)
+- donts (3-5 short phrases — what we explicitly want avoided)
+- usage_rights (one sentence on paid-media rights ask)
+- comp_range (suggested USD range with rationale, e.g. "$1.5k-3k · gifted product + flat fee · 30-day usage rights")
+- outreach_dm (3-5 sentence DM template in brand voice, sentence case, includes a specific personalization hook in [brackets])
+- success_metric (1 line — what makes this a hit)
+
+Return ONLY JSON: {"creator_briefs": [...5 packets]}`,
+    `${ctx}\n\n${pos}\n${recLine}\n\nPersonas:\n${personaList}`,
+    { maxTokens: 7000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

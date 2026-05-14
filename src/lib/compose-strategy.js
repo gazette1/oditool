@@ -194,6 +194,38 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 .cadence-col ul{margin-left:0;list-style:none}
 .cadence-col li{padding:8px 0;border-bottom:1px solid rgba(215,183,170,.25);font-size:12.5px;line-height:1.55}
 .cadence-col li:last-child{border-bottom:0}
+.creator-card{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;padding:32px;margin-bottom:20px;position:relative}
+.creator-card .cr-tag{position:absolute;top:-12px;left:24px;background:var(--smile-yellow);color:var(--ink-primary);padding:4px 12px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
+.creator-card .cr-head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:baseline;margin-top:8px;margin-bottom:14px}
+.creator-card .cr-arch{font-family:"DM Serif Display",serif;font-size:22px;line-height:1.2}
+.creator-card .cr-arch .platform{display:block;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;color:var(--rosy-brown);margin-top:6px}
+.creator-card .cr-persona{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--rosy-brown);background:rgba(247,181,164,.15);padding:4px 10px;border-radius:4px;white-space:nowrap}
+.creator-card .cr-fit{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;color:var(--ink-secondary);margin-bottom:18px;line-height:1.6}
+.creator-card .cr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media (max-width:720px){.creator-card .cr-grid{grid-template-columns:1fr}}
+.creator-card .cr-block .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px}
+.creator-card .cr-block p,.creator-card .cr-block ul{font-size:12.5px;line-height:1.65}
+.creator-card .cr-block ul{margin-left:0;list-style:none}
+.creator-card .cr-block li{padding:3px 0;border-bottom:1px solid rgba(215,183,170,.2)}
+.creator-card .cr-block li:last-child{border-bottom:0}
+.creator-card .cr-concept{padding:16px 20px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-radius:10px;margin-bottom:18px}
+.creator-card .cr-concept .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px}
+.creator-card .cr-concept p{font-size:13.5px;line-height:1.65}
+.creator-card .cr-deliv{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.creator-card .cr-deliv .chip{font-family:"IBM Plex Mono",monospace;font-size:10px;background:var(--bg-warm);color:var(--ink-secondary);padding:5px 10px;border-radius:4px;border:1px solid rgba(215,183,170,.3)}
+.creator-card .cr-dosdont{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media (max-width:720px){.creator-card .cr-dosdont{grid-template-columns:1fr}}
+.creator-card .cr-do,.creator-card .cr-dont{padding:12px 14px;border-radius:8px}
+.creator-card .cr-do{background:rgba(34,197,94,.06);border-left:3px solid #22c55e}
+.creator-card .cr-dont{background:rgba(239,68,68,.06);border-left:3px solid #ef4444}
+.creator-card .cr-do .lbl{color:#15803d}
+.creator-card .cr-dont .lbl{color:#991b1b}
+.creator-card .cr-dm{padding:18px 22px;background:var(--bg-warm);border-left:3px solid var(--siraj-salmon);border-radius:0 8px 8px 0;font-family:"Cormorant Garamond",serif;font-size:14px;line-height:1.7;color:var(--ink-primary);white-space:pre-line;margin-bottom:14px}
+.creator-card .cr-dm .lbl{display:block;font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);margin-bottom:8px}
+.creator-card .cr-foot{padding-top:14px;border-top:1px solid rgba(215,183,170,.3);display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media (max-width:720px){.creator-card .cr-foot{grid-template-columns:1fr}}
+.creator-card .cr-foot .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);margin-bottom:4px}
+.creator-card .cr-foot .val{font-size:11.5px;line-height:1.5}
 footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(215,183,170,.4);text-align:center}
 .footer-meta{font-size:11px;color:var(--ink-muted);letter-spacing:0.18em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
 `;
@@ -206,7 +238,7 @@ function renderCover(p, project_name) {
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.6</span>
+      <span class="doc-num">Phase 1 Strategy · Engine v1.6.2</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -232,7 +264,7 @@ function renderPositioning(p) {
   const alts = p.positioning.alternatives || [];
   return `<section class="section" id="position">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The single sentence<br/>to claim.</h2>
     <div class="position-primary">
       <span class="tag">Primary</span>
@@ -251,7 +283,7 @@ function renderEvidence(p) {
     .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
   return `<section class="section" id="evidence">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The outcomes<br/>behind the numbers.</h2>
     <div class="ev-table">
       <div class="ev-row head"><div>Job</div><div>Outcome (Ulwick format)</div><div>Importance</div><div>Satisfaction</div><div>Opp score</div></div>
@@ -266,7 +298,7 @@ function renderValueProp(p) {
   if (!rows.length) return "";
   return `<section class="section" id="vp">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Brand vs the named<br/>incumbents.</h2>
     <div class="vp-table">
       <div class="vp-row head"><div>Brand</div><div>Stated value prop</div><div>Prices for</div><div>Leaves unserved</div><div>Where brand wins</div></div>
@@ -280,7 +312,7 @@ function renderPersonas(p) {
   if (!(p.personas || []).length) return "";
   return `<section class="section" id="personas">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.personas.length} buyers.<br/>Each at a hinge.</h2>
     ${p.personas.map((per, i) => `<div class="persona">
       <div class="persona-avatar" style="background:linear-gradient(135deg,var(--pillow-pink),var(--siraj-salmon))">${esc((per.name || "?")[0])}</div>
@@ -307,7 +339,7 @@ function renderSwipe(p) {
   if (!(p.swipeFile || []).length) return "";
   return `<section class="section" id="swipe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => `<div class="swipe-card"><div class="ad-mock"><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`).join("")}
@@ -320,7 +352,7 @@ function renderScripts(p) {
   if (!(p.scripts || []).length) return "";
   return `<section class="section" id="scripts">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.scripts.length} shot-by-shot scripts.</h2>
     ${p.scripts.map(s => `<div class="script">
       <div class="script-header">
@@ -342,7 +374,7 @@ function renderEmails(p) {
   if (!(p.emailFlows?.flows || []).length) return "";
   return `<section class="section" id="email">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.emailFlows.flows.length} flows.</h2>
     ${p.emailFlows.flows.map(f => `<div class="email-flow">
       <div class="email-flow-head"><div class="email-flow-name">${esc(f.name || "")}</div><div class="email-flow-trigger">${esc(f.trigger || "")}</div></div>
@@ -358,7 +390,7 @@ function renderEntryWedge(p) {
   const top = p.recommendations.slice(0, 3);
   return `<section class="section" id="wedge">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where to start.</h2>
     ${top.map((r, i) => `<div class="position-alt"><div class="alt-tag">Rank ${r.rank || i+1} · ${esc(r.strategy || "")}</div><div class="claim">${esc(r.target_job || "")}</div><div class="citation">Score <span class="score">${r.citation_score ?? ""}</span> · ${esc(r.estimated_market_signal || "")}/100</div><p class="rationale">${esc(r.rationale || "")}<br/><br/><strong>First move:</strong> ${esc(r.first_move || "")}<br/><strong>Belief shift:</strong> ${esc(r.belief_change_required || "")}<br/><strong>Risk:</strong> ${esc(r.risk || "")}</p></div>`).join("")}
   </div>
@@ -370,7 +402,7 @@ function renderChannels(p) {
   if (!ch.length) return "";
   return `<section class="section" id="channels">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where the money goes.</h2>
     <div class="channel-grid">
       ${ch.map(c => `<div class="channel-card">
@@ -391,7 +423,7 @@ function renderMatrix(p) {
   if (!rows.length) return "";
   return `<section class="section" id="matrix">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Persona × channel grid.</h2>
     <div class="matrix-table">
       <div class="matrix-row head"><div>Persona</div><div>Channel</div><div>Interests / seeds / exclusions</div><div>Creative angle</div><div>Share</div></div>
@@ -416,7 +448,7 @@ function renderLanding(p) {
   if (!vars.length) return "";
   return `<section class="section" id="landing">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${vars.length} landing pages, one per persona.</h2>
     ${vars.map(v => `<div class="landing-variant">
       <div class="lp-head">
@@ -445,7 +477,7 @@ function renderRollout(p) {
   const kills = p.rollout?.kill_criteria || [];
   return `<section class="section" id="rollout">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">90 days, three gates.</h2>
     ${phases.map((ph, i) => `<div class="phase-card">
       <span class="ph-tag">Phase ${i+1}</span>
@@ -472,13 +504,65 @@ function renderRollout(p) {
 </section>`;
 }
 
+function renderCreators(p) {
+  const briefs = p.creators?.creator_briefs || [];
+  if (!briefs.length) return "";
+  return `<section class="section" id="creators">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 15</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">${briefs.length} paid-creator packets.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">Archetypes + sourcing criteria, not handles. A human sourcer matches each to a verified account before outreach.</p>
+    ${briefs.map(b => `<div class="creator-card">
+      <span class="cr-tag">${esc(b.packet_id || "")}</span>
+      <div class="cr-head">
+        <div class="cr-arch">${esc(b.creator_archetype || "")}<span class="platform">${esc(b.platform || "")}</span></div>
+        <div class="cr-persona">for ${esc(b.target_persona_name || "")}</div>
+      </div>
+      <p class="cr-fit">${esc(b.audience_fit || "")}</p>
+      <div class="cr-concept">
+        <div class="lbl">Content concept</div>
+        <p>${esc(b.content_concept || "")}</p>
+      </div>
+      ${(b.deliverables || []).length ? `<div class="cr-deliv">${(b.deliverables || []).map(d => `<span class="chip">${esc(d)}</span>`).join("")}</div>` : ""}
+      <div class="cr-grid">
+        <div class="cr-block">
+          <div class="lbl">Sourcing criteria</div>
+          <ul>${(b.sourcing_criteria || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
+        </div>
+        <div class="cr-block">
+          <div class="lbl">Talking points</div>
+          <ul>${(b.talking_points || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="cr-dosdont">
+        <div class="cr-do">
+          <div class="lbl">Do</div>
+          <ul>${(b.dos || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
+        </div>
+        <div class="cr-dont">
+          <div class="lbl">Don't</div>
+          <ul>${(b.donts || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      ${b.outreach_dm ? `<div class="cr-dm"><span class="lbl">Outreach DM template</span>${esc(b.outreach_dm)}</div>` : ""}
+      <div class="cr-foot">
+        <div><div class="lbl">CTA</div><div class="val">${esc(b.cta || "")}</div></div>
+        <div><div class="lbl">Comp range</div><div class="val">${esc(b.comp_range || "")}</div></div>
+        <div><div class="lbl">Usage rights</div><div class="val">${esc(b.usage_rights || "")}</div></div>
+      </div>
+      ${b.success_metric ? `<p style="margin-top:12px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--ink-secondary)">Success: ${esc(b.success_metric)}</p>` : ""}
+    </div>`).join("")}
+  </div>
+</section>`;
+}
+
 function renderMethodology(p) {
   const pc = p.project_context || {};
   return `<section class="section" id="method">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 13 · Methodology</span><span class="section-number">13 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 14 · Methodology</span><span class="section-number">14 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6 · 13 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases.</p>
+    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.2 · 14 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
     <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
     ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#B85C5C">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
@@ -489,7 +573,7 @@ function renderMethodology(p) {
 function renderColophon(p) {
   return `<section class="section" id="colophon">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 14 · Colophon</span><span class="section-number">14 / 14</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 15 · Colophon</span><span class="section-number">15 / 15</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
@@ -516,7 +600,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
-      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#method">Method</a>
+      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -534,9 +618,10 @@ ${renderChannels(payload)}
 ${renderMatrix(payload)}
 ${renderLanding(payload)}
 ${renderRollout(payload)}
+${renderCreators(payload)}
 ${renderMethodology(payload)}
 ${renderColophon(payload)}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6 · Mode 1 Earth</p></div></footer>
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.2 · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }
