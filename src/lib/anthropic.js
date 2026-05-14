@@ -558,6 +558,101 @@ Return ONLY JSON: {"flows": [{"name": "...", "trigger": "...", "description": "1
   return extractJSON(data);
 }
 
+// ── PASS 11: Channel Plan + Targeting Matrix (Engine v1.6) ──
+export async function generateChannelPlan(apiKey, projectContext, positioning, personas) {
+  const ctx = projectContext ? `Sector: ${projectContext.sector}\nAudience: ${projectContext.audience}\nBrand voice: ${projectContext.brand_voice}` : "";
+  const pos = positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"` : "";
+  const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype}) — lives at: ${p.lives_online_at || "?"}`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `You are a paid + organic media strategist. Produce a channel plan and a targeting matrix for the launch.
+
+Return ONLY JSON:
+{
+  "channels": [
+    { "channel": "Meta Ads (FB+IG)", "role": "Prospecting · feed + reels", "budget_pct": 40, "primary_kpi": "CPA under $X", "first_test": "1-sentence first test to run", "creative_format": "Meta 4:5 + 9:16", "audience_hook": "1-sentence targeting note" },
+    ... (8-10 channels — include Meta, TikTok Ads, TikTok organic, IG organic, Klaviyo email, Google branded search, Pinterest, influencer/UGC, PR/earned, retargeting)
+  ],
+  "targeting_matrix": [
+    { "persona_name": "...", "channel": "Meta Ads", "interest_targets": ["3-5 interest layers"], "lookalike_seeds": ["seed1","seed2"], "exclusions": ["exclude1"], "creative_angle": "1 sentence", "spend_share_pct": 25 },
+    ... (one row per persona × top-3 channel pairing — 9-12 rows total)
+  ]
+}`,
+    `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
+    { maxTokens: 6000 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 12: Landing Page Variants (Engine v1.6) ──
+export async function generateLandingVariants(apiKey, projectContext, positioning, personas) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nVoice: ${projectContext.brand_voice}\nKey facts: ${(projectContext.key_facts || []).slice(0,5).join("; ")}` : "";
+  const pos = positioning?.primary?.sentence ? `Primary positioning: "${positioning.primary.sentence}"` : "";
+  const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype}): ${p.one_liner}`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `Produce 3 landing-page variants — one per top persona. Each variant is a conversion page tuned to that persona's awareness level and trigger.
+
+Each variant:
+- variant_id (LP-01..LP-03)
+- persona_name
+- url_slug (3-4 lowercase words separated by hyphens)
+- hero_headline (1-2 lines, brand voice, no exclamation points, no em-dashes)
+- hero_sub (1 sentence)
+- hero_cta (3-5 words)
+- proof_strip (array of 3-5 short proof phrases — review stars, press mentions, founder credentials)
+- sections: array of 5-6 {label: "Problem"/"Solution"/"How it works"/"Proof"/"Compare"/"FAQ"/"Founder note"/"Final CTA", headline: "...", body: "2-3 sentence section body"}
+- visual_direction (1-2 sentences for the art director)
+- primary_kpi (1 line, e.g. "Conversion rate >2.4% from cold Meta traffic")
+
+Return ONLY JSON: {"variants": [{...}, {...}, {...}]}`,
+    `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
+    { maxTokens: 7000 }
+  );
+  return extractJSON(data);
+}
+
+// ── PASS 13: 90-Day Rollout (Engine v1.6) ──
+export async function generateRollout(apiKey, projectContext, positioning, recommendations) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}` : "";
+  const pos = positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"` : "";
+  const topRecs = (recommendations || []).slice(0, 3).map(r => `- Rank ${r.rank}: ${r.target_job} (${r.strategy}) — first move: ${r.first_move}`).join("\n");
+
+  const data = await callClaude(apiKey,
+    `Produce a 90-day rollout plan in 3 phases (Weeks 1-4 / Weeks 5-8 / Weeks 9-12). Each phase has a clear theme, objectives, deliverables, channels live, budget allocation, KPIs, and gating decision to advance.
+
+Return ONLY JSON:
+{
+  "phases": [
+    {
+      "phase": "Phase 1 · Weeks 1-4",
+      "theme": "5-8 word theme name",
+      "objective": "1 sentence",
+      "deliverables": ["6-8 concrete shippable items"],
+      "channels_live": ["which channels run this phase"],
+      "budget_pct": 25,
+      "kpis": [{"metric":"CAC","target":"under $X"},{"metric":"CTR","target":">1.2%"},{"metric":"Add-to-cart","target":">3%"}],
+      "gate_to_next": "1 sentence: what must be true to advance"
+    },
+    { phase 2 ... },
+    { phase 3 ... }
+  ],
+  "weekly_cadence": [
+    "1-line weekly ritual",
+    "1-line weekly ritual",
+    "..." (4-6 rituals — creative reviews, performance readouts, etc.)
+  ],
+  "kill_criteria": [
+    "1-line kill condition",
+    "..." (3-5 conditions — e.g. 'Pause Meta if CAC > 2× LTV after 14 days')
+  ]
+}`,
+    `${ctx}\n\n${pos}\n\nTop entry recommendations:\n${topRecs}`,
+    { maxTokens: 6000 }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

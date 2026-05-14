@@ -1,6 +1,6 @@
 // src/lib/compose-strategy.js
 //
-// Engine v1.5 — Strategy Doc Composer.
+// Engine v1.6 — Strategy Doc Composer.
 // Takes the full set of pass outputs + Pass 0 context and returns a
 // self-contained HTML document matching the v5 strategy-doc template.
 //
@@ -135,6 +135,65 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 .email-card .email-preview{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary);margin-bottom:14px}
 .email-card .email-body{font-size:13px;line-height:1.75;white-space:pre-line}
 .email-card .email-cta{display:inline-block;margin-top:14px;padding:8px 16px;background:var(--ink-primary);color:var(--bg-base);font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
+.channel-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px}
+@media (max-width:720px){.channel-grid{grid-template-columns:1fr}}
+.channel-card{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:10px;padding:20px 22px}
+.channel-card .ch-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:12px}
+.channel-card .ch-name{font-family:"DM Serif Display",serif;font-size:18px;line-height:1.2}
+.channel-card .ch-budget{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--rosy-brown);background:var(--bg-card);padding:3px 8px;border-radius:4px;white-space:nowrap}
+.channel-card .ch-role{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary);margin-bottom:12px}
+.channel-card .ch-row{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:6px 0;border-top:1px solid rgba(215,183,170,.2);font-size:12px;line-height:1.5}
+.channel-card .ch-row .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);padding-top:2px}
+.matrix-table{margin-top:24px;background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;overflow:hidden}
+.matrix-row{display:grid;grid-template-columns:120px 110px 1.4fr 1fr 90px;gap:14px;padding:16px 22px;border-bottom:1px solid rgba(215,183,170,.25);font-size:12px;line-height:1.5;align-items:start}
+.matrix-row.head{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
+.matrix-row .pname{font-family:"DM Serif Display",serif;font-size:14px;line-height:1.2}
+.matrix-row .cname{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.12em;color:var(--rosy-brown)}
+.matrix-row .share{font-family:"DM Serif Display",serif;font-size:18px;color:var(--rosy-brown);text-align:right}
+.matrix-row .tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.matrix-row .tags .tag{font-family:"IBM Plex Mono",monospace;font-size:9px;background:var(--bg-warm);padding:2px 6px;border-radius:3px;color:var(--ink-secondary)}
+@media (max-width:720px){.matrix-row,.matrix-row.head{grid-template-columns:1fr;gap:6px}.matrix-row.head{display:none}}
+.landing-variant{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;padding:32px;margin-bottom:20px}
+.landing-variant .lp-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.landing-variant .lp-id{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;color:var(--rosy-brown)}
+.landing-variant .lp-slug{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--ink-muted)}
+.landing-variant .lp-hero{padding:24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-radius:10px;margin-bottom:16px}
+.landing-variant .lp-hero h3{font-family:"DM Serif Display",serif;font-size:26px;line-height:1.15;margin-bottom:8px}
+.landing-variant .lp-hero p{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--ink-secondary);margin-bottom:14px}
+.landing-variant .lp-cta-pill{display:inline-block;padding:8px 16px;background:var(--ink-primary);color:var(--bg-base);font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
+.landing-variant .lp-proof{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.landing-variant .lp-proof span{font-family:"IBM Plex Mono",monospace;font-size:9px;background:rgba(247,181,164,.15);color:var(--ink-secondary);padding:4px 10px;border-radius:3px;letter-spacing:0.08em}
+.landing-variant .lp-section{padding:12px 0;border-top:1px solid rgba(215,183,170,.25)}
+.landing-variant .lp-section .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
+.landing-variant .lp-section h4{font-family:"DM Serif Display",serif;font-size:17px;margin-bottom:6px;line-height:1.25}
+.landing-variant .lp-section p{font-size:12.5px;line-height:1.6}
+.landing-variant .lp-foot{margin-top:18px;padding-top:14px;border-top:1px solid rgba(215,183,170,.3);display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:11px}
+.landing-variant .lp-foot .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);margin-bottom:3px}
+.phase-card{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;padding:32px;margin-bottom:20px;position:relative}
+.phase-card .ph-tag{position:absolute;top:-12px;left:24px;background:var(--siraj-salmon);color:var(--ink-primary);padding:4px 12px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
+.phase-card .ph-head{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px;margin-top:8px}
+.phase-card .ph-theme{font-family:"DM Serif Display",serif;font-size:24px;line-height:1.2}
+.phase-card .ph-budget{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--rosy-brown);background:var(--bg-card);padding:4px 10px;border-radius:4px}
+.phase-card .ph-obj{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--ink-secondary);margin-bottom:18px}
+.phase-card .ph-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:16px}
+@media (max-width:720px){.phase-card .ph-grid{grid-template-columns:1fr}}
+.phase-card .ph-grid .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:6px}
+.phase-card .ph-grid ul{margin-left:0;list-style:none;font-size:12.5px;line-height:1.65}
+.phase-card .ph-grid li{padding:2px 0}
+.phase-card .ph-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+@media (max-width:720px){.phase-card .ph-kpis{grid-template-columns:1fr}}
+.phase-card .ph-kpi{background:var(--bg-warm);border-radius:6px;padding:10px 14px}
+.phase-card .ph-kpi .m{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
+.phase-card .ph-kpi .t{font-family:"DM Serif Display",serif;font-size:17px;margin-top:4px}
+.phase-card .ph-gate{padding:12px 16px;background:rgba(247,181,164,.12);border-left:3px solid var(--siraj-salmon);border-radius:0 6px 6px 0;font-size:12.5px;line-height:1.55}
+.phase-card .ph-gate strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);display:block;margin-bottom:4px}
+.cadence-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px}
+@media (max-width:720px){.cadence-grid{grid-template-columns:1fr}}
+.cadence-col{background:var(--bg-base);border:1px solid rgba(215,183,170,.3);border-radius:12px;padding:24px}
+.cadence-col .h{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--rosy-brown);margin-bottom:14px}
+.cadence-col ul{margin-left:0;list-style:none}
+.cadence-col li{padding:8px 0;border-bottom:1px solid rgba(215,183,170,.25);font-size:12.5px;line-height:1.55}
+.cadence-col li:last-child{border-bottom:0}
 footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(215,183,170,.4);text-align:center}
 .footer-meta{font-size:11px;color:var(--ink-muted);letter-spacing:0.18em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
 `;
@@ -147,7 +206,7 @@ function renderCover(p, project_name) {
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.5</span>
+      <span class="doc-num">Phase 1 Strategy · Engine v1.6</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -173,7 +232,7 @@ function renderPositioning(p) {
   const alts = p.positioning.alternatives || [];
   return `<section class="section" id="position">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The single sentence<br/>to claim.</h2>
     <div class="position-primary">
       <span class="tag">Primary</span>
@@ -192,7 +251,7 @@ function renderEvidence(p) {
     .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
   return `<section class="section" id="evidence">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The outcomes<br/>behind the numbers.</h2>
     <div class="ev-table">
       <div class="ev-row head"><div>Job</div><div>Outcome (Ulwick format)</div><div>Importance</div><div>Satisfaction</div><div>Opp score</div></div>
@@ -207,7 +266,7 @@ function renderValueProp(p) {
   if (!rows.length) return "";
   return `<section class="section" id="vp">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Brand vs the named<br/>incumbents.</h2>
     <div class="vp-table">
       <div class="vp-row head"><div>Brand</div><div>Stated value prop</div><div>Prices for</div><div>Leaves unserved</div><div>Where brand wins</div></div>
@@ -221,7 +280,7 @@ function renderPersonas(p) {
   if (!(p.personas || []).length) return "";
   return `<section class="section" id="personas">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.personas.length} buyers.<br/>Each at a hinge.</h2>
     ${p.personas.map((per, i) => `<div class="persona">
       <div class="persona-avatar" style="background:linear-gradient(135deg,var(--pillow-pink),var(--siraj-salmon))">${esc((per.name || "?")[0])}</div>
@@ -248,7 +307,7 @@ function renderSwipe(p) {
   if (!(p.swipeFile || []).length) return "";
   return `<section class="section" id="swipe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => `<div class="swipe-card"><div class="ad-mock"><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`).join("")}
@@ -261,7 +320,7 @@ function renderScripts(p) {
   if (!(p.scripts || []).length) return "";
   return `<section class="section" id="scripts">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.scripts.length} shot-by-shot scripts.</h2>
     ${p.scripts.map(s => `<div class="script">
       <div class="script-header">
@@ -283,7 +342,7 @@ function renderEmails(p) {
   if (!(p.emailFlows?.flows || []).length) return "";
   return `<section class="section" id="email">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.emailFlows.flows.length} flows.</h2>
     ${p.emailFlows.flows.map(f => `<div class="email-flow">
       <div class="email-flow-head"><div class="email-flow-name">${esc(f.name || "")}</div><div class="email-flow-trigger">${esc(f.trigger || "")}</div></div>
@@ -299,9 +358,116 @@ function renderEntryWedge(p) {
   const top = p.recommendations.slice(0, 3);
   return `<section class="section" id="wedge">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where to start.</h2>
     ${top.map((r, i) => `<div class="position-alt"><div class="alt-tag">Rank ${r.rank || i+1} · ${esc(r.strategy || "")}</div><div class="claim">${esc(r.target_job || "")}</div><div class="citation">Score <span class="score">${r.citation_score ?? ""}</span> · ${esc(r.estimated_market_signal || "")}/100</div><p class="rationale">${esc(r.rationale || "")}<br/><br/><strong>First move:</strong> ${esc(r.first_move || "")}<br/><strong>Belief shift:</strong> ${esc(r.belief_change_required || "")}<br/><strong>Risk:</strong> ${esc(r.risk || "")}</p></div>`).join("")}
+  </div>
+</section>`;
+}
+
+function renderChannels(p) {
+  const ch = p.channelPlan?.channels || [];
+  if (!ch.length) return "";
+  return `<section class="section" id="channels">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 14</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">Where the money goes.</h2>
+    <div class="channel-grid">
+      ${ch.map(c => `<div class="channel-card">
+        <div class="ch-head"><div class="ch-name">${esc(c.channel || "")}</div><div class="ch-budget">${c.budget_pct ?? 0}% of budget</div></div>
+        <div class="ch-role">${esc(c.role || "")}</div>
+        <div class="ch-row"><div class="lbl">KPI</div><div>${esc(c.primary_kpi || "")}</div></div>
+        <div class="ch-row"><div class="lbl">First test</div><div>${esc(c.first_test || "")}</div></div>
+        <div class="ch-row"><div class="lbl">Format</div><div>${esc(c.creative_format || "")}</div></div>
+        <div class="ch-row"><div class="lbl">Audience</div><div>${esc(c.audience_hook || "")}</div></div>
+      </div>`).join("")}
+    </div>
+  </div>
+</section>`;
+}
+
+function renderMatrix(p) {
+  const rows = p.channelPlan?.targeting_matrix || [];
+  if (!rows.length) return "";
+  return `<section class="section" id="matrix">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 14</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">Persona × channel grid.</h2>
+    <div class="matrix-table">
+      <div class="matrix-row head"><div>Persona</div><div>Channel</div><div>Interests / seeds / exclusions</div><div>Creative angle</div><div>Share</div></div>
+      ${rows.map(r => `<div class="matrix-row">
+        <div class="pname">${esc(r.persona_name || "")}</div>
+        <div class="cname">${esc(r.channel || "")}</div>
+        <div>
+          ${(r.interest_targets || []).length ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-muted)">Interests</strong><div class="tags">${(r.interest_targets || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div></div>` : ""}
+          ${(r.lookalike_seeds || []).length ? `<div style="margin-top:6px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-muted)">Seeds</strong><div class="tags">${(r.lookalike_seeds || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div></div>` : ""}
+          ${(r.exclusions || []).length ? `<div style="margin-top:6px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-muted)">Exclude</strong><div class="tags">${(r.exclusions || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div></div>` : ""}
+        </div>
+        <div>${esc(r.creative_angle || "")}</div>
+        <div class="share">${r.spend_share_pct ?? 0}%</div>
+      </div>`).join("")}
+    </div>
+  </div>
+</section>`;
+}
+
+function renderLanding(p) {
+  const vars = p.landing?.variants || [];
+  if (!vars.length) return "";
+  return `<section class="section" id="landing">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 14</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">${vars.length} landing pages, one per persona.</h2>
+    ${vars.map(v => `<div class="landing-variant">
+      <div class="lp-head">
+        <div><div class="lp-id">${esc(v.variant_id || "")} · ${esc(v.persona_name || "")}</div><div class="lp-slug">/${esc(v.url_slug || "")}</div></div>
+      </div>
+      <div class="lp-hero">
+        <h3>${esc(v.hero_headline || "")}</h3>
+        <p>${esc(v.hero_sub || "")}</p>
+        <span class="lp-cta-pill">${esc(v.hero_cta || "")}</span>
+      </div>
+      <div class="lp-proof">${(v.proof_strip || []).map(pr => `<span>${esc(pr)}</span>`).join("")}</div>
+      ${(v.sections || []).map(s => `<div class="lp-section"><div class="lbl">${esc(s.label || "")}</div><h4>${esc(s.headline || "")}</h4><p>${esc(s.body || "")}</p></div>`).join("")}
+      <div class="lp-foot">
+        <div><div class="lbl">Visual direction</div><div>${esc(v.visual_direction || "")}</div></div>
+        <div><div class="lbl">Primary KPI</div><div>${esc(v.primary_kpi || "")}</div></div>
+      </div>
+    </div>`).join("")}
+  </div>
+</section>`;
+}
+
+function renderRollout(p) {
+  const phases = p.rollout?.phases || [];
+  if (!phases.length) return "";
+  const cadence = p.rollout?.weekly_cadence || [];
+  const kills = p.rollout?.kill_criteria || [];
+  return `<section class="section" id="rollout">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 14</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">90 days, three gates.</h2>
+    ${phases.map((ph, i) => `<div class="phase-card">
+      <span class="ph-tag">Phase ${i+1}</span>
+      <div class="ph-head"><div class="ph-theme">${esc(ph.theme || ph.phase || "")}</div><div class="ph-budget">${ph.budget_pct ?? 0}% of budget</div></div>
+      <p class="ph-obj">${esc(ph.objective || "")}</p>
+      <div class="ph-grid">
+        <div>
+          <div class="lbl">Deliverables</div>
+          <ul>${(ph.deliverables || []).map(d => `<li>· ${esc(d)}</li>`).join("")}</ul>
+        </div>
+        <div>
+          <div class="lbl">Channels live</div>
+          <ul>${(ph.channels_live || []).map(c => `<li>· ${esc(c)}</li>`).join("")}</ul>
+        </div>
+      </div>
+      <div class="ph-kpis">${(ph.kpis || []).map(k => `<div class="ph-kpi"><div class="m">${esc(k.metric || "")}</div><div class="t">${esc(k.target || "")}</div></div>`).join("")}</div>
+      <div class="ph-gate"><strong>Gate to next phase</strong>${esc(ph.gate_to_next || "")}</div>
+    </div>`).join("")}
+    ${(cadence.length || kills.length) ? `<div class="cadence-grid">
+      ${cadence.length ? `<div class="cadence-col"><div class="h">Weekly cadence</div><ul>${cadence.map(c => `<li>· ${esc(c)}</li>`).join("")}</ul></div>` : ""}
+      ${kills.length ? `<div class="cadence-col"><div class="h">Kill criteria</div><ul>${kills.map(c => `<li>· ${esc(c)}</li>`).join("")}</ul></div>` : ""}
+    </div>` : ""}
   </div>
 </section>`;
 }
@@ -310,12 +476,23 @@ function renderMethodology(p) {
   const pc = p.project_context || {};
   return `<section class="section" id="method">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 10 · Methodology</span><span class="section-number">10 / 10</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 13 · Methodology</span><span class="section-number">13 / 14</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.5 · 10 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows.</p>
+    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6 · 13 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
     <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
     ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#B85C5C">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
+  </div>
+</section>`;
+}
+
+function renderColophon(p) {
+  return `<section class="section" id="colophon">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 14 · Colophon</span><span class="section-number">14 / 14</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
   </div>
 </section>`;
 }
@@ -339,7 +516,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
-      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#method">Method</a>
+      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -353,8 +530,13 @@ ${renderSwipe(payload)}
 ${renderScripts(payload)}
 ${renderEmails(payload)}
 ${renderEntryWedge(payload)}
+${renderChannels(payload)}
+${renderMatrix(payload)}
+${renderLanding(payload)}
+${renderRollout(payload)}
 ${renderMethodology(payload)}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.5 · Mode 1 Earth</p></div></footer>
+${renderColophon(payload)}
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6 · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }

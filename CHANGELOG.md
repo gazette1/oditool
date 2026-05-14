@@ -6,6 +6,75 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.0] — 2026-05-13
+
+Strategy Doc parity (Phase B). Three more Anthropic passes plus four new
+renderers extend the doc from 10 sections to 14, closing the gap toward
+the v5 reference at `siraj-strategy.vercel.app`. The output now covers
+channel allocation, persona × channel targeting, conversion-ready
+landing pages, and a gated 90-day rollout — the operational layer that
+sits under the positioning + creative.
+
+### Added — 3 new passes in `src/lib/anthropic.js`
+
+- **Pass 11 `generateChannelPlan`** — 8–10 paid + organic channels with
+  budget %, role, KPI, first test, format, audience hook; plus a
+  9–12-row targeting matrix (persona × channel) with interest layers,
+  lookalike seeds, exclusions, creative angle, spend share.
+- **Pass 12 `generateLandingVariants`** — 3 persona-specific landing
+  pages. Hero headline + sub + CTA, proof strip, 5–6 sections (Problem
+  / Solution / How it works / Proof / Compare / FAQ / Founder note /
+  Final CTA), visual direction, primary KPI.
+- **Pass 13 `generateRollout`** — 90-day rollout in 3 gated phases
+  (Weeks 1-4 / 5-8 / 9-12). Each phase: theme, objective, deliverables,
+  channels live, budget %, KPI targets, gate-to-next. Plus weekly
+  cadence rituals + kill criteria.
+
+### Added — 4 new renderers in `src/lib/compose-strategy.js`
+
+- `renderChannels` (§09) · 2-column channel grid with budget pills, KPI,
+  first test, format, audience hook per channel.
+- `renderMatrix` (§10) · persona × channel table with interest / seed /
+  exclusion tags plus creative angle and spend share.
+- `renderLanding` (§11) · 3 landing variants rendered as mock hero
+  blocks with proof strip, sectioned copy, visual-direction footer.
+- `renderRollout` (§12) · 3 phase cards with deliverable / channel
+  grids, KPI tiles, gate quote-blocks; plus cadence + kill-criteria
+  columns.
+- `renderColophon` (§14) · brand-voice closing on methodology framing.
+
+### Changed
+
+- Doc now totals 14 sections (was 10). Existing renderers (§01–§08)
+  renumbered to / 14. Nav extended with Channels / Matrix / Landing /
+  Rollout links.
+- Methodology renderer now reports v1.6 plus counts for the 3 new
+  artifact families.
+- App.jsx `generateStrategyDoc` handler runs Pass 11 → 12 → 13 after
+  Pass 10. Each is wrapped in try/catch so a single failure can't
+  block the download. Progress phase labels updated.
+- Cover doc-num tag updated to "Phase 1 Strategy · Engine v1.6".
+
+### Bundle
+
+Main bundle: 273 KB (gzip 82.5 KB) — up from 254 KB / 79 KB for v1.5.
+~19 KB cost for 3 passes + 4 renderers + section CSS.
+
+### Pending for v1.7
+
+- Wire ad-intel CLI stages (Stage A/B/C/D) into the React run so the
+  doc picks up real competitive evidence rather than relying on Pass 5
+  alone.
+- Add Pass 14 `generateCreatorBriefs` for paid-creator outreach + Pass
+  15 `generateCompetitiveTeardown` to feed a §15-style competitive
+  matrix. Together these close the v5 21-section gap.
+- Optional: gpt-image-2 hook so the swipe-file renderer pulls real
+  imagery rather than gradient mocks.
+- Optional: Vercel deploy hook from the composer so "↓ Strategy Doc"
+  also returns a shareable URL.
+
+---
+
 ## [1.5.0] — 2026-05-13
 
 Strategy Doc parity (Phase A). Four new Anthropic passes plus an HTML
