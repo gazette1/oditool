@@ -1,0 +1,171 @@
+{
+  "aud_ba4b2d280bde": {
+    "id": "aud_ba4b2d280bde",
+    "created_at": "2026-05-13T23:57:21.698Z",
+    "event": "stage_a_start",
+    "data": {
+      "brand": "Siraj Beauty",
+      "project_id": "siraj_001"
+    },
+    "ts": "2026-05-13T23:57:21.676Z"
+  },
+  "aud_b740bcbcf9a8": {
+    "id": "aud_b740bcbcf9a8",
+    "created_at": "2026-05-13T23:58:21.451Z",
+    "event": "stage_a_complete",
+    "data": {
+      "brand": "Siraj Beauty",
+      "project_id": "siraj_001",
+      "count": 10
+    },
+    "ts": "2026-05-13T23:58:21.451Z"
+  },
+  "aud_943d2e48c679": {
+    "id": "aud_943d2e48c679",
+    "created_at": "2026-05-13T23:59:01.617Z",
+    "event": "stage_b_start",
+    "data": {
+      "project_id": "siraj_001",
+      "mode": "web_search_fallback"
+    },
+    "ts": "2026-05-13T23:59:01.614Z"
+  },
+  "aud_434aa2175713": {
+    "id": "aud_434aa2175713",
+    "created_at": "2026-05-14T00:03:07.066Z",
+    "event": "stage_b_complete",
+    "data": {
+      "project_id": "siraj_001",
+      "pages_scraped": 10,
+      "ads_total": 8
+    },
+    "ts": "2026-05-14T00:03:07.066Z"
+  },
+  "aud_82f999ec6fd6": {
+    "id": "aud_82f999ec6fd6",
+    "created_at": "2026-05-14T00:04:00.028Z",
+    "event": "stage_c_start",
+    "data": {
+      "project_id": "siraj_001",
+      "provider": "claude-sonnet-4"
+    },
+    "ts": "2026-05-14T00:04:00.025Z"
+  },
+  "aud_2d238df8d851": {
+    "id": "aud_2d238df8d851",
+    "created_at": "2026-05-14T00:04:08.816Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_42befb6a78ff",
+      "project_id": "siraj_001",
+      "score_total": 18
+    },
+    "ts": "2026-05-14T00:04:08.816Z"
+  },
+  "aud_92bf8d375bb7": {
+    "id": "aud_92bf8d375bb7",
+    "created_at": "2026-05-14T00:04:16.324Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_a4845f787f9c",
+      "project_id": "siraj_001",
+      "score_total": 27
+    },
+    "ts": "2026-05-14T00:04:16.324Z"
+  },
+  "aud_3b41cf177fbc": {
+    "id": "aud_3b41cf177fbc",
+    "created_at": "2026-05-14T00:04:24.686Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_e4b55485da8b",
+      "project_id": "siraj_001",
+      "score_total": 27
+    },
+    "ts": "2026-05-14T00:04:24.686Z"
+  },
+  "aud_aac10cf957fc": {
+    "id": "aud_aac10cf957fc",
+    "created_at": "2026-05-14T00:04:31.956Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_6dbeea6419e1",
+      "project_id": "siraj_001",
+      "score_total": 23
+    },
+    "ts": "2026-05-14T00:04:31.955Z"
+  },
+  "aud_e96045485043": {
+    "id": "aud_e96045485043",
+    "created_at": "2026-05-14T00:04:39.042Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_46170f30c3c2",
+      "project_id": "siraj_001",
+      "score_total": 28
+    },
+    "ts": "2026-05-14T00:04:39.042Z"
+  },
+  "aud_700bc30e1a3d": {
+    "id": "aud_700bc30e1a3d",
+    "created_at": "2026-05-14T00:04:46.740Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_913ce8cae8e1",
+      "project_id": "siraj_001",
+      "score_total": 28
+    },
+    "ts": "2026-05-14T00:04:46.740Z"
+  },
+  "aud_1cac8fd0e970": {
+    "id": "aud_1cac8fd0e970",
+    "created_at": "2026-05-14T00:04:53.679Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_0318a1fbdad5",
+      "project_id": "siraj_001",
+      "score_total": 32
+    },
+    "ts": "2026-05-14T00:04:53.679Z"
+  },
+  "aud_a7beba8228fc": {
+    "id": "aud_a7beba8228fc",
+    "created_at": "2026-05-14T00:04:59.938Z",
+    "event": "ad_evaluated",
+    "data": {
+      "ad_id": "swi_f6b34bb5922d",
+      "project_id": "siraj_001",
+      "score_total": 24
+    },
+    "ts": "2026-05-14T00:04:59.937Z"
+  },
+  "aud_062d801d2b07": {
+    "id": "aud_062d801d2b07",
+    "created_at": "2026-05-14T00:04:59.939Z",
+    "event": "stage_c_complete",
+    "data": {
+      "project_id": "siraj_001",
+      "scored": 8
+    },
+    "ts": "2026-05-14T00:04:59.938Z"
+  },
+  "aud_f0ac669f1bfc": {
+    "id": "aud_f0ac669f1bfc",
+    "created_at": "2026-05-14T00:06:02.302Z",
+    "event": "stage_d_start",
+    "data": {
+      "project_id": "siraj_001"
+    },
+    "ts": "2026-05-14T00:06:02.299Z"
+  },
+  "aud_6a2d286d4a32": {
+    "id": "aud_6a2d286d4a32",
+    "created_at": "2026-05-14T00:06:51.954Z",
+    "event": "stage_d_complete",
+    "data": {
+      "project_id": "siraj_001",
+      "briefs": 5
+    },
+    "ts": "2026-05-14T00:06:51.953Z"
+  }
+}

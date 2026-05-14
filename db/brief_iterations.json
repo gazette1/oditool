@@ -1,0 +1,192 @@
+{
+  "bri_98a03fa8f325": {
+    "id": "bri_98a03fa8f325",
+    "created_at": "2026-05-14T00:06:11.245Z",
+    "project_id": "siraj_001",
+    "creative_brief_id": "cre_a73ac0632c60",
+    "iteration_number": 1,
+    "edit_prompt": "Siraj's soft-life season has officially begun\n\nShop sleepwear that never pinches recovery scars or cuts into changing bodies. TENCEL Modal that stays cloud-soft wash after wash, with ultra-gentle bands that move with you. Made by a Black woman who knows these bodies deserve better.\n\nCTA: Shop the three-piece sets\n\nShot list:\n1. Close-up of ultra-wide, gentle elastic waistband being stretched gently by hands\n2. TENCEL Modal fabric flowing through fingers in slow motion\n3. Black woman in Petal set stretching arms overhead, fabric moving seamlessly\n4. Quick montage: washing machine, then same fabric being touched - still soft\n5. Side profile showing how waistband sits without cutting in\n6. Three colorways (Petal/Daisy/Oat) laid flat on bed\n7. Woman settling into bed, fabric draping naturally\n8. Product shot with 'TENCEL Modal' text overlay",
+    "brief_json": {
+      "angle_code": "deal_anchor",
+      "hook": "Siraj's soft-life season has officially begun",
+      "body": "Shop sleepwear that never pinches recovery scars or cuts into changing bodies. TENCEL Modal that stays cloud-soft wash after wash, with ultra-gentle bands that move with you. Made by a Black woman who knows these bodies deserve better.",
+      "cta": "Shop the three-piece sets",
+      "shot_list": [
+        "1. Close-up of ultra-wide, gentle elastic waistband being stretched gently by hands",
+        "2. TENCEL Modal fabric flowing through fingers in slow motion",
+        "3. Black woman in Petal set stretching arms overhead, fabric moving seamlessly",
+        "4. Quick montage: washing machine, then same fabric being touched - still soft",
+        "5. Side profile showing how waistband sits without cutting in",
+        "6. Three colorways (Petal/Daisy/Oat) laid flat on bed",
+        "7. Woman settling into bed, fabric draping naturally",
+        "8. Product shot with 'TENCEL Modal' text overlay"
+      ],
+      "belief_to_shift": "I have to choose between sleepwear that looks good and sleepwear that won't hurt my body or hold up over time",
+      "evidence_to_use": "TENCEL Modal fabric, founder Shantay's lived experience, ultra-gentle elastic bands",
+      "predicted_scores": {
+        "attention_capture": 8,
+        "emotional_valence": 8,
+        "memory_encoding": 7,
+        "brand_recall": 7,
+        "purchase_intent": 8
+      }
+    },
+    "shell_command": "# Higgsfield Soul-ID brief cre_a73ac0632c60\nhiggsfield generate \\\n  --preset \"soul-id-portrait\" \\\n  --format \"9:16\" \\\n  --duration 8 \\\n  --brand \"Siraj Beauty\" \\\n  --prompt-file briefs/cre_a73ac0632c60.txt",
+    "air_score": null,
+    "stepps_breakdown": null,
+    "verdict": null,
+    "status": "ready_to_render"
+  },
+  "bri_db464d694ae1": {
+    "id": "bri_db464d694ae1",
+    "created_at": "2026-05-14T00:06:20.906Z",
+    "project_id": "siraj_001",
+    "creative_brief_id": "cre_8bf2f13b04ff",
+    "iteration_number": 1,
+    "edit_prompt": "Soft life season has officially begun\n\nYou know that feeling when your body is still holding the day but your mind is ready to let go. That's where most sleepwear fails us. TENCEL Modal moves with your skin like it was always meant to be there. Three pieces that tell your nervous system the workday is over.\n\nCTA: Shop the transition\n\nShot list:\n1. Close-up of hands untying work blazer, camera follows movement down\n2. Quick cut to TENCEL Modal fabric flowing in slow motion against skin\n3. Wide shot of model transitioning from work clothes to Petal set in bedroom\n4. Extreme close-up of fabric texture against collarbone, showing drape\n5. Medium shot of model sitting on bed edge, shoulders visibly relaxing\n6. Close-up of hands smoothing fabric over thighs, emphasizing fit\n7. Final wide shot of model lying back, body language completely at ease\n8. Product flat lay of all three colorways with soft lighting",
+    "brief_json": {
+      "angle_code": "seasonal_anchor",
+      "hook": "Soft life season has officially begun",
+      "body": "You know that feeling when your body is still holding the day but your mind is ready to let go. That's where most sleepwear fails us. TENCEL Modal moves with your skin like it was always meant to be there. Three pieces that tell your nervous system the workday is over.",
+      "cta": "Shop the transition",
+      "shot_list": [
+        "1. Close-up of hands untying work blazer, camera follows movement down",
+        "2. Quick cut to TENCEL Modal fabric flowing in slow motion against skin",
+        "3. Wide shot of model transitioning from work clothes to Petal set in bedroom",
+        "4. Extreme close-up of fabric texture against collarbone, showing drape",
+        "5. Medium shot of model sitting on bed edge, shoulders visibly relaxing",
+        "6. Close-up of hands smoothing fabric over thighs, emphasizing fit",
+        "7. Final wide shot of model lying back, body language completely at ease",
+        "8. Product flat lay of all three colorways with soft lighting"
+      ],
+      "belief_to_shift": "Good sleepwear is just about looking cute rather than actually helping your body transition from day to night.",
+      "evidence_to_use": "TENCEL Modal fabric technology and three-piece construction designed specifically for Black women's bodies",
+      "predicted_scores": {
+        "attention_capture": 8,
+        "emotional_valence": 9,
+        "memory_encoding": 8,
+        "brand_recall": 7,
+        "purchase_intent": 8
+      }
+    },
+    "shell_command": "# Higgsfield Soul-ID brief cre_8bf2f13b04ff\nhiggsfield generate \\\n  --preset \"soul-id-portrait\" \\\n  --format \"9:16\" \\\n  --duration 8 \\\n  --brand \"Siraj Beauty\" \\\n  --prompt-file briefs/cre_8bf2f13b04ff.txt",
+    "air_score": null,
+    "stepps_breakdown": null,
+    "verdict": null,
+    "status": "ready_to_render"
+  },
+  "bri_7fe76901d37b": {
+    "id": "bri_7fe76901d37b",
+    "created_at": "2026-05-14T00:06:31.545Z",
+    "project_id": "siraj_001",
+    "creative_brief_id": "cre_67c99a5659aa",
+    "iteration_number": 1,
+    "edit_prompt": "Wedding season is here and we're done with those basic robes\n\nEvery bride deserves sleepwear that actually fits her body, not just fits the aesthetic. Our TENCEL Modal sets are what your girls will reach for long after the honeymoon photos fade. Soft enough for sensitive skin, cut for curves that bridesmaid robes ignore.\n\nCTA: Shop the bridal edit\n\nShot list:\n1. Close-up of hands tossing a wrinkled satin robe into a drawer\n2. Quick montage of ill-fitting bridesmaid robes on different body types\n3. Founder Shantay holding up a Petal three-piece set against natural light\n4. Slow-motion fabric drape showing TENCEL Modal's fluid movement\n5. Black woman in Daisy set stretching comfortably in bed\n6. Side-by-side: drawer full of forgotten robes vs. woman reaching for Siraj set\n7. Three sets (Petal, Daisy, Oat) laid out with wedding invitation\n8. Woman in Oat set looking confident in mirror, natural morning light",
+    "brief_json": {
+      "angle_code": "seasonal_anchor",
+      "hook": "Wedding season is here and we're done with those basic robes",
+      "body": "Every bride deserves sleepwear that actually fits her body, not just fits the aesthetic. Our TENCEL Modal sets are what your girls will reach for long after the honeymoon photos fade. Soft enough for sensitive skin, cut for curves that bridesmaid robes ignore.",
+      "cta": "Shop the bridal edit",
+      "shot_list": [
+        "1. Close-up of hands tossing a wrinkled satin robe into a drawer",
+        "2. Quick montage of ill-fitting bridesmaid robes on different body types",
+        "3. Founder Shantay holding up a Petal three-piece set against natural light",
+        "4. Slow-motion fabric drape showing TENCEL Modal's fluid movement",
+        "5. Black woman in Daisy set stretching comfortably in bed",
+        "6. Side-by-side: drawer full of forgotten robes vs. woman reaching for Siraj set",
+        "7. Three sets (Petal, Daisy, Oat) laid out with wedding invitation",
+        "8. Woman in Oat set looking confident in mirror, natural morning light"
+      ],
+      "belief_to_shift": "Bridal party gifts have to be pretty throwaway items that look good in photos but aren't practical for real life",
+      "evidence_to_use": "TENCEL Modal fabric, founder Shantay, three colorways (Petal/Daisy/Oat), body-inclusive sizing",
+      "predicted_scores": {
+        "attention_capture": 8,
+        "emotional_valence": 8,
+        "memory_encoding": 7,
+        "brand_recall": 7,
+        "purchase_intent": 8
+      }
+    },
+    "shell_command": "# Higgsfield Soul-ID brief cre_67c99a5659aa\nhiggsfield generate \\\n  --preset \"soul-id-portrait\" \\\n  --format \"9:16\" \\\n  --duration 8 \\\n  --brand \"Siraj Beauty\" \\\n  --prompt-file briefs/cre_67c99a5659aa.txt",
+    "air_score": null,
+    "stepps_breakdown": null,
+    "verdict": null,
+    "status": "ready_to_render"
+  },
+  "bri_a2ef9f91151f": {
+    "id": "bri_a2ef9f91151f",
+    "created_at": "2026-05-14T00:06:41.369Z",
+    "project_id": "siraj_001",
+    "creative_brief_id": "cre_af3d6a99d248",
+    "iteration_number": 1,
+    "edit_prompt": "Soft girl season has officially begun\n\nWhile other brands were building sleepwear for bodies that don't look like ours, Shantay was designing TENCEL Modal sets that actually fit. Three pieces that move with your curves, not against them. Petal, Daisy, and Oat colorways that complement melanin instead of washing it out.\n\nCTA: Shop the soft girl essentials\n\nShot list:\n1. Close-up of Black woman's face waking up naturally, golden hour lighting through window\n2. Wide shot of her stretching in bed wearing the Petal set, fabric flowing with movement\n3. Detail shot of TENCEL Modal fabric texture against brown skin\n4. Medium shot of her sitting cross-legged on bed in Daisy set, looking content\n5. Quick cuts of all three colorways laid out on neutral bedding\n6. Her walking to kitchen in Oat set, fabric moving naturally with her body\n7. Text overlay: 'Made by a Black woman, for bodies the category forgot'\n8. Final shot of Siraj Beauty logo with three sets displayed",
+    "brief_json": {
+      "angle_code": "season_anchor",
+      "hook": "Soft girl season has officially begun",
+      "body": "While other brands were building sleepwear for bodies that don't look like ours, Shantay was designing TENCEL Modal sets that actually fit. Three pieces that move with your curves, not against them. Petal, Daisy, and Oat colorways that complement melanin instead of washing it out.",
+      "cta": "Shop the soft girl essentials",
+      "shot_list": [
+        "1. Close-up of Black woman's face waking up naturally, golden hour lighting through window",
+        "2. Wide shot of her stretching in bed wearing the Petal set, fabric flowing with movement",
+        "3. Detail shot of TENCEL Modal fabric texture against brown skin",
+        "4. Medium shot of her sitting cross-legged on bed in Daisy set, looking content",
+        "5. Quick cuts of all three colorways laid out on neutral bedding",
+        "6. Her walking to kitchen in Oat set, fabric moving naturally with her body",
+        "7. Text overlay: 'Made by a Black woman, for bodies the category forgot'",
+        "8. Final shot of Siraj Beauty logo with three sets displayed"
+      ],
+      "belief_to_shift": "Luxury sleepwear brands don't understand or design for Black women's bodies and lifestyle preferences",
+      "evidence_to_use": "TENCEL Modal fabric, founder Shantay's Black woman perspective, three colorways designed for melanin, $78 price point",
+      "predicted_scores": {
+        "attention_capture": 8,
+        "emotional_valence": 9,
+        "memory_encoding": 8,
+        "brand_recall": 7,
+        "purchase_intent": 8
+      }
+    },
+    "shell_command": "# Higgsfield Soul-ID brief cre_af3d6a99d248\nhiggsfield generate \\\n  --preset \"soul-id-portrait\" \\\n  --format \"9:16\" \\\n  --duration 8 \\\n  --brand \"Siraj Beauty\" \\\n  --prompt-file briefs/cre_af3d6a99d248.txt",
+    "air_score": null,
+    "stepps_breakdown": null,
+    "verdict": null,
+    "status": "ready_to_render"
+  },
+  "bri_25f784c98b2c": {
+    "id": "bri_25f784c98b2c",
+    "created_at": "2026-05-14T00:06:51.953Z",
+    "project_id": "siraj_001",
+    "creative_brief_id": "cre_319a11e73657",
+    "iteration_number": 1,
+    "edit_prompt": "Soft life season has officially begun\n\nThe sleepwear that moves seamlessly from bedroom to brunch, designed by a Black woman who knows your body deserves fabric this luxurious. TENCEL Modal sets that feel like silk but breathe like cotton, in colors that complement melanin beautifully. Finally, pieces curated enough for your aesthetic, comfortable enough for your rest.\n\nCTA: Shop the three-piece sets\n\nShot list:\n1. Close-up of TENCEL Modal fabric draped over dark skin, showing the lustrous texture\n2. Model in Petal set walking from bedroom to kitchen, fabric flowing naturally\n3. Quick cuts of the three colorways (Petal/Daisy/Oat) laid out aesthetically\n4. Model answering door in Daisy set, looking effortlessly put-together\n5. Macro shot of fabric stretch and recovery on skin\n6. Model in Oat set working from home setup, looking polished\n7. All three sets hanging in a curated closet space\n8. Shantay's hands adjusting the Petal set on model, founder touch",
+    "brief_json": {
+      "angle_code": "seasonal_anchor",
+      "hook": "Soft life season has officially begun",
+      "body": "The sleepwear that moves seamlessly from bedroom to brunch, designed by a Black woman who knows your body deserves fabric this luxurious. TENCEL Modal sets that feel like silk but breathe like cotton, in colors that complement melanin beautifully. Finally, pieces curated enough for your aesthetic, comfortable enough for your rest.",
+      "cta": "Shop the three-piece sets",
+      "shot_list": [
+        "1. Close-up of TENCEL Modal fabric draped over dark skin, showing the lustrous texture",
+        "2. Model in Petal set walking from bedroom to kitchen, fabric flowing naturally",
+        "3. Quick cuts of the three colorways (Petal/Daisy/Oat) laid out aesthetically",
+        "4. Model answering door in Daisy set, looking effortlessly put-together",
+        "5. Macro shot of fabric stretch and recovery on skin",
+        "6. Model in Oat set working from home setup, looking polished",
+        "7. All three sets hanging in a curated closet space",
+        "8. Shantay's hands adjusting the Petal set on model, founder touch"
+      ],
+      "belief_to_shift": "Sleepwear is only for private moments and can't be part of a curated aesthetic that works in semi-public spaces",
+      "evidence_to_use": "TENCEL Modal fabric technology, founder Shantay's design perspective, three colorways specifically chosen for melanin",
+      "predicted_scores": {
+        "attention_capture": 8,
+        "emotional_valence": 8,
+        "memory_encoding": 7,
+        "brand_recall": 7,
+        "purchase_intent": 8
+      }
+    },
+    "shell_command": "# Higgsfield Soul-ID brief cre_319a11e73657\nhiggsfield generate \\\n  --preset \"soul-id-portrait\" \\\n  --format \"9:16\" \\\n  --duration 8 \\\n  --brand \"Siraj Beauty\" \\\n  --prompt-file briefs/cre_319a11e73657.txt",
+    "air_score": null,
+    "stepps_breakdown": null,
+    "verdict": null,
+    "status": "ready_to_render"
+  }
+}

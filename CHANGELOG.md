@@ -6,6 +6,99 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.2.0] — 2026-05-12
+
+Ad-intel module add. Four new pipeline stages plus a TRIBE+BrainLM
+research scaffold. Storage layer abstracted to a backend-agnostic
+adapter (JSON files now, Airtable when access lands).
+
+### Added — engine/db/storage.mjs
+
+Storage adapter with two backends:
+- `json` (default) writes to `db/<table>.json` files
+- `airtable` writes to live tables when `STORAGE_BACKEND=airtable` env is set
+Tables: `swipe_pages`, `swipe_ads`, `creative_briefs`,
+`brief_iterations`, `audit`. Same API across both backends.
+
+### Added — engine/ad-intel/stage-a-competitors.mjs
+
+Stage A. Given `{ brand, category, project_id }` returns 10 named
+competitors with classification (direct / adjacent / aspirational),
+verticals, spend tier, and meta_page_url. Sourced via Anthropic
+`web_search` against SimilarWeb / Crunchbase / category roundups.
+
+### Added — engine/ad-intel/stage-b-ad-ingest.mjs
+
+Stage B. For each Swipe Page with `scrape_status: pending`, pulls
+currently-running Meta ads. **Current implementation uses
+web_search as fallback** — no Meta Ad Library API access yet.
+When the API token lands, swap the `ingestForPage` function for
+a real `/ads_archive` call. Record shape stays identical.
+
+TikTok Creative Center ingestion deferred to v2.1 per spec.
+
+### Added — engine/eval/ad_eval_llm.mjs
+
+Stage C. AD_EVAL contract — primary implementation, Claude Sonnet 4.
+Provider-agnostic (Gemini / OpenAI swappable). For each tagged ad
+returns: five behavioral scores (1-10 each), awareness level (1-5
+Schwartz), hook type (controlled vocab), addressed beliefs, plus
+cited evidence per score. Sets `tag_status: tagged` on completion.
+
+### Added — engine/ad-intel/stage-d-storyboards.mjs
+
+Stage D. For each underserved Desired Outcome (opp ≥ 10) with no
+competitor ad coverage, generates a Creative Brief + initial Brief
+Iteration. Brief includes hook + body + CTA + shot list + belief
+to shift + predicted scores. Iteration carries a Higgsfield CLI
+shell command. References to Belief Sessions / Belief Cells are
+stubbed (`null`) until the Airtable schema lands.
+
+### Added — engine/eval/tribe_brainlm.py
+
+Phase-2 evaluator scaffold. NOT IMPLEMENTED. Defines the AD_EVAL
+contract that the LLM evaluator already satisfies. Phase 2 swaps
+when the R&D doc is approved + Meta API access lands.
+
+### Added — engine/research/TRIBE-BRAINLM-RND.md
+
+Architecture doc: ad creative → TRIBE v2 → fsaverage5 → Glasser 360
+ROI pool → BrainLM encoder → 3-layer MLP head → 5 behavioral
+scores. Includes data plan, phased rollout (2A-2D), risk register,
+open questions.
+
+### Siraj first run
+
+- Stage A: 10 competitors identified (Sleep Ova, DAYO, Re Ona,
+  Fancy Homebody, K.NGSLEY, Lunya, Skims, Printfresh, Set Active,
+  Eberjey)
+- Stage B: 8 ads ingested from Lunya + Skims; other 8 brands
+  returned 0 ads via web_search (need Meta API token)
+- Stage C: 8/8 ads scored. Winning pattern: Skims Vacation Shop
+  deal-anchor (32/50).
+- Stage D: 5 storyboard briefs + 5 iterations generated against the
+  5 underserved outcomes.
+- Stage E: findings surfaced in `phase1-strategy-v4.html` as Part III
+  + §20. Deployed to `siraj-strategy.vercel.app`.
+
+### Known issue (v1.3 fix)
+
+Stage D picks a single winning ad pattern and applies it to every
+outcome, which made all 5 briefs lean on Skims's seasonal-deal hook
+even where it doesn't fit the brand voice. Fix: match patterns to
+outcomes by hook_type + addressed_beliefs similarity, not by raw
+score.
+
+### Migration notes
+
+- `STORAGE_BACKEND=json` (default) keeps everything in `db/`. No
+  Airtable dependency for the v1.2 pipeline.
+- When Airtable access lands: set `STORAGE_BACKEND=airtable` and the
+  same code writes to Airtable. Tables must exist with names matching
+  `AIRTABLE_NAMES` map in `engine/db/storage.mjs`.
+
+---
+
 ## Siraj v3 strategy doc — 2026-05-12
 
 Unified Phase 1 deliverable. Combines v2's positioning brief (Part I) with
