@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
 import { runAdIntel } from "./lib/ad-intel";
 import { getSearchVolume, getSearchConfig } from "./lib/search-volume";
@@ -89,10 +89,28 @@ function SessionList({ sessions, activeId, onSelect, onNew }) {
   );
 }
 
+// Engine v1.6.7 · `.env.local` fallback for API keys.
+// Anything the user pastes into the Config panel (localStorage) wins
+// over these env defaults. The env path exists so a baseline key set
+// can persist across browser-state wipes without re-typing.
+const ENV_DEFAULTS = {
+  anthropicKey:      import.meta.env.VITE_ANTHROPIC_API_KEY     || "",
+  airtableKey:       import.meta.env.VITE_AIRTABLE_API_KEY      || "",
+  airtableBaseId:    import.meta.env.VITE_AIRTABLE_BASE_ID      || "",
+  serpApiKey:        import.meta.env.VITE_SERPAPI_KEY           || "",
+  googleDriveApiKey: import.meta.env.VITE_GOOGLE_DRIVE_API_KEY  || "",
+};
+
 // ── Main App ──
 export default function App() {
   const [config, setConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("odi-config") || "{}"); } catch { return {}; }
+    try {
+      const stored = JSON.parse(localStorage.getItem("odi-config") || "{}");
+      // localStorage wins · env vars only fill in keys the user hasn't set yet
+      return { ...ENV_DEFAULTS, ...stored };
+    } catch {
+      return { ...ENV_DEFAULTS };
+    }
   });
   const [showConfig, setShowConfig] = useState(false);
   const [sessions, setSessions] = useState([]);
@@ -206,11 +224,11 @@ export default function App() {
     setError(null);
     try {
       setStratDocPhase("Pass 7: generating personas…");
-      log("Pass 7/17: personas");
+      log("Pass 7/18: personas");
       const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
 
       setStratDocPhase("Pass 5: value-prop comparison…");
-      log("Pass 5/17: competitor value-prop comparison");
+      log("Pass 5/18: competitor value-prop comparison");
       // Pull competitor names from positioningHints / context if available; else skip
       const competitors = (projectContext?.key_facts || []).filter(f => /competitor|vs\s/i.test(f)).slice(0, 4).map(name => ({ name, stated_value_prop: "", source_url: "" }));
       let valueProp = { comparisons: [] };
@@ -222,43 +240,43 @@ export default function App() {
       }
 
       setStratDocPhase("Pass 8: swipe file (20 ads)…");
-      log("Pass 8/17: 20 swipe-file ad concepts");
+      log("Pass 8/18: 20 swipe-file ad concepts");
       const { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
 
       setStratDocPhase("Pass 9: TikTok scripts…");
-      log("Pass 9/17: 8 shot-by-shot TikTok scripts");
+      log("Pass 9/18: 8 shot-by-shot TikTok scripts");
       const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
 
       setStratDocPhase("Pass 10: email flows…");
-      log("Pass 10/17: 4 Klaviyo-ready email flows");
+      log("Pass 10/18: 4 Klaviyo-ready email flows");
       const emailFlows = await generateEmailFlows(config.anthropicKey, projectContext, positioningSpine);
 
       setStratDocPhase("Pass 11: channel plan + targeting matrix…");
-      log("Pass 11/17: channel plan + targeting matrix");
+      log("Pass 11/18: channel plan + targeting matrix");
       let channelPlan = { channels: [], targeting_matrix: [] };
       try { channelPlan = await generateChannelPlan(config.anthropicKey, projectContext, positioningSpine, personas); }
       catch (e) { log(`Pass 11 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 12: landing-page variants…");
-      log("Pass 12/17: landing-page variants");
+      log("Pass 12/18: landing-page variants");
       let landing = { variants: [] };
       try { landing = await generateLandingVariants(config.anthropicKey, projectContext, positioningSpine, personas); }
       catch (e) { log(`Pass 12 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 13: 90-day rollout plan…");
-      log("Pass 13/17: 90-day rollout");
+      log("Pass 13/18: 90-day rollout");
       let rollout = { phases: [], weekly_cadence: [], kill_criteria: [] };
       try { rollout = await generateRollout(config.anthropicKey, projectContext, positioningSpine, entryRecs); }
       catch (e) { log(`Pass 13 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 14: creator outreach packets…");
-      log("Pass 14/17: 5 paid-creator briefs");
+      log("Pass 14/18: 5 paid-creator briefs");
       let creators = { creator_briefs: [] };
       try { creators = await generateCreatorBriefs(config.anthropicKey, projectContext, positioningSpine, personas, entryRecs); }
       catch (e) { log(`Pass 14 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 15: competitive teardown…");
-      log("Pass 15/17: 6-row competitive matrix + axis summary");
+      log("Pass 15/18: 6-row competitive matrix + axis summary");
       let competitive = { competitive_matrix: [], axis_summary: null };
       try {
         const adIntelCompetitors = adIntelData?.competitors || null;
@@ -266,7 +284,7 @@ export default function App() {
       } catch (e) { log(`Pass 15 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 16: brand audit…");
-      log("Pass 16/17: 8-10 surface brand audit");
+      log("Pass 16/18: 8-10 surface brand audit");
       let brandAudit = { audit_summary: "", areas: [], voice_consistency: null, discoverability: null };
       try {
         // Optional: feed scraped content if any URLs were ingested at Pass 0.
@@ -275,11 +293,18 @@ export default function App() {
       } catch (e) { log(`Pass 16 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 17: demand landscape…");
-      log("Pass 17/17: 3-stage funnel + white-space + seasonal");
+      log("Pass 17/18: 3-stage funnel + white-space + seasonal");
       let demandLandscape = { funnel_stages: [], white_space_keywords: [], seasonal_pulse: [], category_temperature: null };
       try {
         demandLandscape = await generateDemandLandscape(config.anthropicKey, projectContext, positioningSpine, data, searchVolumeData);
       } catch (e) { log(`Pass 17 skipped: ${e.message}`, "error"); }
+
+      setStratDocPhase("Pass 18: tribe readout (web_search verification, slow)…");
+      log("Pass 18/18: tribe readout · web_search-verified handles only");
+      let tribe = { tribe_summary: "", creators: [], search_paths: [], honest_caveats: [] };
+      try {
+        tribe = await generateTribeReadout(config.anthropicKey, projectContext, personas, creators);
+      } catch (e) { log(`Pass 18 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Composing HTML doc…");
       const html = composeStrategyDoc({
@@ -300,6 +325,7 @@ export default function App() {
         competitive,
         brandAudit,
         demandLandscape,
+        tribe,
       });
 
       const filename = `strategy-${(activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${Date.now()}.html`;

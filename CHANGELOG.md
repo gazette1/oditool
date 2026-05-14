@@ -6,6 +6,109 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.7] — 2026-05-14
+
+**Pass 18 · Tribe readout + `.env.local` API-key fallback.** Doc grows
+18 → 19 sections. One section to v5 reference parity (21).
+
+### Added — Pass 18 `generateTribeReadout` (§17)
+
+Honest-by-construction creator list. Uses Claude's `web_search_20250305`
+tool to find AND verify creators in one pass. The v1.3 verify-creators
+rule is enforced by schema:
+
+- Every `handle` in `creators[]` must have `verified: true` + an
+  `evidence` field with a verbatim web_search snippet or URL
+- Anything the model couldn't verify is demoted to `search_paths` (a
+  sourcing-query list a human matcher runs to find real handles)
+- Optional `honest_caveats[]` array surfaces low-confidence reads
+
+Output shape:
+```json
+{
+  "tribe_summary": "...",
+  "creators": [{ handle, platform, verified, follower_band,
+                 primary_content, audience_fit, target_persona,
+                 outreach_priority, tier, evidence }, ...6-12],
+  "search_paths": [{ platform, query, why }, ...3-5],
+  "honest_caveats": ["..."]
+}
+```
+
+Pass 18 vs Pass 14 distinction (both creator-related, both kept):
+- **Pass 14** = archetypes + sourcing criteria + DM template · no handles
+- **Pass 18** = verified handles + tier + audience-fit evidence
+
+### Added — `src/lib/compose-strategy.js`
+
+- **§17 · Tribe readout** renderer · 2-col `.tribe-card` grid with
+  large serif handle, tier chip (T1 hero/T2 UGC/T3 spark/Aspirational),
+  meta chips (platform · follower band · target persona · priority),
+  italic audience-fit quote, ✓-prefixed evidence callout (moss border)
+- **Unverified candidates** render with dashed brick border + ⚠ prefix
+  in case the LLM returned some despite the rules — caller can manually
+  check before outreach
+- **`.search-paths` block** · platform / query / why grid for sourcing
+  queries the human matcher should run
+- Section count: **18 → 19** · Methodology → §18 · Colophon → §19
+- Nav adds "Tribe" link
+
+### Added — `.env.local` API-key fallback
+
+Engine now reads `VITE_*` env vars as defaults that fill in any API-key
+field localStorage doesn't have:
+
+| Env var | Maps to |
+| --- | --- |
+| `VITE_ANTHROPIC_API_KEY` | `config.anthropicKey` |
+| `VITE_AIRTABLE_API_KEY` | `config.airtableKey` |
+| `VITE_AIRTABLE_BASE_ID` | `config.airtableBaseId` |
+| `VITE_SERPAPI_KEY` | `config.serpApiKey` |
+| `VITE_GOOGLE_DRIVE_API_KEY` | `config.googleDriveApiKey` |
+
+**localStorage wins** — anything the user pastes into the Config panel
+overrides the env value. The env path exists so a baseline key set can
+persist across browser-state wipes (clear cache, fresh browser, etc.)
+without retyping. `.env.local` is gitignored.
+
+### Changed — `src/App.jsx`
+
+- `generateStrategyDoc` runs Pass 18 after Pass 17, try/catch isolated.
+  Passes `creators` (Pass 14 archetype list) into Pass 18 as the seed.
+- All pass log labels updated to `/18`.
+- Config init merges `ENV_DEFAULTS` with localStorage (localStorage wins).
+
+### Bundle
+
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.6 | 341.83 KB | 99.18 KB |
+| **v1.6.7** | **353.26 KB** | **101.72 KB** |
+
++12 KB for Pass 18 + renderer + CSS + env loader.
+
+### Cost & time
+
+Pass 18 is the most expensive single pass: web_search tool · 12 search
+uses max · ~6-8 K output tokens. Adds ~45 seconds to the strategy doc
+gen. Full run now **~5m 20s · 20 Anthropic calls · ~110 K tokens · ~$1.10**.
+
+### v1.7 backlog status
+
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | Ad-Intel wire-in | ✅ v1.6.1 |
+| 2 | Pass 14 creator briefs | ✅ v1.6.2 |
+| 3 | Pass 15 competitive teardown | ✅ v1.6.3 |
+| 4 | Pass 16 brand audit | ✅ v1.6.6 |
+| 5 | Pass 17 demand landscape | ✅ v1.6.6 |
+| 6 | **Pass 18 tribe readout** | ✅ **v1.6.7** |
+| 7 | Pass 19 seasonal campaign | 🔴 last one to 21 |
+
+**2 sections to v5 reference parity.**
+
+---
+
 ## [1.6.6] — 2026-05-14
 
 **Pass 16 + Pass 17 · Brand audit + Demand landscape.** Two more v1.7

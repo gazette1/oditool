@@ -918,6 +918,74 @@ Rules:
   return extractJSON(data);
 }
 
+// ── PASS 18: Tribe Readout (Engine v1.6.7) ──
+//
+// Renders as §17. Finds and VERIFIES creators via web_search.
+// The v1.3 verify-creators rule is non-negotiable: every `handle`
+// listed must be confirmed real via a web_search result. Candidates
+// the model couldn't verify are demoted to `search_paths` (sourcing
+// queries for a human matcher) — never listed as "creators".
+//
+// Different from Pass 14 (creator briefs):
+//   - Pass 14 outputs ARCHETYPES + sourcing criteria · no handles
+//   - Pass 18 outputs VERIFIED HANDLES + tier + audience-fit evidence
+//
+// Inputs:
+//   - projectContext (Pass 0)
+//   - personas (Pass 7) — who each creator should reach
+//   - creatorBriefs (Pass 14) — optional · archetypes to hunt for
+export async function generateTribeReadout(apiKey, projectContext, personas, creatorBriefs = null) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}\nVoice: ${projectContext.brand_voice}` : "";
+  const personaList = (personas || []).slice(0, 5).map(p =>
+    `- ${p.name} (${p.archetype}) · lives at: ${p.lives_online_at || "?"}`
+  ).join("\n");
+
+  const briefSeed = creatorBriefs?.creator_briefs?.length
+    ? `Archetype hunt list from Pass 14:\n${creatorBriefs.creator_briefs.map(b => `- ${b.creator_archetype} on ${b.platform} for ${b.target_persona_name}`).join("\n")}`
+    : "No prior archetype seeds. Derive from personas.";
+
+  const data = await callClaude(apiKey,
+    `You are a creator-research analyst. Your single most important rule: DO NOT FABRICATE HANDLES. Every handle you list must be confirmed real by a web_search result you cite as evidence. If you can't verify, demote that candidate to a search_path query for a human sourcer.
+
+Use web_search to find creators who match the personas + archetypes below. For each verified creator, return:
+- handle (the @-handle, exact spelling · must match what web_search returned)
+- platform ("TikTok" / "Instagram" / "YouTube" / "Substack" / "Podcast")
+- verified (boolean) — TRUE only if web_search returned a result confirming this exact handle exists and is active
+- follower_band ("under 10k" / "10k-50k" / "50k-100k" / "100k-500k" / "500k-1M" / "1M+")
+- primary_content (1 sentence describing what they post about · use what web_search showed)
+- audience_fit (1 sentence on how their audience overlaps with our target persona)
+- target_persona (which persona name from the list this creator reaches)
+- outreach_priority ("high" / "medium" / "low")
+- tier ("Tier 1 hero" / "Tier 2 UGC" / "Tier 3 spark" / "Aspirational")
+- evidence (the specific web_search snippet that confirmed this handle exists · verbatim quote if possible · NO QUOTE = NOT VERIFIED = demote to search_paths)
+
+Plus:
+- tribe_summary (1-2 sentence read on the creator landscape · honest if sparse)
+- search_paths (3-5 records) — for archetypes you couldn't verify a handle for: { platform, query: "specific search a human sourcer should run", why: "what creator type we're hunting" }
+- honest_caveats (array of strings) — anything the model wasn't able to verify or surfaces with low confidence
+
+Return ONLY JSON:
+{
+  "tribe_summary": "...",
+  "creators": [{...}, ...],   // 6-12 entries · all verified=true
+  "search_paths": [{...}, ...],
+  "honest_caveats": ["..."]
+}
+
+Rules:
+- Aim for 6-12 verified creators. If you can only find 4, return 4 — do NOT pad.
+- If web_search returns nothing for a category, add a search_path query instead of a fake handle.
+- "evidence" must be a verbatim phrase or URL from a search result · NO PARAPHRASE.
+- Tier mapping: Tier 1 hero = 50k-500k follower band, longform content · Tier 2 UGC = 10k-50k, scrappy content · Tier 3 spark = under 10k, micro-niche · Aspirational = 500k+ as reach play.`,
+    `${ctx}\n\nPersonas:\n${personaList}\n\n${briefSeed}\n\nFind verified creators per the rules. Use web_search aggressively. Demote anything you can't verify.`,
+    {
+      maxTokens: 8000,
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 12 }],
+    }
+  );
+  return extractJSON(data);
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

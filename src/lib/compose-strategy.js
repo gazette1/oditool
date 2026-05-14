@@ -1,6 +1,6 @@
 // src/lib/compose-strategy.js
 //
-// Engine v1.6.6 — Strategy Doc Composer.
+// Engine v1.6.7 — Strategy Doc Composer.
 // Takes the full set of pass outputs + Pass 0 context and returns a
 // self-contained HTML document matching the v5 strategy-doc template.
 //
@@ -358,6 +358,45 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 .seasonal-row .period{font-family:"DM Serif Display",serif;font-size:14px}
 .seasonal-row .lift{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--moss-deep)}
 .seasonal-row .play{color:var(--ink-secondary)}
+/* §17 · Tribe readout */
+.tribe-summary{padding:20px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-base));border:1px solid rgba(106,153,78,0.3);border-radius:12px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:16px;line-height:1.6;color:var(--ink-primary);margin-bottom:24px}
+.tribe-caveats{padding:14px 18px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;margin-bottom:24px}
+.tribe-caveats .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#7a2c2e;margin-bottom:6px;display:block}
+.tribe-caveats ul{margin:0;padding-left:18px;color:var(--ink-secondary)}
+.tribe-caveats li{margin-bottom:3px}
+.tribe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:28px}
+@media (max-width:720px){.tribe-grid{grid-template-columns:1fr}}
+.tribe-card{background:var(--bg-base);border:1px solid rgba(106,153,78,0.25);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.tribe-card.unverified{border:1px dashed var(--brick);background:rgba(188,71,73,0.04)}
+.tribe-card .tc-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:8px;border-bottom:1px solid rgba(106,153,78,0.15)}
+.tribe-card .tc-handle{font-family:"DM Serif Display",serif;font-size:20px;line-height:1.15;color:var(--moss-deep)}
+.tribe-card.unverified .tc-handle{color:var(--brick)}
+.tribe-card .tc-tier{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--bg-warm);color:var(--ink-secondary)}
+.tribe-card .tc-tier.t1{background:rgba(56,102,65,0.15);color:#2a4a30}
+.tribe-card .tc-tier.t2{background:rgba(167,201,87,0.2);color:#2a4a30}
+.tribe-card .tc-tier.t3{background:var(--bg-warm);color:var(--ink-secondary)}
+.tribe-card .tc-tier.aspirational{background:rgba(106,153,78,0.15);color:var(--moss-deep)}
+.tribe-card .tc-meta{display:flex;gap:8px;flex-wrap:wrap;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:0.1em;color:var(--ink-muted)}
+.tribe-card .tc-meta .chip{background:var(--bg-warm);padding:3px 8px;border-radius:3px}
+.tribe-card .tc-meta .priority.high{background:rgba(56,102,65,0.15);color:#2a4a30;font-weight:600}
+.tribe-card .tc-meta .priority.medium{background:rgba(167,201,87,0.2);color:#2a4a30}
+.tribe-card .tc-meta .priority.low{background:var(--bg-warm);color:var(--ink-secondary)}
+.tribe-card .tc-content{font-size:12.5px;line-height:1.55}
+.tribe-card .tc-content strong{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px}
+.tribe-card .tc-fit{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;line-height:1.55;color:var(--ink-primary);padding:8px 12px;background:var(--bg-warm);border-radius:5px}
+.tribe-card .tc-evidence{font-size:11px;line-height:1.5;color:var(--ink-secondary);padding:8px 12px;background:rgba(56,102,65,0.06);border-left:2px solid var(--moss-mid);border-radius:0 4px 4px 0}
+.tribe-card .tc-evidence::before{content:"\\2713  ";color:var(--moss-deep);font-weight:600}
+.tribe-card.unverified .tc-evidence{background:rgba(188,71,73,0.06);border-left-color:var(--brick)}
+.tribe-card.unverified .tc-evidence::before{content:"\\26A0  ";color:var(--brick)}
+.search-paths{padding:24px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.25);border-radius:10px;margin-bottom:18px}
+.search-paths h4{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:14px}
+.search-paths .sp-intro{font-size:12.5px;line-height:1.6;color:var(--ink-secondary);font-style:italic;font-family:"Cormorant Garamond",serif;margin-bottom:16px}
+.sp-grid{display:flex;flex-direction:column;gap:10px}
+.sp-row{display:grid;grid-template-columns:90px 1fr 1.4fr;gap:12px;padding:12px 14px;background:var(--bg-warm);border-radius:6px;font-size:11.5px;line-height:1.5;align-items:start}
+@media (max-width:720px){.sp-row{grid-template-columns:1fr;gap:4px}}
+.sp-row .platform{font-family:"IBM Plex Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)}
+.sp-row .query{font-family:"IBM Plex Mono",monospace;font-size:11px;background:var(--bg-base);padding:4px 8px;border-radius:4px;color:var(--ink-primary);word-break:break-word}
+.sp-row .why{color:var(--ink-secondary)}
 footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(106,153,78,.4);text-align:center}
 .footer-meta{font-size:11px;color:var(--ink-muted);letter-spacing:0.18em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
 `;
@@ -370,7 +409,7 @@ function renderCover(p, project_name) {
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.6.6</span>
+      <span class="doc-num">Phase 1 Strategy · Engine v1.6.7</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -396,7 +435,7 @@ function renderPositioning(p) {
   const alts = p.positioning.alternatives || [];
   return `<section class="section" id="position">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The single sentence<br/>to claim.</h2>
     <div class="position-primary">
       <span class="tag">Primary</span>
@@ -415,7 +454,7 @@ function renderEvidence(p) {
     .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
   return `<section class="section" id="evidence">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The outcomes<br/>behind the numbers.</h2>
     <div class="ev-table">
       <div class="ev-row head"><div>Job</div><div>Outcome (Ulwick format)</div><div>Importance</div><div>Satisfaction</div><div>Opp score</div></div>
@@ -430,7 +469,7 @@ function renderValueProp(p) {
   if (!rows.length) return "";
   return `<section class="section" id="vp">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Brand vs the named<br/>incumbents.</h2>
     <div class="vp-table">
       <div class="vp-row head"><div>Brand</div><div>Stated value prop</div><div>Prices for</div><div>Leaves unserved</div><div>Where brand wins</div></div>
@@ -444,7 +483,7 @@ function renderPersonas(p) {
   if (!(p.personas || []).length) return "";
   return `<section class="section" id="personas">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.personas.length} buyers.<br/>Each at a hinge.</h2>
     ${p.personas.map((per, i) => `<div class="persona">
       <div class="persona-avatar" style="background:linear-gradient(135deg,var(--moss-light),var(--moss-deep))">${esc((per.name || "?")[0])}</div>
@@ -471,7 +510,7 @@ function renderSwipe(p) {
   if (!(p.swipeFile || []).length) return "";
   return `<section class="section" id="swipe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => `<div class="swipe-card"><div class="ad-mock"><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`).join("")}
@@ -484,7 +523,7 @@ function renderScripts(p) {
   if (!(p.scripts || []).length) return "";
   return `<section class="section" id="scripts">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.scripts.length} shot-by-shot scripts.</h2>
     ${p.scripts.map(s => `<div class="script">
       <div class="script-header">
@@ -506,7 +545,7 @@ function renderEmails(p) {
   if (!(p.emailFlows?.flows || []).length) return "";
   return `<section class="section" id="email">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${p.emailFlows.flows.length} flows.</h2>
     ${p.emailFlows.flows.map(f => `<div class="email-flow">
       <div class="email-flow-head"><div class="email-flow-name">${esc(f.name || "")}</div><div class="email-flow-trigger">${esc(f.trigger || "")}</div></div>
@@ -522,7 +561,7 @@ function renderEntryWedge(p) {
   const top = p.recommendations.slice(0, 3);
   return `<section class="section" id="wedge">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where to start.</h2>
     ${top.map((r, i) => `<div class="position-alt"><div class="alt-tag">Rank ${r.rank || i+1} · ${esc(r.strategy || "")}</div><div class="claim">${esc(r.target_job || "")}</div><div class="citation">Score <span class="score">${r.citation_score ?? ""}</span> · ${esc(r.estimated_market_signal || "")}/100</div><p class="rationale">${esc(r.rationale || "")}<br/><br/><strong>First move:</strong> ${esc(r.first_move || "")}<br/><strong>Belief shift:</strong> ${esc(r.belief_change_required || "")}<br/><strong>Risk:</strong> ${esc(r.risk || "")}</p></div>`).join("")}
   </div>
@@ -534,7 +573,7 @@ function renderChannels(p) {
   if (!ch.length) return "";
   return `<section class="section" id="channels">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where the money goes.</h2>
     <div class="channel-grid">
       ${ch.map(c => `<div class="channel-card">
@@ -555,7 +594,7 @@ function renderMatrix(p) {
   if (!rows.length) return "";
   return `<section class="section" id="matrix">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Persona × channel grid.</h2>
     <div class="matrix-table">
       <div class="matrix-row head"><div>Persona</div><div>Channel</div><div>Interests / seeds / exclusions</div><div>Creative angle</div><div>Share</div></div>
@@ -580,7 +619,7 @@ function renderLanding(p) {
   if (!vars.length) return "";
   return `<section class="section" id="landing">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${vars.length} landing pages, one per persona.</h2>
     ${vars.map(v => `<div class="landing-variant">
       <div class="lp-head">
@@ -609,7 +648,7 @@ function renderRollout(p) {
   const kills = p.rollout?.kill_criteria || [];
   return `<section class="section" id="rollout">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">90 days, three gates.</h2>
     ${phases.map((ph, i) => `<div class="phase-card">
       <span class="ph-tag">Phase ${i+1}</span>
@@ -641,7 +680,7 @@ function renderCreators(p) {
   if (!briefs.length) return "";
   return `<section class="section" id="creators">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${briefs.length} paid-creator packets.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">Archetypes + sourcing criteria, not handles. A human sourcer matches each to a verified account before outreach.</p>
     ${briefs.map(b => `<div class="creator-card">
@@ -694,7 +733,7 @@ function renderCompetitive(p) {
   if (!rows.length && !axis) return "";
   return `<section class="section" id="competitive">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 14 · Competitive teardown</span><span class="section-number">14 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 14 · Competitive teardown</span><span class="section-number">14 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${rows.length} incumbents.<br/>Where to attack each one.</h2>
     ${rows.length ? `<div class="comp-grid">
       ${rows.map(c => `<div class="comp-card">
@@ -737,7 +776,7 @@ function renderBrandAudit(p) {
   const disc = a.discoverability || {};
   return `<section class="section" id="audit">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 15 · Brand audit</span><span class="section-number">15 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 15 · Brand audit</span><span class="section-number">15 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">${areas.length} surfaces.<br/>State of the brand today.</h2>
     ${a.audit_summary ? `<p class="audit-summary">${esc(a.audit_summary)}</p>` : ""}
     ${areas.length ? `<div class="audit-grid">
@@ -785,7 +824,7 @@ function renderDemandLandscape(p) {
   const tempLabel = (temp.label || "").toLowerCase();
   return `<section class="section" id="demand">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 16 · Demand landscape</span><span class="section-number">16 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 16 · Demand landscape</span><span class="section-number">16 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">Where the demand is.<br/>And where it's growing.</h2>
     ${temp.label ? `<div class="dl-temp">
       <div class="temp-left"><div class="lbl">Category temperature</div><div class="val ${esc(tempLabel)}">${esc(temp.label)}</div></div>
@@ -824,13 +863,75 @@ function renderDemandLandscape(p) {
 </section>`;
 }
 
+function renderTribe(p) {
+  const t = p.tribe;
+  if (!t || (!t.creators?.length && !t.search_paths?.length && !t.tribe_summary)) return "";
+  const creators = t.creators || [];
+  const verified = creators.filter(c => c.verified !== false);
+  const unverified = creators.filter(c => c.verified === false);
+  const paths = t.search_paths || [];
+  const caveats = t.honest_caveats || [];
+
+  const tierClass = (tier) => {
+    const s = (tier || "").toLowerCase();
+    if (s.includes("tier 1") || s.includes("hero")) return "t1";
+    if (s.includes("tier 2") || s.includes("ugc")) return "t2";
+    if (s.includes("tier 3") || s.includes("spark")) return "t3";
+    if (s.includes("aspir")) return "aspirational";
+    return "";
+  };
+
+  const renderCard = (c) => `<div class="tribe-card${c.verified === false ? " unverified" : ""}">
+    <div class="tc-head">
+      <div class="tc-handle">${esc(c.handle || "")}</div>
+      ${c.tier ? `<span class="tc-tier ${tierClass(c.tier)}">${esc(c.tier)}</span>` : ""}
+    </div>
+    <div class="tc-meta">
+      ${c.platform ? `<span class="chip">${esc(c.platform)}</span>` : ""}
+      ${c.follower_band ? `<span class="chip">${esc(c.follower_band)}</span>` : ""}
+      ${c.target_persona ? `<span class="chip">for ${esc(c.target_persona)}</span>` : ""}
+      ${c.outreach_priority ? `<span class="chip priority ${esc((c.outreach_priority || "").toLowerCase())}">${esc(c.outreach_priority)} priority</span>` : ""}
+    </div>
+    ${c.primary_content ? `<div class="tc-content"><strong>Primary content</strong>${esc(c.primary_content)}</div>` : ""}
+    ${c.audience_fit ? `<p class="tc-fit">${esc(c.audience_fit)}</p>` : ""}
+    ${c.evidence ? `<p class="tc-evidence">${esc(c.evidence)}</p>` : ""}
+  </div>`;
+
+  return `<section class="section" id="tribe">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 17 · Tribe readout</span><span class="section-number">17 / 19</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">${verified.length} verified creators.<br/>${paths.length} sourcing leads.</h2>
+    ${t.tribe_summary ? `<p class="tribe-summary">${esc(t.tribe_summary)}</p>` : ""}
+    ${caveats.length ? `<div class="tribe-caveats"><span class="lbl">Honest caveats</span><ul>${caveats.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
+    ${verified.length ? `<div class="tribe-grid">
+      ${verified.map(renderCard).join("")}
+    </div>` : ""}
+    ${unverified.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin-bottom:14px">Unverified candidates · check before outreach</h3>
+    <div class="tribe-grid">
+      ${unverified.map(renderCard).join("")}
+    </div>` : ""}
+    ${paths.length ? `<div class="search-paths">
+      <h4>Sourcing queries · for the human matcher</h4>
+      <p class="sp-intro">Engine couldn't verify a handle for these archetypes. Run these queries (or hand them to a sourcer) before adding to the outreach list.</p>
+      <div class="sp-grid">
+        ${paths.map(p => `<div class="sp-row">
+          <div class="platform">${esc(p.platform || "")}</div>
+          <div class="query">${esc(p.query || "")}</div>
+          <div class="why">${esc(p.why || "")}</div>
+        </div>`).join("")}
+      </div>
+    </div>` : ""}
+  </div>
+</section>`;
+}
+
 function renderMethodology(p) {
   const pc = p.project_context || {};
   return `<section class="section" id="method">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 17 · Methodology</span><span class="section-number">17 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 18 · Methodology</span><span class="section-number">18 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.6 · 17 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages.</p>
+    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.7 · 18 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages · ${(p.tribe?.creators || []).filter(c => c.verified !== false).length} verified creators.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
     <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
     ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#bc4749">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
@@ -841,7 +942,7 @@ function renderMethodology(p) {
 function renderColophon(p) {
   return `<section class="section" id="colophon">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 18 · Colophon</span><span class="section-number">18 / 18</span></div>
+    <div class="section-tag-row"><span class="section-name">§ 19 · Colophon</span><span class="section-number">19 / 19</span></div>
     <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
@@ -868,7 +969,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
-      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#method">Method</a>
+      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -890,9 +991,10 @@ ${renderCreators(payload)}
 ${renderCompetitive(payload)}
 ${renderBrandAudit(payload)}
 ${renderDemandLandscape(payload)}
+${renderTribe(payload)}
 ${renderMethodology(payload)}
 ${renderColophon(payload)}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.6 · Mode 1 Earth</p></div></footer>
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.7 · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }
