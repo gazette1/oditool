@@ -87,20 +87,19 @@ export function extractJSON(data) {
 // `inputs` shape:
 //   { files: [{ fileName, kind, text }, ...], urls: [{ url, content }, ...] }
 // Engine v1.6.10 · Pass 0 corpus cap.
+//   Bounded total-corpus size: per-file 30K char cap (parse-files.js) +
+//   total 120K char cap here. Prevents "prompt is too long" on large
+//   folder drops · proportionally clips each source when totalLen
+//   exceeds cap · surfaces a ⚑ red_flag so the user knows context
+//   was elided.
 //
-// Used to concat every file + URL with no total ceiling. With a folder
-// drop of 30+ files + a scrape, the corpus could exceed ~1M chars
-// (~250K tokens), blowing past Sonnet 4's 200K context window and
-// throwing "prompt is too long" at the API.
-//
-// 120 K chars ≈ 30 K tokens for English prose · leaves ample room for
-// system prompt + JSON output. If the actual corpus exceeds, each
-// source is proportionally clipped (keeps the head — brand docs
-// usually front-load thesis statements). A red_flag is injected to
-// surface that context was elided.
+// Engine v1.6.11 · optional `refocusGuidance` parameter.
+//   Lets the user re-run Pass 0 with a natural-language nudge
+//   ("focus more on pricing", "ignore the founder bio"). Passed as a
+//   named option to preserve backward compatibility with 2-arg callers.
 const MAX_CORPUS_CHARS = 120_000;
 
-export async function summarizeProjectContext(apiKey, inputs) {
+export async function summarizeProjectContext(apiKey, inputs, { refocusGuidance = "" } = {}) {
   const fileBlocksList = (inputs.files || [])
     .filter(f => f.text && f.text.length > 0)
     .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`);
@@ -141,9 +140,13 @@ export async function summarizeProjectContext(apiKey, inputs) {
     };
   }
 
+  const refocusPrefix = refocusGuidance && refocusGuidance.trim()
+    ? `REFOCUS GUIDANCE: ${refocusGuidance.trim()}\n\n`
+    : "";
+
   const data = await callClaude(
     apiKey,
-    `You are an Outcome-Driven Innovation analyst preparing a Project Context for a Mode 1 Earth engine run. Given raw text extracted from a brand's uploaded documents (PDFs, decks, agreements, shot lists, brand briefs) and from a scrape of the brand's homepage, produce a single structured Project Context that downstream passes (job discovery, positioning, value-prop comparison) will read.
+    `${refocusPrefix}You are an Outcome-Driven Innovation analyst preparing a Project Context for a Mode 1 Earth engine run. Given raw text extracted from a brand's uploaded documents (PDFs, decks, agreements, shot lists, brand briefs) and from a scrape of the brand's homepage, produce a single structured Project Context that downstream passes (job discovery, positioning, value-prop comparison) will read.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -160,7 +163,7 @@ Return ONLY valid JSON (no markdown):
 Rules:
 - Every fact must be defensible against a quote from the input. No invention.
 - If the corpus contradicts itself, surface that in red_flags rather than picking one side silently.
-- If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.`,
+- If the corpus is thin on a field (e.g., no brand_voice content), leave that field empty and add a red_flag.${refocusPrefix ? "\n- Honor the REFOCUS GUIDANCE at the top of this prompt: re-weight your reading of the corpus accordingly while still obeying the no-invention rule." : ""}`,
     `Project context corpus:\n\n${corpus}${truncationNote ? `\n\n[ENGINE NOTE — corpus was clipped: ${truncationNote}]` : ""}`,
     { maxTokens: 4000 }
   );

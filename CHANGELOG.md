@@ -6,6 +6,84 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.11] — 2026-05-14
+
+**Pass 0 editable review panel + refocus (long-deferred Task 2 from the
+v1.7 spec).** When the user clicks `Ingest Context`, the Pass 0 output
+is now a fully editable form instead of read-only chips. The user can
+correct sector / audience / brand voice, add/delete/reorder key_facts
+and red_flags, then click Save — **only the edited state goes to
+Airtable**, never the raw LLM output.
+
+A `🔄 Refocus` button next to Save re-invokes Pass 0 with
+natural-language guidance prepended to the system prompt
+(`REFOCUS GUIDANCE: <user text>`). Capped at 5 refocuses per session.
+
+### Cherry-picked from `v1.7/hermes-backlog-and-pass0-edit` branch
+
+Originally built and committed (`ea26c4f`) as Task 2 of the May 14
+Hermes-backlog spec, then sat on the v1.7 branch unmerged for 10 ships
+while master moved on. Cherry-picked now with conflicts resolved
+manually in `anthropic.js` to keep BOTH the v1.6.10 corpus cap and the
+new `refocusGuidance` parameter.
+
+### Changed — `src/lib/anthropic.js`
+
+- `summarizeProjectContext(apiKey, inputs, { refocusGuidance = "" } = {})`
+  signature gains optional 3rd arg via named-options object
+- Backward-compatible — 2-arg callers unchanged
+- When `refocusGuidance` is non-empty: prepended to the system prompt
+  as `REFOCUS GUIDANCE: <text>` + one extra honoring rule appended to
+  the rule list
+- v1.6.10 corpus cap stays intact and runs first
+
+### Changed — `src/ProjectSetup.jsx`
+
+- New state: `editedSummary`, `refocusOpen`, `refocusText`, `refocusCount`
+- `useEffect` reseeds `editedSummary` from `contextSummary` on each new
+  Pass 0 run (initial or refocus)
+- Section 03 panel **replaced** with editable form:
+  - `EditField` (sector · audience · brand_voice)
+  - `ListEditor` (key_facts · red_flags) with per-row ↑/↓ reorder,
+    ✕ delete, `+ Add` button, row index labels
+  - `ReadOnlyChips` (sources · ingestion source list, not editable)
+  - Collapsible `<details>` showing raw `product_context` (passes
+    through to downstream untouched)
+- Section 04 gains:
+  - `💾 Save Project` button (gold) — persists **editedSummary**
+  - `🔄 Refocus (N/5)` button (purple)
+  - When refocus opens: textarea with examples + Cancel/Re-run buttons
+  - Cap-reached state disables button with tooltip
+- Refocus logs to browser console: `[Pass 0] refocus attempt N/5 · guidance: "..."`
+
+### Behavior
+
+- Backward-compat: if user clicks Save without editing, `editedSummary`
+  matches `contextSummary` field-for-field — same outcome as v1.4
+- `handleSaveProject` now strips empty-string list entries (users can
+  delete-and-leave-blank without polluting Airtable)
+- Refocus replaces edits with new Pass 0 output (warning shown above
+  the Re-run button)
+
+### Bundle
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.10 | 361.57 KB | 104.75 KB |
+| **v1.6.11** | **370.46 KB** | **106.76 KB** |
+
++9 KB for the edit panel + list editor + refocus UI.
+
+### What this finally fixes
+Before v1.6.11 the user had no way to:
+- Fix a wrong Pass 0 read before it propagated to all 18 downstream passes
+- Add a key fact the LLM missed
+- Remove a hallucinated red flag
+- Re-aim Pass 0 ("focus more on pricing") without rewriting the source files
+
+All four now work. Edit-then-Save is the new happy path.
+
+---
+
 ## [1.6.10] — 2026-05-14
 
 **Hotfix: Pass 0 corpus cap.** Fixes `"prompt is too long"` error when
