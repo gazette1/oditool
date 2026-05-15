@@ -20,7 +20,11 @@ import { summarizeProjectContext } from "./lib/anthropic";
 import { AirtableClient } from "./lib/airtable";
 import { ingestFolder } from "./lib/google-drive";
 
-export default function ProjectSetup({ config, onProjectReady, onCancel }) {
+// Engine v1.6.12 · ProjectSetup now accepts an optional `priorBrandMemory`
+// prop · when present (loaded from a previously-saved project's brand_memory
+// Airtable field) it gets passed into summarizeProjectContext so Pass 0
+// sees prior-run learnings as background context.
+export default function ProjectSetup({ config, onProjectReady, onCancel, priorBrandMemory = "" }) {
   const [files, setFiles] = useState([]);
   const [parsedFiles, setParsedFiles] = useState([]);
   const [url, setUrl] = useState("");
@@ -173,7 +177,7 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
         })),
         urls: scraped && scraped.content ? [{ url: scraped.url, content: scraped.content }] : [],
       };
-      const summary = await summarizeProjectContext(config.anthropicKey, inputs);
+      const summary = await summarizeProjectContext(config.anthropicKey, inputs, { priorBrandMemory });
       setContextSummary(summary);
       // Pre-fill the project name from the summary if not set
       if (!projectName && summary.sector) {
@@ -217,6 +221,7 @@ export default function ProjectSetup({ config, onProjectReady, onCancel }) {
       };
       const summary = await summarizeProjectContext(config.anthropicKey, inputs, {
         refocusGuidance: refocusText.trim(),
+        priorBrandMemory,
       });
       setContextSummary(summary); // triggers useEffect → reseed editedSummary
       setRefocusCount(attempt);

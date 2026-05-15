@@ -9,7 +9,51 @@
 const API_URL = "https://api.anthropic.com/v1/messages";
 const MODEL = "claude-sonnet-4-20250514";
 
-export async function callClaude(apiKey, system, userMessage, { tools = null, maxTokens = 4000 } = {}) {
+// ─────────────────────────────────────────────────────────────
+// Pattern E · Hook system on callClaude (Engine v1.6.12)
+// ─────────────────────────────────────────────────────────────
+// Foundation for retry, throttle, validation, token logging, and
+// fallback-provider routing. Anyone (including the engine itself) can
+// register a hook to fire before or after every Claude call.
+//
+//   registerHook("pre_llm_call",  async (ctx)     => ctx_or_undefined)
+//   registerHook("post_llm_call", async (result)  => result_or_undefined)
+//
+// Pre-hook signature  · receives { apiKey, system, userMessage, opts }
+//                     · may return a NEW ctx to mutate the outgoing call
+//                     · throwing aborts the call entirely
+// Post-hook signature · receives { ...ctx, data, error, ms, attempt, provider }
+//                     · may return a NEW result (e.g. retry result · or
+//                       a transformed `data`)
+//                     · `error` is non-null when the call failed; a
+//                       post-hook may handle it (return { data, error:null })
+//                       to swallow and recover
+//
+// Hooks fire in registration order. Returning undefined keeps the ctx
+// unchanged. Returning null is treated as undefined (safety).
+//
+// Pattern F (fallback chain) registers itself as the LAST post_llm_call
+// hook · it checks for 529/503 + retry-exhaustion and rotates providers.
+// ─────────────────────────────────────────────────────────────
+const _hooks = { pre_llm_call: [], post_llm_call: [] };
+
+export function registerHook(type, fn) {
+  if (!(type in _hooks)) throw new Error(`Unknown hook type: ${type}. Use pre_llm_call or post_llm_call.`);
+  if (typeof fn !== "function") throw new Error("Hook must be a function");
+  _hooks[type].push(fn);
+  // Return an unsubscribe handle so callers can detach later
+  return () => { _hooks[type] = _hooks[type].filter((h) => h !== fn); };
+}
+
+export function clearHooks(type) {
+  if (type) _hooks[type] = [];
+  else { _hooks.pre_llm_call = []; _hooks.post_llm_call = []; }
+}
+
+export function _internalCallAnthropic({ apiKey, system, userMessage, opts }) {
+  // The raw Anthropic call. Exported under `_internal*` for Pattern F
+  // (fallback providers) to use when reconstructing a retry.
+  const { tools = null, maxTokens = 4000 } = opts || {};
   const body = {
     model: MODEL,
     max_tokens: maxTokens,
@@ -18,7 +62,7 @@ export async function callClaude(apiKey, system, userMessage, { tools = null, ma
   };
   if (tools) body.tools = tools;
 
-  const res = await fetch(API_URL, {
+  return fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -27,21 +71,68 @@ export async function callClaude(apiKey, system, userMessage, { tools = null, ma
       "anthropic-dangerous-direct-browser-access": "true",
     },
     body: JSON.stringify(body),
+  }).then(async (res) => {
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const e = new Error(`Claude API error (${res.status}): ${err.error?.message || res.statusText}`);
+      e.status = res.status;
+      e.provider = "anthropic";
+      throw e;
+    }
+    return res.json();
   });
+}
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(`Claude API error (${res.status}): ${err.error?.message || res.statusText}`);
+export async function callClaude(apiKey, system, userMessage, { tools = null, maxTokens = 4000 } = {}) {
+  // Build the initial ctx · pre-hooks can mutate everything except the
+  // shape (apiKey/system/userMessage/opts stays the contract).
+  let ctx = { apiKey, system, userMessage, opts: { tools, maxTokens } };
+
+  for (const hook of _hooks.pre_llm_call) {
+    try {
+      const out = await hook(ctx);
+      if (out) ctx = out;
+    } catch (e) {
+      // A pre-hook may intentionally abort by throwing. Propagate.
+      throw e;
+    }
   }
 
-  const data = await res.json();
-
-  // CRITICAL: detect truncation BEFORE trying to parse JSON.
-  if (data.stop_reason === "max_tokens") {
-    throw new Error("TRUNCATED: Claude response hit max_tokens before completing. Reduce scope or raise max_tokens.");
+  const start = Date.now();
+  let data = null, error = null;
+  try {
+    data = await _internalCallAnthropic(ctx);
+    // Truncation detection lives here (was the old return path)
+    if (data?.stop_reason === "max_tokens") {
+      error = new Error("TRUNCATED: Claude response hit max_tokens before completing. Reduce scope or raise max_tokens.");
+      error.truncated = true;
+    }
+  } catch (e) {
+    error = e;
   }
 
-  return data;
+  let result = {
+    ...ctx,
+    data,
+    error,
+    ms: Date.now() - start,
+    attempt: 1,
+    provider: "anthropic",
+  };
+
+  for (const hook of _hooks.post_llm_call) {
+    try {
+      const out = await hook(result);
+      if (out) result = out;
+    } catch (e) {
+      // A post-hook error does not abort the call · log + continue.
+      // eslint-disable-next-line no-console
+      console.warn("[post_llm_call hook] threw:", e.message);
+    }
+  }
+
+  if (result.error) throw result.error;
+  return result.data;
 }
 
 export function extractJSON(data) {
@@ -99,14 +190,24 @@ export function extractJSON(data) {
 //   named option to preserve backward compatibility with 2-arg callers.
 const MAX_CORPUS_CHARS = 120_000;
 
-export async function summarizeProjectContext(apiKey, inputs, { refocusGuidance = "" } = {}) {
+// Engine v1.6.12 · Pattern B · `priorBrandMemory` optional 3rd-arg field.
+// When passed, the accumulated brand_memory string from prior runs gets
+// prepended to the corpus inside a `── PRIOR BRAND MEMORY ──` block so
+// Pass 0 can carry insights across sessions WITHOUT mid-run mutation.
+// Counted against MAX_CORPUS_CHARS · clipped proportionally if total
+// exceeds cap.
+export async function summarizeProjectContext(apiKey, inputs, { refocusGuidance = "", priorBrandMemory = "" } = {}) {
   const fileBlocksList = (inputs.files || [])
     .filter(f => f.text && f.text.length > 0)
     .map(f => `── FILE: ${f.fileName} (${f.kind}) ──\n${f.text}`);
   const urlBlocksList = (inputs.urls || [])
     .filter(u => u.content && u.content.length > 0)
     .map(u => `── URL: ${u.url} ──\n${u.content}`);
-  const allBlocks = [...fileBlocksList, ...urlBlocksList];
+  // Pattern B · prior brand memory leads the corpus (highest priority)
+  const memoryBlock = priorBrandMemory && priorBrandMemory.trim()
+    ? [`── PRIOR BRAND MEMORY (from earlier runs · use as background context, do not over-weight) ──\n${priorBrandMemory.trim()}`]
+    : [];
+  const allBlocks = [...memoryBlock, ...fileBlocksList, ...urlBlocksList];
   const totalLen = allBlocks.reduce((s, b) => s + b.length, 0);
 
   let corpus = "";
@@ -989,6 +1090,92 @@ export function validateAndNormalizeChannelPlan(channelPlan) {
     channels,
     _validation: { ok: true, applied: true, original_sum: originalSum, final_sum: 100 },
   };
+}
+
+// ── HERMES META-PASS · generateRunRetrospective (Engine v1.6.12) ──
+//
+// Not a strategy-doc section. Meta-pass that reads outputs from
+// Passes 1-18 and proposes prompt-improvement candidates for the user
+// to approve. Accepted candidates append to the project's brand_learned
+// Airtable field (Pattern B) so future runs benefit.
+//
+// Spec'd in v1.7 backlog row #18 as "Pass 15 generateRunRetrospective"
+// but renamed here to avoid collision with the now-shipped Pass 15
+// generateCompetitiveTeardown. Internally referred to as the "Hermes
+// retrospective pass" · not numbered in the strategy doc.
+//
+// Inputs:
+//   - projectContext (Pass 0 output)
+//   - allOutputs · { mergedJobs, entryRecs, positioning, personas,
+//                    swipeFile, scripts, emailFlows, channelPlan,
+//                    landing, rollout, creators, competitive,
+//                    brandAudit, demandLandscape, tribe }
+//
+// Output:
+//   {
+//     overall_verdict: "1-2 sentence read on the run's quality",
+//     candidates: [
+//       {
+//         pass_id: 1-18,
+//         pass_name: "discoverJobs",
+//         severity: "high" | "medium" | "low",
+//         observation: "What looked weak",
+//         improvement: "Concrete prompt-level fix (1-2 sentences)",
+//         brand_learned_entry: "If accepted, this is what appends to brand_learned",
+//       }
+//     ],
+//     wins: ["What worked well · keep doing this"]
+//   }
+export async function generateRunRetrospective(apiKey, projectContext, allOutputs) {
+  const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}` : "";
+
+  // Compact summary of each pass output · keep prompt under ~20K chars
+  const summarize = (pass, val, getLabel) => {
+    if (!val) return `${pass}: (not run)`;
+    if (Array.isArray(val)) return `${pass}: ${val.length} entries · samples: ${val.slice(0, 2).map(getLabel).join(" · ")}`;
+    return `${pass}: ${getLabel(val)}`;
+  };
+
+  const passDigest = [
+    summarize("Pass 1 jobs", allOutputs.mergedJobs, (j) => `[${j.id}] ${j.job_statement?.slice(0, 80)}`),
+    summarize("Pass 4 positioning", allOutputs.positioning?.primary, (p) => `"${p.sentence?.slice(0, 100)}" (score ${p.citation_score})`),
+    summarize("Pass 4 entry recs", allOutputs.entryRecs, (r) => `${r.strategy}: ${r.target_job?.slice(0, 60)}`),
+    summarize("Pass 7 personas", allOutputs.personas, (p) => `${p.name} (${p.archetype})`),
+    summarize("Pass 8 swipe file", allOutputs.swipeFile, (s) => `${s.id} ${s.framework}`),
+    summarize("Pass 11 channels", allOutputs.channelPlan?.channels, (c) => `${c.channel} ${c.budget_pct}%`),
+    summarize("Pass 13 rollout", allOutputs.rollout?.phases, (p) => `${p.theme}`),
+    summarize("Pass 14 creators", allOutputs.creators?.creator_briefs, (b) => `${b.packet_id} ${b.creator_archetype}`),
+    summarize("Pass 15 competitive", allOutputs.competitive?.competitive_matrix, (c) => `${c.competitor_name}: ${c.wedge_to_attack?.slice(0, 60)}`),
+    summarize("Pass 16 audit", allOutputs.brandAudit?.areas, (a) => `${a.area_name} [${a.fix_priority}]`),
+    summarize("Pass 17 demand", allOutputs.demandLandscape?.white_space_keywords, (w) => `"${w.kw}"`),
+    summarize("Pass 18 tribe", allOutputs.tribe?.creators?.filter(c => c.verified !== false), (c) => `${c.handle} (${c.tier})`),
+  ].join("\n");
+
+  const data = await callClaude(apiKey,
+    `You are a meta-reviewer auditing an ODI engine's full-run output for prompt-quality issues. Your job: scan the digest below and surface concrete, schema-anchored improvements that would make the NEXT run better. Be honest · severity should reflect real signal, not LLM politeness.
+
+For each issue you flag:
+- pass_id (1-18)
+- pass_name (exact function name from the engine)
+- severity ("high" / "medium" / "low")
+- observation (1 sentence describing what looked weak in THIS run · cite specifics from the digest)
+- improvement (1-2 sentences proposing a concrete prompt-level fix · phrased as a rule the prompt should add)
+- brand_learned_entry (1-3 sentences · what to write to brand_learned if the user accepts this candidate · written as a brand-specific learning, not a generic rule)
+
+Plus an overall_verdict (1-2 sentences · honest, e.g. "Strong on positioning + entry wedge. Weak on creator briefs — too generic.") and a wins array (3-5 things that worked well · keep-doing-this signals).
+
+Cap candidates at 5 high/medium issues. Skip cosmetic complaints. No generic marketing advice — every candidate must reference a specific pass output you saw in the digest.
+
+Return ONLY JSON:
+{
+  "overall_verdict": "...",
+  "candidates": [{...}, ...0-5],
+  "wins": ["...", ...]
+}`,
+    `${ctx}\n\nRun digest:\n${passDigest}`,
+    { maxTokens: 5000 }
+  );
+  return extractJSON(data);
 }
 
 // ── PASS 18: Tribe Readout (Engine v1.6.7) ──

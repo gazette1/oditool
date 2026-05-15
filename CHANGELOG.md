@@ -6,6 +6,149 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.6.12] — 2026-05-14
+
+**Hermes Foundation drop · 5 items in one ship.** Pattern A + Pattern E +
+Pattern F + Pattern B + the meta-pass retrospective. Built in the spec's
+prescribed order so each layer plugs the next in cleanly.
+
+### Pattern A · Skill files (`src/passes/PASS_XX.md` × 19)
+One markdown file per pass with YAML frontmatter declaring `pass_id`,
+`pass_name`, `version`, `deps[]`, `quality_metric`. Body explains what
+the pass does, what section it renders as, dependencies, cost. Plus a
+`src/passes/README.md` documenting the pattern.
+
+- Not loaded at runtime (yet) — pure metadata foundation
+- Future use: runtime validators (does output satisfy schema?) and DSPy-
+  style optimizers (compile prompts against the skill spec)
+- GLOBAL · exempt from project-isolation rules
+
+### Pattern E · Hook system on `callClaude`
+Added `pre_llm_call` + `post_llm_call` hook arrays. Anyone can register
+a hook to fire before/after every Claude call.
+
+```js
+registerHook("pre_llm_call",  (ctx)    => ctx_or_undefined)
+registerHook("post_llm_call", (result) => result_or_undefined)
+```
+
+- Pre-hook receives `{ apiKey, system, userMessage, opts }` · can mutate
+- Post-hook receives `{ ...ctx, data, error, ms, attempt, provider }`
+- Returning a new result handles an error (e.g. retry succeeded)
+- Pattern F registers itself as the post-hook for retry/fallback
+- `_internalCallAnthropic` exported for providers.js to reuse
+
+### Pattern F · Retry + fallback provider chain (`src/lib/providers.js`)
+Single post-hook handles BOTH retry-on-same-provider AND rotate-to-next.
+
+**Retry:** on 429/500/502/503/504/529 or network errors, up to 2 retries
+with exponential backoff (0.8s → 1.6s → 3.2s).
+
+**Chain:** Anthropic → OpenRouter Claude → OpenAI. Activates only when
+the corresponding env var is set:
+- `VITE_OPENROUTER_API_KEY` + optional `VITE_OPENROUTER_MODEL`
+- `VITE_OPENAI_API_KEY` + optional `VITE_OPENAI_FALLBACK_MODEL`
+
+Each provider has a `normalize()` step that maps its response shape
+back to Anthropic's `{content, stop_reason}` so `extractJSON()` and the
+TRUNCATED check work uniformly. Solves Known Issue #10.
+
+`installFallbackChain()` called once in `src/main.jsx` at boot.
+
+### Pattern B · `brand_memory` + `brand_learned` Airtable fields
+Two new fields on the `projects` table (user must add columns in
+Airtable):
+- `brand_memory` (long text) · facts learned about the brand across
+  sessions · loaded into Pass 0 as prior context
+- `brand_learned` (long text) · accepted prompt-improvement candidates
+  from retrospectives
+
+Both section-sign delimited (`── BRAND MEMORY · YYYY-MM-DD ──`) so
+sessions append without clobbering. Loaded at project switch, FROZEN
+during a run (preserves Anthropic prompt cache), written only post-run.
+
+New AirtableClient methods:
+- `loadBrandMemory(airtableId)` → `{ brand_memory, brand_learned }`
+- `appendBrandMemory(airtableId, entry)` · idempotent on dup stanzas
+- `appendBrandLearned(airtableId, entry)` · same pattern
+
+Pass 0 chain: `summarizeProjectContext` gains optional
+`{ priorBrandMemory }` named option · when present, prepended to the
+corpus inside a `── PRIOR BRAND MEMORY ──` block · counted against the
+v1.6.10 MAX_CORPUS_CHARS cap.
+
+App.jsx loads brand_memory on project switch · ProjectSetup passes it
+through to Pass 0 · brand_memory + brand_learned both reset on the
+project-state reset (v1.6.5 isolation rules).
+
+### Hermes Retrospective · `generateRunRetrospective` (meta-pass)
+Reads outputs from passes 1-18 + projectContext · returns
+`{ overall_verdict, candidates[0-5], wins[] }`. Each candidate:
+- `pass_id` · `pass_name` · `severity` (high/medium/low)
+- `observation` · what looked weak in THIS run, citing the digest
+- `improvement` · concrete prompt-level fix (1-2 sentences)
+- `brand_learned_entry` · what writes to Airtable if accepted
+
+Schema rejects generic marketing advice · every candidate must
+reference a specific pass output from the digest. Cap at 5 issues to
+prevent runaway.
+
+UI: new `RetrospectiveModal` auto-opens after Strategy Doc completes.
+Each candidate has an "Accept → brand_learned" button. Accepted ones
+append to the project's brand_learned Airtable field and the local
+cache updates immediately.
+
+### Note on naming
+Spec called this "Pass 15 generateRunRetrospective" but Pass 15 is now
+generateCompetitiveTeardown (shipped v1.6.3). Renamed to "Hermes
+retrospective pass" · not numbered in the strategy doc anyway since
+it's a meta-pass that runs AFTER the doc and produces no section.
+
+### Files touched
+- `src/passes/` · NEW directory · 19 PASS_XX_*.md + README.md
+- `src/lib/anthropic.js` · Pattern E hook system + Pattern B priorBrandMemory + Hermes retrospective pass (~250 lines added)
+- `src/lib/providers.js` · NEW · 175 lines · Pattern F provider chain
+- `src/lib/airtable.js` · Pattern B loadBrandMemory/appendBrandMemory/appendBrandLearned (~75 lines)
+- `src/ProjectSetup.jsx` · accepts priorBrandMemory prop, threads into Pass 0
+- `src/App.jsx` · RetrospectiveModal component, brand_memory state + load on project switch, retro auto-trigger after Strategy Doc, acceptRetroCandidate handler
+- `src/main.jsx` · installFallbackChain() at boot
+
+### Bundle
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.11 | 370.46 KB | 106.76 KB |
+| **v1.6.12** | **384.04 KB** | **110.95 KB** |
+
++14 KB.
+
+### How the foundation chains forward
+1. **Pattern A** establishes the metadata vocabulary every future
+   validator/optimizer reads from.
+2. **Pattern E** is the seam — anyone (us, you, future plugins) can
+   register a hook without forking `callClaude`.
+3. **Pattern F** is the FIRST consumer of Pattern E · proves the seam.
+   Adds resilience without changing any pass's call site.
+4. **Pattern B** gives projects memory across sessions · Pass 0 reads
+   it · retrospective writes it.
+5. **Retrospective** closes the learning loop · user-approval-gated so
+   no automated prompt drift.
+
+### Backlog status (v1.7 Hermes-Inspired Enhancements)
+| # | Item | Status |
+| --- | --- | --- |
+| 14 | Pattern E hook system | ✅ v1.6.12 |
+| 15 | Pattern F fallback chain | ✅ v1.6.12 |
+| 16 | Pattern A skill files | ✅ v1.6.12 |
+| 17 | Pattern B brand_memory | ✅ v1.6.12 |
+| 18 | Hermes retrospective pass | ✅ v1.6.12 |
+| 19 | ~~Pass 0 input edit + refocus~~ | ✅ v1.6.11 |
+| 20 | ~~Project isolation audit~~ | ✅ v1.6.5 |
+
+**All 7 Hermes rows shipped.** v1.7 Parity-21 remaining: Pass 19 seasonal
+campaign + Meta Ad Library API token.
+
+---
+
 ## [1.6.11] — 2026-05-14
 
 **Pass 0 editable review panel + refocus (long-deferred Task 2 from the

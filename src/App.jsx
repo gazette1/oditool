@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective } from "./lib/anthropic";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
 import { deployStrategyDoc, isVercelDeployConfigured } from "./lib/vercel-deploy";
 import { generateSwipeImagery } from "./lib/image-gen";
@@ -34,6 +34,82 @@ const marketSignalColor = (n) => n >= 70 ? "#22c55e" : n >= 40 ? "#eab308" : "#e
 const difficultyColor = (d) => d === "low" ? "#22c55e" : d === "high" ? "#ef4444" : "#eab308";
 
 // ── Config Panel ──
+// Engine v1.6.12 · Hermes Retrospective modal.
+// Renders after a Strategy Doc run completes. Shows the meta-pass output:
+// overall verdict, prompt-improvement candidates (Accept/Reject per row),
+// and wins. Accepted candidates append to brand_learned via Pattern B.
+function RetrospectiveModal({ retro, onAccept, onClose, brandLearnedSize, brandMemorySize }) {
+  const candidates = retro.candidates || [];
+  const wins = retro.wins || [];
+  const sevColor = (s) => s === "high" ? "#bc4749" : s === "medium" ? "#c8a45c" : "#6a994e";
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-[#1e2a3a] sticky top-0 bg-surface-1 z-10">
+          <div className="flex items-baseline justify-between gap-3 mb-1">
+            <div className="font-display text-base font-bold">🜂 Hermes Retrospective</div>
+            <button onClick={onClose} className="text-[10px] text-dim border border-[#1e2a3a] px-2 py-1 rounded hover:border-accent hover:text-accent">✕ close</button>
+          </div>
+          <p className="text-[11px] text-dim leading-relaxed">{retro.overall_verdict}</p>
+          <div className="text-[9px] text-dim mt-2 tracking-widest uppercase">
+            brand_memory: {brandMemorySize.toLocaleString()} chars · brand_learned: {brandLearnedSize.toLocaleString()} chars
+          </div>
+        </div>
+
+        <div className="px-6 py-5">
+          {/* Wins */}
+          {wins.length > 0 && (
+            <div className="mb-5 p-3 rounded-lg" style={{ background: "rgba(106,153,78,0.08)", borderLeft: "3px solid #6a994e" }}>
+              <div className="text-[9px] tracking-widest uppercase font-bold mb-2" style={{ color: "#6a994e" }}>✓ Wins · keep doing this</div>
+              <ul className="space-y-1.5">
+                {wins.map((w, i) => <li key={i} className="text-[12px] leading-relaxed">· {w}</li>)}
+              </ul>
+            </div>
+          )}
+
+          {/* Candidates */}
+          <div className="text-[9px] tracking-widest uppercase font-bold mb-3 text-dim">
+            {candidates.length} prompt-improvement candidate{candidates.length !== 1 ? "s" : ""} · accept to append to brand_learned
+          </div>
+          {candidates.length === 0 && (
+            <p className="text-[12px] text-dim italic py-6 text-center">No candidates surfaced — clean run.</p>
+          )}
+          {candidates.map((c, idx) => (
+            <div key={idx} className="mb-3 p-4 rounded-lg border border-[#1e2a3a] bg-surface-2">
+              <div className="flex items-baseline justify-between gap-3 mb-2">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="font-display text-sm font-bold">Pass {c.pass_id}</span>
+                  <span className="text-[10px] text-dim font-mono">{c.pass_name}</span>
+                  <span className="text-[9px] tracking-widest uppercase px-2 py-0.5 rounded" style={{ background: `${sevColor(c.severity)}33`, color: sevColor(c.severity) }}>
+                    {c.severity}
+                  </span>
+                </div>
+                {c._accepted ? (
+                  <span className="text-[10px] text-[#6a994e] font-bold">✓ ACCEPTED</span>
+                ) : (
+                  <button
+                    onClick={() => onAccept(idx)}
+                    className="text-[10px] border border-[#6a994e] text-[#6a994e] px-3 py-1 rounded hover:bg-[#6a994e] hover:text-[#06080c] transition">
+                    Accept → brand_learned
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-[#e0ddd5] leading-relaxed mb-2"><strong className="text-dim">Observation:</strong> {c.observation}</p>
+              <p className="text-[11px] text-[#e0ddd5] leading-relaxed mb-2"><strong className="text-dim">Improvement:</strong> {c.improvement}</p>
+              {c.brand_learned_entry && (
+                <p className="text-[11px] text-dim italic leading-relaxed border-t border-[#1e2a3a] pt-2 mt-2">
+                  ↳ Will write: "{c.brand_learned_entry}"
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConfigPanel({ config, setConfig, onClose }) {
   const [local, setLocal] = useState(config);
   return (
@@ -138,8 +214,15 @@ export default function App() {
   const [adIntelPhase, setAdIntelPhase] = useState("");
   const [adIntelData, setAdIntelData] = useState(null); // { competitors, ads, briefs, summary }
 
-  // Engine v1.6.8: opt-in swipe imagery toggle (gpt-image-1 per card)
+  // Engine v1.6.8: opt-in swipe imagery toggle (gpt-image-2 per card)
   const [generateImagery, setGenerateImagery] = useState(false);
+
+  // Engine v1.6.12: Hermes retrospective state + brand_memory cache
+  const [retroData, setRetroData] = useState(null);       // { overall_verdict, candidates, wins } or null
+  const [retroBusy, setRetroBusy] = useState(false);
+  const [retroPhase, setRetroPhase] = useState("");
+  const [brandMemory, setBrandMemory] = useState("");     // loaded with active project
+  const [brandLearned, setBrandLearned] = useState("");
 
   // Engine v1.4: Project Setup flow + active project context
   const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
@@ -194,6 +277,11 @@ export default function App() {
     setError(null);
     setView("entry");
     setPhase("");
+    // v1.6.12 · brand_memory and retrospective are project-scoped too
+    setRetroData(null);
+    setRetroPhase("");
+    setBrandMemory("");
+    setBrandLearned("");
   }, []);
 
   const loadProjectAsContext = useCallback((project) => {
@@ -221,7 +309,15 @@ export default function App() {
     }
     setProjectContext(summary);
     if (summary?.sector) setSector(summary.sector);
-  }, [resetProjectScopedState]);
+    // v1.6.12 · Pattern B · load brand_memory + brand_learned for this project
+    if (airtable && project?.airtableId) {
+      airtable.loadBrandMemory(project.airtableId).then(({ brand_memory, brand_learned }) => {
+        setBrandMemory(brand_memory || "");
+        setBrandLearned(brand_learned || "");
+        if (brand_memory) log(`Pattern B · loaded ${brand_memory.length} chars of brand_memory from prior runs`, "ok");
+      }).catch(() => {});
+    }
+  }, [resetProjectScopedState, airtable, log]);
 
   // ── Engine v1.5 · Generate full Strategy Doc ──
   const generateStrategyDoc = useCallback(async () => {
@@ -377,13 +473,41 @@ export default function App() {
           if (result.url) {
             setStratDocPhase(`✓ ${filename} · share: ${result.url}`);
             log(`Vercel share URL: ${result.url}`, "ok");
-            // Stash on window for one-click copy from devtools
             // eslint-disable-next-line no-console
             console.log("📎 Strategy doc share URL:", result.url);
           }
         } catch (e) {
           log(`Vercel deploy skipped: ${e.message}`, "warn");
         }
+      }
+
+      // Engine v1.6.12 · auto-trigger Hermes retrospective after a full run.
+      // Surfaces a modal with prompt-improvement candidates · user accepts
+      // or rejects each · accepted ones append to brand_learned.
+      setStratDocPhase("Hermes meta-pass: reviewing the run…");
+      log("Hermes retrospective · reviewing 18 passes for prompt-improvement candidates");
+      try {
+        const retro = await generateRunRetrospective(config.anthropicKey, projectContext, {
+          mergedJobs: data,
+          entryRecs,
+          positioning: positioningSpine,
+          personas,
+          swipeFile: swipe_file,
+          scripts,
+          emailFlows,
+          channelPlan,
+          landing,
+          rollout,
+          creators,
+          competitive,
+          brandAudit,
+          demandLandscape,
+          tribe,
+        });
+        setRetroData(retro);
+        log(`Hermes retrospective · ${(retro.candidates || []).length} candidates · ${(retro.wins || []).length} wins`, "ok");
+      } catch (e) {
+        log(`Hermes retrospective skipped: ${e.message}`, "warn");
       }
     } catch (e) {
       setError(e.message);
@@ -392,6 +516,28 @@ export default function App() {
       setStratDocBusy(false);
     }
   }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, generateImagery, log]);
+
+  // v1.6.12 · accept a retrospective candidate → append its brand_learned_entry
+  const acceptRetroCandidate = useCallback(async (idx) => {
+    if (!retroData?.candidates?.[idx]) return;
+    const c = retroData.candidates[idx];
+    if (airtable && activeProject?.airtableId && c.brand_learned_entry) {
+      try {
+        await airtable.appendBrandLearned(activeProject.airtableId, `[Pass ${c.pass_id} · ${c.pass_name}] ${c.brand_learned_entry}`);
+        log(`Pattern B · accepted candidate appended to brand_learned`, "ok");
+        // Refresh local cache
+        const fresh = await airtable.loadBrandMemory(activeProject.airtableId);
+        setBrandLearned(fresh.brand_learned);
+      } catch (e) {
+        log(`appendBrandLearned failed: ${e.message}`, "error");
+      }
+    }
+    // Mark as accepted in local state so UI updates
+    setRetroData((prev) => ({
+      ...prev,
+      candidates: prev.candidates.map((x, i) => i === idx ? { ...x, _accepted: true } : x),
+    }));
+  }, [retroData, airtable, activeProject, log]);
 
   // ── Engine v1.7 · Run Ad-Intel (Stage A → B → C → D) ──
   const runAdIntelHandler = useCallback(async () => {
@@ -628,12 +774,13 @@ export default function App() {
 
   // Engine v1.4: when in Project Setup mode, render that view full-screen.
   if (viewMode === "setup") {
-    return <ProjectSetup config={config} onProjectReady={handleProjectReady} onCancel={() => setViewMode("analyze")} />;
+    return <ProjectSetup config={config} priorBrandMemory={brandMemory} onProjectReady={handleProjectReady} onCancel={() => setViewMode("analyze")} />;
   }
 
   return (
     <div className="flex h-screen bg-[#06080c] text-[#e0ddd5] font-mono">
       {showConfig && <ConfigPanel config={config} setConfig={setConfig} onClose={() => setShowConfig(false)} />}
+      {retroData && <RetrospectiveModal retro={retroData} onAccept={acceptRetroCandidate} onClose={() => setRetroData(null)} brandLearnedSize={brandLearned.length} brandMemorySize={brandMemory.length} />}
 
       {/* Sidebar */}
       <SessionList sessions={sessions} activeId={activeSession}

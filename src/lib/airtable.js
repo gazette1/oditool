@@ -310,6 +310,79 @@ class AirtableClient {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // Pattern B · brand_memory + brand_learned (Engine v1.6.12)
+  //
+  // Two new fields on the `projects` table (add manually in Airtable):
+  //   - brand_memory   (Long text) · facts learned about the brand across
+  //     sessions · loaded into Pass 0 as prior context
+  //   - brand_learned  (Long text) · prompt-improvement candidates the
+  //     user has accepted from a Hermes retrospective run
+  //
+  // Section-sign delimited so multiple sessions append without clobbering:
+  //   ── BRAND MEMORY · 2026-05-14 ──
+  //   <facts harvested from this run>
+  //   ── BRAND MEMORY · 2026-05-15 ──
+  //   <facts harvested from the next run>
+  //
+  // Loaded at session start, FROZEN during a run, written only post-run.
+  // (The "frozen" property is what keeps Anthropic's prompt cache valid
+  //  across the run — never mutate context mid-stream.)
+  // ─────────────────────────────────────────────────────────────
+
+  async loadBrandMemory(airtableId) {
+    // Returns { brand_memory, brand_learned } strings (each may be "").
+    // Silently returns empty strings if the field doesn't exist yet
+    // (user hasn't added the column to the Airtable schema).
+    try {
+      const data = await this._request(`${TABLES.projects}/${airtableId}`, "GET");
+      return {
+        brand_memory: data.fields?.brand_memory || "",
+        brand_learned: data.fields?.brand_learned || "",
+      };
+    } catch (e) {
+      console.warn("[Pattern B] loadBrandMemory failed (field may not exist yet):", e.message);
+      return { brand_memory: "", brand_learned: "" };
+    }
+  }
+
+  /**
+   * Append a new section to the brand_memory field.
+   * Appends · never overwrites · idempotent on the same date if entry matches.
+   */
+  async appendBrandMemory(airtableId, entry) {
+    if (!entry || !entry.trim()) return;
+    const existing = await this.loadBrandMemory(airtableId);
+    const today = new Date().toISOString().split("T")[0];
+    const stanza = `── BRAND MEMORY · ${today} ──\n${entry.trim()}\n`;
+    // Dedup: if the most recent stanza is identical, skip
+    if (existing.brand_memory.includes(stanza)) return;
+    const next = existing.brand_memory
+      ? `${existing.brand_memory}\n${stanza}`
+      : stanza;
+    try {
+      await this.updateProject(airtableId, { brand_memory: next });
+    } catch (e) {
+      console.warn("[Pattern B] appendBrandMemory failed:", e.message);
+    }
+  }
+
+  async appendBrandLearned(airtableId, entry) {
+    if (!entry || !entry.trim()) return;
+    const existing = await this.loadBrandMemory(airtableId);
+    const today = new Date().toISOString().split("T")[0];
+    const stanza = `── BRAND LEARNED · ${today} ──\n${entry.trim()}\n`;
+    if (existing.brand_learned.includes(stanza)) return;
+    const next = existing.brand_learned
+      ? `${existing.brand_learned}\n${stanza}`
+      : stanza;
+    try {
+      await this.updateProject(airtableId, { brand_learned: next });
+    } catch (e) {
+      console.warn("[Pattern B] appendBrandLearned failed:", e.message);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Ad-Intel module · Engine v1.7
   //
   // Expected base schema (create these tables in Airtable):
