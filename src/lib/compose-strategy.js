@@ -478,13 +478,24 @@ function renderCover(p, project_name) {
 </section>`;
 }
 
-function renderPositioning(p) {
+// v1.7.1 · helper used by every renderer to emit a section-tag-row.
+// Centralizes the "§ NN · Name" + "NN / TOTAL" pattern so renderers
+// don't have to know their own section number — the dispatcher tells
+// them via (n, total). Drops hard-coded "/ 19" denominators that
+// shipped in v1.7.0 before this fix.
+function sectionTag(name, n, total) {
+  const nn = String(n).padStart(2, "0");
+  const tt = String(total).padStart(2, "0");
+  return `<div class="section-tag-row"><span class="section-name">§ ${nn} · ${esc(name)}</span><span class="section-number">${nn} / ${tt}</span></div>`;
+}
+
+function renderPositioning(p, n, total) {
   if (!p.positioning?.primary) return "";
   const pr = p.positioning.primary;
   const alts = p.positioning.alternatives || [];
   return `<section class="section" id="position">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 01 · Positioning</span><span class="section-number">01 / 19</span></div>
+    ${sectionTag("Positioning", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">The single sentence<br/>to claim.</h2>
     <div class="position-primary">
       <span class="tag">Primary</span>
@@ -497,13 +508,13 @@ function renderPositioning(p) {
 </section>`;
 }
 
-function renderEvidence(p) {
+function renderEvidence(p, n, total) {
   if (!(p.mergedJobs || []).length) return "";
   const rows = p.mergedJobs.flatMap(j => (j.outcomes || []).map(o => ({ job: j.id, statement: o.statement, importance: o.importance, satisfaction: o.satisfaction, score: o.opportunity_score })))
     .sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 8);
   return `<section class="section" id="evidence">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 02 · Evidence</span><span class="section-number">02 / 19</span></div>
+    ${sectionTag("Evidence", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">The outcomes<br/>behind the numbers.</h2>
     <div class="ev-table">
       <div class="ev-row head"><div>Job</div><div>Outcome (Ulwick format)</div><div>Importance</div><div>Satisfaction</div><div>Opp score</div></div>
@@ -513,12 +524,12 @@ function renderEvidence(p) {
 </section>`;
 }
 
-function renderValueProp(p) {
+function renderValueProp(p, n, total) {
   const rows = p.valueProp?.comparisons || [];
   if (!rows.length) return "";
   return `<section class="section" id="vp">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 03 · Value-prop comparison</span><span class="section-number">03 / 19</span></div>
+    ${sectionTag("Value-prop comparison", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">Brand vs the named<br/>incumbents.</h2>
     <div class="vp-table">
       <div class="vp-row head"><div>Brand</div><div>Stated value prop</div><div>Prices for</div><div>Leaves unserved</div><div>Where brand wins</div></div>
@@ -528,11 +539,11 @@ function renderValueProp(p) {
 </section>`;
 }
 
-function renderPersonas(p) {
+function renderPersonas(p, n, total) {
   if (!(p.personas || []).length) return "";
   return `<section class="section" id="personas">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 04 · Personas</span><span class="section-number">04 / 19</span></div>
+    ${sectionTag("Personas", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${p.personas.length} buyers.<br/>Each at a hinge.</h2>
     ${p.personas.map((per, i) => `<div class="persona">
       <div class="persona-avatar" style="background:linear-gradient(135deg,var(--moss-light),var(--moss-deep))">${esc((per.name || "?")[0])}</div>
@@ -555,11 +566,11 @@ function renderPersonas(p) {
 </section>`;
 }
 
-function renderSwipe(p) {
+function renderSwipe(p, n, total) {
   if (!(p.swipeFile || []).length) return "";
   return `<section class="section" id="swipe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 05 · Swipe file</span><span class="section-number">05 / 19</span></div>
+    ${sectionTag("Swipe file", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => {
@@ -576,11 +587,11 @@ function renderSwipe(p) {
 </section>`;
 }
 
-function renderScripts(p) {
+function renderScripts(p, n, total) {
   if (!(p.scripts || []).length) return "";
   return `<section class="section" id="scripts">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 06 · TikTok scripts</span><span class="section-number">06 / 19</span></div>
+    ${sectionTag("TikTok scripts", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${p.scripts.length} shot-by-shot scripts.</h2>
     ${p.scripts.map(s => `<div class="script">
       <div class="script-header">
@@ -598,11 +609,11 @@ function renderScripts(p) {
 </section>`;
 }
 
-function renderEmails(p) {
+function renderEmails(p, n, total) {
   if (!(p.emailFlows?.flows || []).length) return "";
   return `<section class="section" id="email">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 07 · Email flows</span><span class="section-number">07 / 19</span></div>
+    ${sectionTag("Email flows", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${p.emailFlows.flows.length} flows.</h2>
     ${p.emailFlows.flows.map(f => `<div class="email-flow">
       <div class="email-flow-head"><div class="email-flow-name">${esc(f.name || "")}</div><div class="email-flow-trigger">${esc(f.trigger || "")}</div></div>
@@ -613,24 +624,24 @@ function renderEmails(p) {
 </section>`;
 }
 
-function renderEntryWedge(p) {
+function renderEntryWedge(p, n, total) {
   if (!(p.recommendations || []).length) return "";
   const top = p.recommendations.slice(0, 3);
   return `<section class="section" id="wedge">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 08 · Entry wedge · top recommendations</span><span class="section-number">08 / 19</span></div>
+    ${sectionTag("Entry wedge · top recommendations", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">Where to start.</h2>
     ${top.map((r, i) => `<div class="position-alt"><div class="alt-tag">Rank ${r.rank || i+1} · ${esc(r.strategy || "")}</div><div class="claim">${esc(r.target_job || "")}</div><div class="citation">Score <span class="score">${r.citation_score ?? ""}</span> · ${esc(r.estimated_market_signal || "")}/100</div><p class="rationale">${esc(r.rationale || "")}<br/><br/><strong>First move:</strong> ${esc(r.first_move || "")}<br/><strong>Belief shift:</strong> ${esc(r.belief_change_required || "")}<br/><strong>Risk:</strong> ${esc(r.risk || "")}</p></div>`).join("")}
   </div>
 </section>`;
 }
 
-function renderChannels(p) {
+function renderChannels(p, n, total) {
   const ch = p.channelPlan?.channels || [];
   if (!ch.length) return "";
   return `<section class="section" id="channels">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 09 · Channel plan</span><span class="section-number">09 / 19</span></div>
+    ${sectionTag("Channel plan", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">Where the money goes.</h2>
     <div class="channel-grid">
       ${ch.map(c => `<div class="channel-card">
@@ -646,12 +657,12 @@ function renderChannels(p) {
 </section>`;
 }
 
-function renderMatrix(p) {
+function renderMatrix(p, n, total) {
   const rows = p.channelPlan?.targeting_matrix || [];
   if (!rows.length) return "";
   return `<section class="section" id="matrix">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 10 · Targeting matrix</span><span class="section-number">10 / 19</span></div>
+    ${sectionTag("Targeting matrix", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">Persona × channel grid.</h2>
     <div class="matrix-table">
       <div class="matrix-row head"><div>Persona</div><div>Channel</div><div>Interests / seeds / exclusions</div><div>Creative angle</div><div>Share</div></div>
@@ -671,12 +682,12 @@ function renderMatrix(p) {
 </section>`;
 }
 
-function renderLanding(p) {
+function renderLanding(p, n, total) {
   const vars = p.landing?.variants || [];
   if (!vars.length) return "";
   return `<section class="section" id="landing">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 11 · Landing variants</span><span class="section-number">11 / 19</span></div>
+    ${sectionTag("Landing variants", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${vars.length} landing pages, one per persona.</h2>
     ${vars.map(v => `<div class="landing-variant">
       <div class="lp-head">
@@ -698,14 +709,14 @@ function renderLanding(p) {
 </section>`;
 }
 
-function renderRollout(p) {
+function renderRollout(p, n, total) {
   const phases = p.rollout?.phases || [];
   if (!phases.length) return "";
   const cadence = p.rollout?.weekly_cadence || [];
   const kills = p.rollout?.kill_criteria || [];
   return `<section class="section" id="rollout">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 12 · 90-day rollout</span><span class="section-number">12 / 19</span></div>
+    ${sectionTag("90-day rollout", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">90 days, three gates.</h2>
     ${phases.map((ph, i) => `<div class="phase-card">
       <span class="ph-tag">Phase ${i+1}</span>
@@ -732,12 +743,12 @@ function renderRollout(p) {
 </section>`;
 }
 
-function renderCreators(p) {
+function renderCreators(p, n, total) {
   const briefs = p.creators?.creator_briefs || [];
   if (!briefs.length) return "";
   return `<section class="section" id="creators">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 13 · Creator outreach</span><span class="section-number">13 / 19</span></div>
+    ${sectionTag("Creator outreach", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${briefs.length} paid-creator packets.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">Archetypes + sourcing criteria, not handles. A human sourcer matches each to a verified account before outreach.</p>
     ${briefs.map(b => `<div class="creator-card">
@@ -784,13 +795,13 @@ function renderCreators(p) {
 </section>`;
 }
 
-function renderCompetitive(p) {
+function renderCompetitive(p, n, total) {
   const rows = p.competitive?.competitive_matrix || [];
   const axis = p.competitive?.axis_summary;
   if (!rows.length && !axis) return "";
   return `<section class="section" id="competitive">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 14 · Competitive teardown</span><span class="section-number">14 / 19</span></div>
+    ${sectionTag("Competitive teardown", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${rows.length} incumbents.<br/>Where to attack each one.</h2>
     ${rows.length ? `<div class="comp-grid">
       ${rows.map(c => `<div class="comp-card">
@@ -825,7 +836,7 @@ function renderCompetitive(p) {
 </section>`;
 }
 
-function renderBrandAudit(p) {
+function renderBrandAudit(p, n, total) {
   const a = p.brandAudit;
   if (!a || (!a.areas?.length && !a.audit_summary)) return "";
   const areas = a.areas || [];
@@ -833,7 +844,7 @@ function renderBrandAudit(p) {
   const disc = a.discoverability || {};
   return `<section class="section" id="audit">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 15 · Brand audit</span><span class="section-number">15 / 19</span></div>
+    ${sectionTag("Brand audit", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${areas.length} surfaces.<br/>State of the brand today.</h2>
     ${a.audit_summary ? `<p class="audit-summary">${esc(a.audit_summary)}</p>` : ""}
     ${areas.length ? `<div class="audit-grid">
@@ -871,7 +882,7 @@ function renderBrandAudit(p) {
 </section>`;
 }
 
-function renderDemandLandscape(p) {
+function renderDemandLandscape(p, n, total) {
   const d = p.demandLandscape;
   if (!d || (!d.funnel_stages?.length && !d.demand_summary)) return "";
   const stages = d.funnel_stages || [];
@@ -881,7 +892,7 @@ function renderDemandLandscape(p) {
   const tempLabel = (temp.label || "").toLowerCase();
   return `<section class="section" id="demand">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 16 · Demand landscape</span><span class="section-number">16 / 19</span></div>
+    ${sectionTag("Demand landscape", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">Where the demand is.<br/>And where it's growing.</h2>
     ${temp.label ? `<div class="dl-temp">
       <div class="temp-left"><div class="lbl">Category temperature</div><div class="val ${esc(tempLabel)}">${esc(temp.label)}</div></div>
@@ -920,7 +931,7 @@ function renderDemandLandscape(p) {
 </section>`;
 }
 
-function renderTribe(p) {
+function renderTribe(p, n, total) {
   const t = p.tribe;
   if (!t || (!t.creators?.length && !t.search_paths?.length && !t.tribe_summary)) return "";
   const creators = t.creators || [];
@@ -956,7 +967,7 @@ function renderTribe(p) {
 
   return `<section class="section" id="tribe">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 17 · Tribe readout</span><span class="section-number">17 / 19</span></div>
+    ${sectionTag("Tribe readout", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${verified.length} verified creators.<br/>${paths.length} sourcing leads.</h2>
     ${t.tribe_summary ? `<p class="tribe-summary">${esc(t.tribe_summary)}</p>` : ""}
     ${caveats.length ? `<div class="tribe-caveats"><span class="lbl">Honest caveats</span><ul>${caveats.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
@@ -982,11 +993,11 @@ function renderTribe(p) {
 </section>`;
 }
 
-function renderMethodology(p) {
+function renderMethodology(p, n, total) {
   const pc = p.project_context || {};
   return `<section class="section" id="method">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 18 · Methodology</span><span class="section-number">18 / 19</span></div>
+    ${sectionTag("Methodology", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
     <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.7 · 18 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages · ${(p.tribe?.creators || []).filter(c => c.verified !== false).length} verified creators.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
@@ -996,10 +1007,10 @@ function renderMethodology(p) {
 </section>`;
 }
 
-function renderColophon(p) {
+function renderColophon(p, n, total) {
   return `<section class="section" id="colophon">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 19 · Colophon</span><span class="section-number">19 / 19</span></div>
+    ${sectionTag("Colophon", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
     <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
@@ -1008,7 +1019,9 @@ function renderColophon(p) {
 }
 
 // ── §00 Strategic Context (Pass D · v1.7.0) ──
-function renderStrategicContext(p, totalSections) {
+// Note: signature is (p, totalSections, n) to match buildSectionMap dispatch.
+// Defaults n to 0 because §00 is conventionally rendered as "00 / TOTAL".
+function renderStrategicContext(p, totalSections, n = 0) {
   const d = p.diagnostic;
   if (!d) return "";
   const bm = d.business_model || {};
@@ -1021,7 +1034,7 @@ function renderStrategicContext(p, totalSections) {
 
   return `<section class="section" id="strategic">
   <div class="container">
-    <div class="section-tag-row"><span class="section-name">§ 00 · Strategic Context</span><span class="section-number">00 / ${totalSections}</span></div>
+    ${sectionTag("Strategic Context", n, totalSections)}
     <h2 class="display-lg" style="margin-bottom:16px">The diagnostic.<br/>Four axes, before any creative.</h2>
     ${warnTriggered ? `<div class="strat-ctx-warning"><strong>⚠ Override · fit gap acknowledged</strong>${esc(warn)}</div>` : ""}
     <div class="strat-ctx-bm"><strong>Business model</strong>${esc(bm.primary || "")} · confidence ${typeof bm.confidence === "number" ? Math.round(bm.confidence * 100) + "%" : "—"}${bm.evidence ? ` · ${esc(bm.evidence)}` : ""}</div>
@@ -1103,38 +1116,36 @@ function renderAppliedPlaybooks(p, totalSections, sectionNum) {
 </section>`;
 }
 
-// ── Section ID → renderer dispatch (v1.7.0) ──
-// Section order is now driven by `diagnostic.business_model.doc_sections`
-// from the registry. Unknown section IDs are skipped with console.warn.
+// ── Section ID → renderer dispatch (v1.7.0 · refined v1.7.1) ──
+// Section order is driven by `diagnostic.business_model.doc_sections`
+// from the registry. Every renderer receives (payload, n, total) and
+// emits its own § NN · NAME / NN / TOTAL tag via `sectionTag()`.
+// Unknown section IDs are skipped with console.warn.
 function buildSectionMap(payload, totalSections) {
-  const sectionMap = {};
-  const wrap = (id, fn) => { sectionMap[id] = fn; };
-  let counter = 0;
-  // Each renderer was already coded to emit its own § N / 19 label.
-  // For v1.7.0 we patch them at the payload level if a different totalSections is requested.
-  wrap("strategic_context", () => renderStrategicContext(payload, totalSections));
-  wrap("positioning",       () => renderPositioning(payload));
-  wrap("evidence",          () => renderEvidence(payload));
-  wrap("value_prop",        () => renderValueProp(payload));
-  wrap("personas",          () => renderPersonas(payload));
-  wrap("swipe_file",        () => renderSwipe(payload));
-  wrap("scripts",           () => renderScripts(payload));
-  wrap("email_flows",       () => renderEmails(payload));
-  wrap("entry_wedge",       () => renderEntryWedge(payload));
-  wrap("channels",          () => renderChannels(payload));
-  wrap("matrix",            () => renderMatrix(payload));
-  wrap("landing",           () => renderLanding(payload));
-  wrap("rollout",           () => renderRollout(payload));
-  wrap("creators",          () => renderCreators(payload));
-  wrap("competitive",       () => renderCompetitive(payload));
-  wrap("brand_audit",       () => renderBrandAudit(payload));
-  wrap("demand",            () => renderDemandLandscape(payload));
-  wrap("tribe",             () => renderTribe(payload));
-  // applied_playbooks needs a section number · computed below
-  wrap("applied_playbooks", (n) => renderAppliedPlaybooks(payload, totalSections, n));
-  wrap("methodology",       () => renderMethodology(payload));
-  wrap("colophon",          () => renderColophon(payload));
-  return sectionMap;
+  const t = totalSections;
+  return {
+    strategic_context: (n) => renderStrategicContext(payload, t, n),
+    positioning:       (n) => renderPositioning(payload, n, t),
+    evidence:          (n) => renderEvidence(payload, n, t),
+    value_prop:        (n) => renderValueProp(payload, n, t),
+    personas:          (n) => renderPersonas(payload, n, t),
+    swipe_file:        (n) => renderSwipe(payload, n, t),
+    scripts:           (n) => renderScripts(payload, n, t),
+    email_flows:       (n) => renderEmails(payload, n, t),
+    entry_wedge:       (n) => renderEntryWedge(payload, n, t),
+    channels:          (n) => renderChannels(payload, n, t),
+    matrix:            (n) => renderMatrix(payload, n, t),
+    landing:           (n) => renderLanding(payload, n, t),
+    rollout:           (n) => renderRollout(payload, n, t),
+    creators:          (n) => renderCreators(payload, n, t),
+    competitive:       (n) => renderCompetitive(payload, n, t),
+    brand_audit:       (n) => renderBrandAudit(payload, n, t),
+    demand:            (n) => renderDemandLandscape(payload, n, t),
+    tribe:             (n) => renderTribe(payload, n, t),
+    applied_playbooks: (n) => renderAppliedPlaybooks(payload, t, n),
+    methodology:       (n) => renderMethodology(payload, n, t),
+    colophon:          (n) => renderColophon(payload, n, t),
+  };
 }
 
 // ── Main entry ──
@@ -1176,9 +1187,14 @@ ${(() => {
   const order = payload.diagnostic?.business_model?.doc_sections || defaultOrder;
   const total = order.length;
   const sectionMap = buildSectionMap(payload, total);
-  let n = 0;
-  return order.map((sid) => {
-    n += 1;
+  // 0-based numbering · §00 Strategic Context through §20 Colophon (DTC).
+  // When no diagnostic is passed, defaultOrder begins at positioning so the
+  // first section receives n=0 = "§ 00 · Positioning" which still reads
+  // naturally even without the Strategic Context preface. We bias the
+  // default-order case by +1 so positioning gets §01 when running pre-Pass D.
+  const offset = payload.diagnostic ? 0 : 1;
+  return order.map((sid, idx) => {
+    const n = idx + offset;
     const fn = sectionMap[sid];
     if (!fn) { console.warn(`[compose-strategy] unknown section id: ${sid}`); return ""; }
     return fn(n);

@@ -96,6 +96,11 @@ const TABLES = {
 //   - created_at (Date)
 // ─────────────────────────────────────────────────────────────
 
+// Engine v1.7.1 · business-models registry · used by loadDiagnostic to
+// re-resolve registry-derived fields against the current registry (defense
+// against archetype is_supported flipping between releases).
+import { resolveBusinessModel } from "./business-models.js";
+
 // Engine v1.6.8 · throttle helper. Airtable rate-limit is 5 req/sec per base.
 // We chunk at 10 records per request, so back-to-back chunks plus the
 // preceding session/project writes routinely 429 on a heavy run. 200ms
@@ -431,7 +436,25 @@ class AirtableClient {
       const data = await this._request(`${TABLES.projects}/${airtableId}`, "GET");
       const raw = data.fields?.diagnostic_v1;
       if (!raw) return null;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // v1.7.1 · re-resolve registry-derived fields against the CURRENT
+      // business-models.js so that a project saved in v1.7.0 (when only
+      // dtc_ecommerce was supported) automatically picks up its archetype's
+      // is_supported flag flipping in v1.8+ (e.g., b2b_saas going live).
+      // The user's _override_acknowledged flag is preserved.
+      const bmId = parsed.business_model?.primary;
+      if (bmId) {
+        const fresh = resolveBusinessModel(bmId);
+        parsed.business_model = {
+          ...parsed.business_model,
+          is_supported: fresh.is_supported,
+          phase_target: fresh.phase_target,
+          library_priors: fresh.library_priors,
+          // pass_plan + doc_sections only present on supported archetypes
+          ...(fresh.is_supported ? { pass_plan: fresh.pass_plan, doc_sections: fresh.doc_sections } : {}),
+        };
+      }
+      return parsed;
     } catch (e) {
       console.warn("[Pass D] loadDiagnostic failed:", e.message);
       return null;

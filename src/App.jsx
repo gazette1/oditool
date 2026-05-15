@@ -504,7 +504,7 @@ export default function App() {
       } catch (e) { log(`Pass 17 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 18: tribe readout (web_search verification, slow)…");
-      log("Pass 18/19: tribe readout · web_search-verified handles only");
+      log("Pass 18/18: tribe readout · web_search-verified handles only");
       let tribe = { tribe_summary: "", creators: [], search_paths: [], honest_caveats: [] };
       try {
         tribe = await generateTribeReadout(config.anthropicKey, projectContext, personas, creators);
@@ -514,7 +514,7 @@ export default function App() {
       let pl = { applied_playbooks: [] };
       if (vaultIndex?.concepts?.length && diagnostic) {
         setStratDocPhase(`Pass L: applying ${vaultIndex.concepts.length} library concepts (rank → select 8-12 → anchor)…`);
-        log(`Pass L/19: applying playbook library · vault: ${vaultIndex.concepts.length} concepts`);
+        log(`Pass L (post-18): applying playbook library · vault: ${vaultIndex.concepts.length} concepts`);
         try {
           pl = await applyPlaybookLibrary(config.anthropicKey, {
             projectContext,

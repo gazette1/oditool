@@ -6,6 +6,108 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.1] — 2026-05-15 (unreleased · v1.7.0 polish in progress)
+
+**Hot-fix sweep after v1.7.0 audit.** No new features · entirely cleanup
+of bugs, mismatches, and drift surfaced by reading the v1.7.0 code with
+fresh eyes before user end-to-end test. Listed in priority order.
+
+### Fixed — section numbering across all renderers (the big one)
+
+v1.7.0 shipped with `TOTAL_SECTIONS = 21` exported but **never threaded
+through the 19 inherited renderers**. Every renderer still hard-coded its
+own `§ NN · NAME` label AND a `/ 19` denominator from v1.6.7. The user
+would have downloaded a strategy doc where:
+
+- §00 Strategic Context correctly displayed `00 / 21`
+- §01 Positioning through §17 Tribe Readout displayed `01 / 19`–`17 / 19`
+  (wrong denominator)
+- §18 Applied Playbooks correctly displayed `18 / 21`
+- §19 Methodology was labeled "§ 18 · Methodology" (shifted by one
+  because §00 was inserted ahead of it)
+- §20 Colophon was labeled "§ 19 · Colophon"
+
+**Fix:** added `sectionTag(name, n, total)` helper to compose-strategy.js;
+all 21 renderers now take `(p, n, total)` and emit a section-tag-row via
+the helper. `buildSectionMap` was rewritten as a flat object literal that
+passes `(n)` to every section function (was previously only passing `n`
+to `applied_playbooks`). The dispatcher loop in `composeStrategyDoc` was
+switched from a 1-based counter to a 0-based `idx`, with a `+1` offset
+applied in legacy / no-diagnostic mode so v1.6.x-shape docs still
+display `01 / 19`–`19 / 19` as before.
+
+### Fixed — backward-compat for v1.6.x projects opened in v1.7.0
+
+A project saved in v1.6.x has no `diagnostic_v1` field on Airtable. When
+opened in v1.7.0, `loadDiagnostic` returns null and `composeStrategyDoc`
+falls back to a hardcoded default order. That fallback now correctly
+renders 19 sections numbered `01 / 19`–`19 / 19` (matches the v1.6.x
+output the user previously got · §00 and §18 simply absent).
+
+### Fixed — registry drift across releases
+
+`airtable.loadDiagnostic` now re-resolves the persisted archetype against
+the **current** `business-models.js` registry, so a project saved in
+v1.7.0 (when `b2b_saas.is_supported = false`) will automatically pick up
+that archetype's flag flipping to `true` in v1.8 once Phase 2 ships.
+The user's `_override_acknowledged` flag is preserved across the
+re-resolve. Without this, an old SaaS project would stay permanently
+gated even after its dedicated pass variants land.
+
+### Fixed — vault slim-cache state was invisible to user
+
+`persistIndex` returns `"slim"` when the cached vault exceeds 4.5MB and
+`full_content` had to be stripped from the persisted version. Pass L
+silently degrades to using the 280-char `summary` field in that case.
+v1.7.0 swallowed the return value · v1.7.1 surfaces it: ProjectSetup
+records `_slim_persisted: true` on the in-memory vaultIndex, displays a
+yellow `⚠ slim cache · click ↻ Reload to restore full content next
+session` note next to the concept counter, and the Pass 0 phase line
+now appends `· ⚠ cache slim (>4.5MB · full_content kept in memory for
+this session)` when persistence had to slim.
+
+### Fixed — misleading log lines
+
+App.jsx logged `Pass 18/19` and `Pass L/19` during strategy-doc gen. The
+`19` was the leftover total from v1.6.x; we don't have a Pass 19, and
+Pass L is letter-named (not numeric). Now reads `Pass 18/18` and
+`Pass L (post-18)`. No functional change · purely log readability.
+
+### Fixed — vault docs claimed "5 Schwartz levels"
+
+`16 - Business Model Archetypes.md` and `09 - Strategy Doc Composer.md`
+showed a 5-bar awareness-distribution wireframe (unaware / problem_aware
+/ solution_aware / product_aware / most_aware) but the **actual** Pass D
+schema asks Claude for 7 levels (unaware / problem_aware / outcome_aware
+/ use_case_aware / product_category_aware / product_aware / most_aware
+· per Schwartz / Demand Curve PM101). Vault wireframes corrected to
+match the code.
+
+### Build size
+
+Bundle 436.92 KB / 126.42 KB gzip (was 438.15 KB / 126.28 KB on v1.7.0).
+Slight improvement from removing 19 hardcoded HTML strings in favor of
+a shared helper.
+
+### Files touched (v1.7.1)
+
+- `src/lib/compose-strategy.js` — sectionTag helper, 21 renderer
+  refactors, dispatcher cleanup, 0-based numbering with legacy offset
+- `src/lib/airtable.js` — `loadDiagnostic` registry re-resolve;
+  business-models static import
+- `src/ProjectSetup.jsx` — slim-cache surfacing in vaultIndex + UI
+- `src/App.jsx` — log line cosmetic fix
+- Vault: `09 - Strategy Doc Composer.md` + `06 - Project Setup &
+  Ingestion.md` — awareness wireframes corrected to 7 levels
+
+### Pending for v1.7.1 release
+
+User has not yet tested v1.7.0 or v1.7.1 end-to-end. **Hold tag + push
+until user confirms the polish doesn't regress any v1.7.0 functionality
+when they run a real strategy-doc gen.** This entry is provisional.
+
+---
+
 ## [1.7.0] — 2026-05-15
 
 **Phase-1 Demand Curve Map · Diagnostic + Business-Model Routing +

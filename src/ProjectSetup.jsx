@@ -108,9 +108,19 @@ export default function ProjectSetup({ config, onProjectReady, onCancel, priorBr
       const rootName = firstPath.split(/[/\\]/)[0] || "vault";
       setVaultPath(rootName);
       try { localStorage.setItem("alchemy:library:lastPath", rootName); } catch {}
-      persistIndex(rootName, result);
-      setVaultIndex({ vault_path: rootName, ingested_at: new Date().toISOString(), ...result });
-      setPhase(`Vault loaded · ${result.stats.parsed} concepts across ${result.stats.themes_seen.length} themes`);
+      const persistResult = persistIndex(rootName, result);
+      // persistResult === "slim" means full_content was stripped from the
+      // persisted version to fit under localStorage's 5MB cap. In-memory
+      // copy below keeps full_content intact for THIS session · only the
+      // cached version that reloads next session loses it.
+      setVaultIndex({
+        vault_path: rootName,
+        ingested_at: new Date().toISOString(),
+        _slim_persisted: persistResult === "slim",
+        ...result,
+      });
+      const slimNote = persistResult === "slim" ? " · ⚠ cache slim (>4.5MB · full_content kept in memory for this session)" : "";
+      setPhase(`Vault loaded · ${result.stats.parsed} concepts across ${result.stats.themes_seen.length} themes${slimNote}`);
     } catch (e) {
       setError(`Vault ingest failed: ${e.message}`);
     } finally {
@@ -694,6 +704,9 @@ export default function ProjectSetup({ config, onProjectReady, onCancel, priorBr
                 {vaultIndex && (
                   <span style={{ fontSize: 11, color: "#6E8C5B" }}>
                     ✓ {vaultIndex.concepts?.length || vaultIndex.stats?.parsed || 0} concepts · {vaultIndex.stats?.themes_seen?.length || 0} themes · vault: <code style={{ background: "#1c2536", padding: "1px 5px", borderRadius: 3 }}>{vaultPath}</code>
+                    {(vaultIndex._slim || vaultIndex._slim_persisted) && (
+                      <span style={{ marginLeft: 8, color: "#c8a45c" }}>⚠ slim cache · click ↻ Reload to restore full content next session</span>
+                    )}
                   </span>
                 )}
               </div>
