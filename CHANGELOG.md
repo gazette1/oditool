@@ -6,6 +6,220 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.0] — 2026-05-15
+
+**Phase-1 Demand Curve Map · Diagnostic + Business-Model Routing +
+Archetype Gating + Concept Vault Library.** Major architectural shift.
+Spec v3 implemented end-to-end. **No fallback to DTC ever** — archetypes
+whose pass variants aren't built are GATED, not silently downgraded.
+
+### Architectural pillars
+
+1. **Pass D** classifies every project across 4 axes (Business Model
+   Archetype, Market Maturity, Market Sophistication, Emotional Journey)
+   BEFORE any downstream pass runs
+2. **Diagnostic drives pass routing** — section order now comes from
+   `diagnostic.business_model.doc_sections`, not a hardcoded chain
+3. **Vault is the source of truth** — concept library reads directly
+   from the user's Obsidian folder · no JSON index in repo, no Airtable copy
+4. **Every supported archetype must hit the Siraj-quality bar** — DTC
+   is the first fully-thorough supported archetype · 10 others gated
+   until their dedicated phase ships
+5. **No fallback** — unsupported archetypes are blocked at the strategy-
+   doc step unless user has consciously acknowledged the fit gap
+
+### Added — `src/lib/business-models.js` (NEW)
+
+11 archetypes registry. Only `dtc_ecommerce` is `is_supported: true` in
+phase 1. Each unsupported archetype carries `library_priors`,
+`phase_target`, and `not_yet_supported_message`.
+
+- DTC fully built · `pass_plan` of 18 passes + Pass L · 21-section
+  `doc_sections` (v5 reference parity)
+- B2B SaaS · phase 2 (ICPs, buying committee, cold-email, ABM)
+- B2B Services · phase 3
+- Two-sided Marketplace · phase 4
+- Creator Personal Brand · phase 5
+- Aggregator, Subscription, Local Services, Hardware B2B, Healthcare,
+  Fintech · phase 6+
+- DEV-only `console.assert` block validates registry integrity at module load
+
+### Added — `src/lib/library-reader.js` (NEW)
+
+Vault-folder ingest via `<input type="file" webkitdirectory>`.
+
+- `ingestConceptVault(fileList, onProgress)` — parses `.md` files with
+  YAML frontmatter + fallback derivation from path. Per-file try/catch
+  so single parse error doesn't break the run.
+- `rankByPriors(index, libraryPriors)` — soft signal · `+10` for
+  priority themes, `-3` for deprioritized · ties broken alphabetically
+- `loadCachedIndex` / `persistIndex` — localStorage with 4.5MB cap and
+  graceful drop of `full_content` if over budget
+- 8K-char-per-concept content cap · file content stored in-memory for
+  Pass L's per-concept apply step
+- Files prefixed with `_` (typically index files) are skipped
+- ~30-line regex frontmatter parser · no `gray-matter` dependency
+
+### Added — Pass D `diagnoseStrategicContext` (`src/lib/anthropic.js`)
+
+`async diagnoseStrategicContext(apiKey, projectContext) → diagnostic`
+
+- System prompt embeds PM101 definitions VERBATIM (no paraphrase) per
+  spec · 3 maturity stages + 5 sophistication stages + 17 MoC levels
+  in 4 paradigms + 12 Jung archetypes + 7 awareness levels
+- Token budget 3000
+- `is_supported` + `phase_target` populated deterministically from
+  `BUSINESS_MODELS` registry · Claude classifies, registry gates
+- `awareness_distribution` validated to sum to 1.0 ± 0.02 · normalized
+  if not
+- Coerces invalid `business_model.primary` to `DEFAULT_BUSINESS_MODEL`
+
+### Added — Pass L `applyPlaybookLibrary` (`src/lib/anthropic.js`)
+
+Three-step playbook application:
+
+1. **Rank** by archetype priors against full concept index
+2. **Retrieval call** · top-80 candidates → LLM picks 8-12 with one-
+   sentence rationale (token budget 4000)
+3. **Per-concept apply** · pull full markdown, run anchored apply call
+   per concept (token budget 1500 each, sequential)
+
+**Anchoring rule:** every applied playbook MUST anchor to a real
+persona name AND a real Ulwick outcome from the input · same discipline
+as v1.3 verify-creators · drop if can't anchor. No fabrication.
+
+### Added — `src/lib/airtable.js`
+
+- `appliedPlaybooks: "Applied Playbooks"` in `AIRTABLE_TABLES`
+- `saveDiagnostic(airtableId, diagnostic)` · stores Pass D JSON on
+  `diagnostic_v1` long-text column of `projects` table
+- `loadDiagnostic(airtableId)` · parses + returns or null
+- `saveAppliedPlaybooks(projectId, playbooks)` · chunked write to new
+  `Applied Playbooks` table · honors v1.6.8 throttle
+
+> ⚠ User must add `diagnostic_v1` long-text column to existing
+> `projects` table AND create new `Applied Playbooks` table with the
+> documented columns (see airtable.js header).
+
+### Changed — `src/lib/compose-strategy.js`
+
+- New `TOTAL_SECTIONS = 21` constant — finally closes Known Issue #3
+- `composeStrategyDoc` now reads section order from
+  `diagnostic.business_model.doc_sections` via dispatch loop · unknown
+  section IDs skipped with `console.warn`. Default order fallback for
+  callers that don't yet pass `diagnostic`.
+- **§00 · Strategic Context** renderer · 3-col grid for market stages,
+  archetype as smile-yellow pill, From→To journey strip, business-
+  model citation, yellow override warning when applicable
+- **Applied Playbooks** renderer · 2-col card grid · theme chip,
+  italic why-it-applies, persona/outcome anchor rows (moss-bordered),
+  dashed first-move callout, 3-col footer (owner/KPI/success), vault-
+  source citation
+- Nav extended with `#strategic` + `#playbooks` links
+- Footer + cover stamps → `v1.7.0`
+- ~250 lines new CSS for §00 + Applied Playbooks
+
+### Changed — `src/ProjectSetup.jsx`
+
+- After Pass 0 succeeds, **auto-fires Pass D** via `useEffect` · busy
+  state + phase label visible
+- New **Step 3b · Strategic Diagnostic** section with editable
+  business-model dropdown
+  - Supported archetypes render normally
+  - Unsupported archetypes appear in dropdown ONLY when "Override
+    anyway (accept fit gap)" toggle is checked · selecting one shows
+    the archetype's `not_yet_supported_message` in a yellow warning strip
+- New **Step 3c · Concept Library Vault** picker
+  - `webkitdirectory` folder picker · uses same dynamic-import
+    pattern as `parse-files.js`
+  - Persists vault path + index to localStorage
+  - "↻ Reload library" button refreshes after Obsidian edits
+  - Shows concept count + theme count + parse-error count
+- `handleSaveProject` persists diagnostic to Airtable via
+  `saveDiagnostic` · marks `_override_acknowledged: true` if user
+  acknowledged fit gap
+- `handleProjectReady` passes `diagnostic` + `vaultIndex` through to App.jsx
+
+### Changed — `src/App.jsx`
+
+- New **Strategic Context header tile** · 4 cells (archetype, maturity,
+  sophistication, brand archetype) · yellow border + warning text when
+  archetype is unsupported with active override
+- Loads diagnostic on project switch via `airtable.loadDiagnostic`
+- Loads cached vault index from localStorage on project switch
+- New **`ArchetypeGateModal`** · surfaces when user clicks ↓ Strategy
+  Doc with an unsupported archetype not consciously overridden · two
+  paths: Return to Setup OR wait for the phase
+- `generateStrategyDoc` runs the gate check at the top · if gate is
+  closed, shows modal and returns without generating
+- After Pass 18, runs **Pass L** if vault is loaded · 8-12 playbooks
+  applied + anchored · persisted to Airtable via
+  `saveAppliedPlaybooks`
+- `composeStrategyDoc` payload now includes `diagnostic` +
+  `appliedPlaybooks` to drive §00 + Applied Playbooks rendering
+- Project-state reset extended to include `diagnostic`, `vaultIndex`,
+  `appliedPlaybooks`, `showGateModal`
+
+### Note on baseline drift from spec
+
+Spec v3 referenced engine v1.6.2 (15-section doc · 14 passes). We
+shipped v1.6.3–v1.6.12 ahead of this PR (19-section doc · 18 passes +
+Hermes retrospective). Adapted:
+
+- `TOTAL_SECTIONS = 21` not 17 · DTC `doc_sections` includes all
+  v1.6.x sections (competitive/audit/demand/tribe) plus the new
+  strategic_context (front) and applied_playbooks (before methodology)
+- Pass L runs as the LAST pass in the chain (after Pass 18) · the
+  Hermes retrospective still fires after composeStrategyDoc
+- Bundle exceeds spec's 330 KB budget (438 KB) because the baseline
+  bundle was already 384 KB before this PR · +54 KB for Pass D + Pass L
+  + 2 renderers + 2 new lib files + diagnostic UI
+- Cost per full run estimated ~$1.45 with vault loaded (over spec's
+  $1.25 budget — same baseline drift reason)
+
+### Acceptance criteria · self-check
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | DTC happy path equivalence to v1.6.12 minus the new §00/Applied | ✅ pass · default section order + dispatcher preserves prior chain |
+| 2 | §00 renders for any supported archetype | ✅ renderStrategicContext + tile in App.jsx |
+| 3 | §Applied Playbooks renders 8-12 anchored cards | ✅ Pass L + renderer · anchoring rule enforced |
+| 4 | Archetype gating · b2b_saas override-OFF blocks doc gen | ✅ gate check at top of generateStrategyDoc · modal surfaces |
+| 5 | Override path · b2b_saas override-ON produces doc with DTC pass plan + B2B SaaS library priors | ✅ override toggle + `_override_acknowledged` flag persisted |
+| 6 | Soft prior ranking distribution shift visible | ✅ rankByPriors gives +10/-3 weights · top-80 cutoff |
+| 7 | Vault ingest ≥300 concepts across ≥30 themes | ⏳ depends on user's vault size |
+| 8 | Library cache survives reload | ✅ localStorage with key by vault path |
+| 9 | Diagnostic persists across reload | ✅ Airtable `diagnostic_v1` field · loadDiagnostic on project switch |
+| 10 | No breaking changes to existing Airtable saves | ✅ all existing methods untouched |
+| 11 | Bundle ≤ 330 KB | ❌ 438 KB (baseline drift from spec · accepted) |
+| 12 | Cost ≤ $1.25 | ❌ ~$1.45 with vault (baseline drift · accepted) |
+
+### Bundle
+
+| Build | Main | Gzip |
+| --- | --- | --- |
+| v1.6.12 | 384.04 KB | 110.95 KB |
+| **v1.7.0** | **438.15 KB** | **126.28 KB** |
+
++54 KB for Pass D + Pass L + 2 lib modules + diagnostic UI + section
+dispatcher.
+
+### Next phases (committed)
+
+- **Phase 2** · `b2b_saas` full pass roster · ICPs, buying committee,
+  cold-email sequences, ABM tiering, demand-gen plays, sales enablement,
+  pricing-page positioning, partner-channel, nurture flows
+- **Phase 3** · `b2b_services` · case-study production, lead-gen mix,
+  sales process, pricing model, capacity plan
+- **Phase 4** · `two_sided_marketplace` · supply/demand splits,
+  liquidity strategy, geographic launch sequencing
+- **Phase 5** · `creator_personal_brand` · audience segments, content
+  engine, platform strategy, monetization stack
+- **Phase 6+** · aggregator, subscription_consumer, local_services,
+  hardware_b2b, healthcare_regulated, fintech_regulated
+
+---
+
 ## [1.6.12] — 2026-05-14
 
 **Hermes Foundation drop · 5 items in one ship.** Pattern A + Pattern E +

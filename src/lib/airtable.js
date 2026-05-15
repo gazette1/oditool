@@ -68,7 +68,33 @@ const TABLES = {
   swipeAds: "Swipe Ads",
   creativeBriefs: "Creative Briefs",
   briefIterations: "Brief Iterations",
+  // Engine v1.7.0 · Strategic Diagnostic + Applied Playbooks
+  appliedPlaybooks: "Applied Playbooks",
 };
+
+// ─────────────────────────────────────────────────────────────
+// v1.7.0 · Required Airtable schema additions (user must create manually)
+//
+// Projects table · ADD COLUMN:
+//   - diagnostic_v1 (Long text) · stores Pass D JSON output
+//
+// NEW TABLE · "Applied Playbooks":
+//   - project_id (Single line text · or Link to Projects)
+//   - concept_id (Single line text)
+//   - name (Single line text)
+//   - theme (Single line text)
+//   - category (Single line text)
+//   - why_applies (Long text)
+//   - anchored_to_persona (Single line text)
+//   - anchored_to_outcome (Long text)
+//   - first_move (Long text)
+//   - owner (Single line text)
+//   - kpi (Long text)
+//   - success_signal (Long text)
+//   - references (Long text · JSON array)
+//   - vault_source (Long text · for traceability back to the user's vault file)
+//   - created_at (Date)
+// ─────────────────────────────────────────────────────────────
 
 // Engine v1.6.8 · throttle helper. Airtable rate-limit is 5 req/sec per base.
 // We chunk at 10 records per request, so back-to-back chunks plus the
@@ -379,6 +405,67 @@ class AirtableClient {
       await this.updateProject(airtableId, { brand_learned: next });
     } catch (e) {
       console.warn("[Pattern B] appendBrandLearned failed:", e.message);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Strategic Diagnostic + Applied Playbooks (Engine v1.7.0)
+  //
+  // Pass D output stored as JSON on the `diagnostic_v1` field of the
+  // projects table. Pass L applied playbooks stored as rows on a new
+  // "Applied Playbooks" table.
+  // ─────────────────────────────────────────────────────────────
+
+  async saveDiagnostic(airtableId, diagnostic) {
+    if (!airtableId || !diagnostic) return;
+    try {
+      await this.updateProject(airtableId, { diagnostic_v1: JSON.stringify(diagnostic) });
+    } catch (e) {
+      console.warn("[Pass D] saveDiagnostic failed (diagnostic_v1 field may not exist yet):", e.message);
+    }
+  }
+
+  async loadDiagnostic(airtableId) {
+    if (!airtableId) return null;
+    try {
+      const data = await this._request(`${TABLES.projects}/${airtableId}`, "GET");
+      const raw = data.fields?.diagnostic_v1;
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.warn("[Pass D] loadDiagnostic failed:", e.message);
+      return null;
+    }
+  }
+
+  async saveAppliedPlaybooks(projectId, playbooks) {
+    if (!projectId || !playbooks?.length) return;
+    const records = playbooks.map((b) => ({
+      fields: {
+        project_id: projectId,
+        concept_id: b.id || "",
+        name: b.name || "",
+        theme: b.theme || "",
+        category: b.category || "",
+        why_applies: b.why_it_applies || "",
+        anchored_to_persona: b.anchored_to_persona || "",
+        anchored_to_outcome: b.anchored_to_outcome || "",
+        first_move: b.first_move || "",
+        owner: b.owner || "",
+        kpi: b.kpi || "",
+        success_signal: b.success_signal || "",
+        references: JSON.stringify(b.references || []),
+        vault_source: (b.references && b.references[0]) || "",
+        created_at: new Date().toISOString().split("T")[0],
+      },
+    }));
+    for (let i = 0; i < records.length; i += 10) {
+      try {
+        await this._request(TABLES.appliedPlaybooks, "POST", { records: records.slice(i, i + 10) });
+        if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
+      } catch (e) {
+        console.warn("[Pass L] saveAppliedPlaybooks chunk failed (table may not exist yet):", e.message);
+      }
     }
   }
 

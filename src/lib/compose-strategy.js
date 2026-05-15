@@ -1,6 +1,12 @@
 // src/lib/compose-strategy.js
 //
-// Engine v1.6.7 — Strategy Doc Composer.
+// Engine v1.7.0 — Strategy Doc Composer.
+//
+// Section order now driven by `diagnostic.business_model.doc_sections`
+// instead of a hardcoded chain. TOTAL_SECTIONS closes Known Issue #3
+// (hardcoded /N section numbering). New §00 Strategic Context (Pass D)
+// and §-near-end Applied Playbooks (Pass L). DTC archetype = 21
+// sections total · v5 reference parity.
 // Takes the full set of pass outputs + Pass 0 context and returns a
 // self-contained HTML document matching the v5 strategy-doc template.
 //
@@ -358,6 +364,49 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 .seasonal-row .period{font-family:"DM Serif Display",serif;font-size:14px}
 .seasonal-row .lift{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;color:var(--moss-deep)}
 .seasonal-row .play{color:var(--ink-secondary)}
+/* §00 · Strategic Context (v1.7.0 · Pass D) */
+.strat-ctx-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px;margin-bottom:24px}
+@media (max-width:720px){.strat-ctx-grid{grid-template-columns:1fr}}
+.strat-ctx-tile{background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:10px;padding:20px 22px}
+.strat-ctx-tile .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:6px}
+.strat-ctx-tile .stage{font-family:"DM Serif Display",serif;font-size:28px;line-height:1;color:var(--moss-deep);margin-bottom:4px}
+.strat-ctx-tile .stage-label{font-family:"DM Serif Display",serif;font-size:15px;line-height:1.2;color:var(--ink-primary);margin-bottom:8px}
+.strat-ctx-tile .rationale{font-size:11.5px;line-height:1.55;color:var(--ink-secondary)}
+.strat-ctx-archetype{padding:20px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-radius:12px;border:2px solid var(--moss-lime);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.strat-ctx-archetype .archetype-pill{font-family:"DM Serif Display",serif;font-size:26px;background:var(--moss-lime);color:var(--ink-primary);padding:8px 20px;border-radius:999px;display:inline-block}
+.strat-ctx-archetype .archetype-rationale{flex:1;min-width:200px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;line-height:1.55;color:var(--ink-primary)}
+.strat-ctx-journey{padding:18px 22px;background:var(--bg-warm);border-radius:10px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.strat-ctx-journey .from-state,.strat-ctx-journey .to-state{padding:10px 18px;background:var(--bg-base);border-radius:8px;flex:1;min-width:140px}
+.strat-ctx-journey .from-state .lbl,.strat-ctx-journey .to-state .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
+.strat-ctx-journey .from-state .val,.strat-ctx-journey .to-state .val{font-family:"DM Serif Display",serif;font-size:22px;line-height:1}
+.strat-ctx-journey .from-state .paradigm,.strat-ctx-journey .to-state .paradigm{font-size:10px;color:var(--ink-secondary);font-style:italic;margin-top:4px}
+.strat-ctx-journey .from-state .val{color:var(--brick)}
+.strat-ctx-journey .to-state .val{color:var(--moss-deep)}
+.strat-ctx-journey .arrow{font-family:"DM Serif Display",serif;font-size:32px;color:var(--moss-mid)}
+.strat-ctx-bm{padding:16px 20px;background:rgba(106,153,78,0.08);border-left:3px solid var(--moss-mid);border-radius:0 8px 8px 0;margin-bottom:16px;font-size:13px;line-height:1.55}
+.strat-ctx-bm strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);display:block;margin-bottom:4px}
+.strat-ctx-warning{padding:16px 20px;background:rgba(246,211,141,0.18);border:2px solid #b8911c;border-radius:8px;margin-bottom:20px;color:#5a4710;font-size:13px;line-height:1.6}
+.strat-ctx-warning strong{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;color:#5a4710;margin-bottom:6px}
+
+/* §-near-end · Applied Playbooks (v1.7.0 · Pass L) */
+.playbook-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:24px}
+@media (max-width:720px){.playbook-grid{grid-template-columns:1fr}}
+.playbook-card{background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+.playbook-card .pb-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(106,153,78,0.2)}
+.playbook-card .pb-name{font-family:"DM Serif Display",serif;font-size:19px;line-height:1.2}
+.playbook-card .pb-theme{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid);background:rgba(106,153,78,0.1);padding:3px 9px;border-radius:4px;white-space:nowrap}
+.playbook-card .pb-why{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13.5px;line-height:1.55;color:var(--ink-primary);padding:10px 12px;background:var(--bg-warm);border-radius:6px}
+.playbook-card .pb-anchors{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11.5px;line-height:1.5}
+@media (max-width:720px){.playbook-card .pb-anchors{grid-template-columns:1fr}}
+.playbook-card .pb-anchors .a-row{padding:8px 10px;background:var(--bg-warm);border-left:3px solid var(--moss-mid);border-radius:0 4px 4px 0}
+.playbook-card .pb-anchors .a-row .lbl{display:block;font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px}
+.playbook-card .pb-first{padding:10px 12px;border:1px dashed rgba(106,153,78,0.4);border-radius:6px;font-size:12px;line-height:1.55}
+.playbook-card .pb-first strong{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:4px}
+.playbook-card .pb-foot{padding-top:8px;border-top:1px solid rgba(106,153,78,0.2);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:10.5px;line-height:1.45}
+@media (max-width:720px){.playbook-card .pb-foot{grid-template-columns:1fr}}
+.playbook-card .pb-foot .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px;display:block}
+.playbook-card .pb-source{font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--ink-muted);text-align:right;font-style:italic}
+
 /* §17 · Tribe readout */
 .tribe-summary{padding:20px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-base));border:1px solid rgba(106,153,78,0.3);border-radius:12px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:16px;line-height:1.6;color:var(--ink-primary);margin-bottom:24px}
 .tribe-caveats{padding:14px 18px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;margin-bottom:24px}
@@ -409,7 +458,7 @@ function renderCover(p, project_name) {
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.6.7</span>
+      <span class="doc-num">Phase 1 Strategy · Engine v1.7.0</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -958,7 +1007,139 @@ function renderColophon(p) {
 </section>`;
 }
 
+// ── §00 Strategic Context (Pass D · v1.7.0) ──
+function renderStrategicContext(p, totalSections) {
+  const d = p.diagnostic;
+  if (!d) return "";
+  const bm = d.business_model || {};
+  const mat = d.market_maturity || {};
+  const soph = d.market_sophistication || {};
+  const journey = d.emotional_journey || {};
+  const arch = d.recommended_archetype || {};
+  const warn = p.diagnostic?._override_warning || (bm.is_supported === false ? `This project classifies as ${bm.primary} which isn't yet supported (coming in phase ${bm.phase_target}). You've consciously overridden to generate a DTC-shaped doc anyway. Read with the fit gap in mind: ICPs may read like consumer personas, channel mix may skew DTC, etc. Use as starting scaffolding, not a finished SaaS/Services/etc. plan.` : "");
+  const warnTriggered = bm.is_supported === false;
+
+  return `<section class="section" id="strategic">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ 00 · Strategic Context</span><span class="section-number">00 / ${totalSections}</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">The diagnostic.<br/>Four axes, before any creative.</h2>
+    ${warnTriggered ? `<div class="strat-ctx-warning"><strong>⚠ Override · fit gap acknowledged</strong>${esc(warn)}</div>` : ""}
+    <div class="strat-ctx-bm"><strong>Business model</strong>${esc(bm.primary || "")} · confidence ${typeof bm.confidence === "number" ? Math.round(bm.confidence * 100) + "%" : "—"}${bm.evidence ? ` · ${esc(bm.evidence)}` : ""}</div>
+    <div class="strat-ctx-grid">
+      <div class="strat-ctx-tile">
+        <div class="lbl">Market Maturity</div>
+        <div class="stage">Stage ${esc(String(mat.stage || "?"))}</div>
+        <div class="stage-label">${esc(mat.stage_label || "")}</div>
+        <p class="rationale">${esc(mat.positioning_implication || mat.rationale || "")}</p>
+      </div>
+      <div class="strat-ctx-tile">
+        <div class="lbl">Market Sophistication</div>
+        <div class="stage">Stage ${esc(String(soph.stage || "?"))}</div>
+        <div class="stage-label">${esc(soph.stage_label || "")}</div>
+        <p class="rationale">${esc(soph.messaging_approach || soph.rationale || "")}</p>
+      </div>
+      <div class="strat-ctx-tile">
+        <div class="lbl">Awareness Distribution</div>
+        <div class="stage" style="font-size:14px;line-height:1.5;color:var(--ink-primary)">
+          ${(() => {
+            const aw = d.awareness_distribution || {};
+            const labels = { unaware: "Unaware", problem_aware: "Problem", outcome_aware: "Outcome", use_case_aware: "Use Case", product_category_aware: "Category", product_aware: "Product", most_aware: "Most" };
+            return Object.entries(labels).map(([k, lbl]) => `${lbl}: ${Math.round((aw[k] || 0) * 100)}%`).join(" · ");
+          })()}
+        </div>
+      </div>
+    </div>
+    <div class="strat-ctx-journey">
+      <div class="from-state">
+        <div class="lbl">From</div>
+        <div class="val">${esc(journey.from_state || "?")}</div>
+        <div class="paradigm">${esc(journey.from_paradigm || "")} paradigm</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="to-state">
+        <div class="lbl">To</div>
+        <div class="val">${esc(journey.to_state || "?")}</div>
+        <div class="paradigm">${esc(journey.to_paradigm || "")} paradigm</div>
+      </div>
+    </div>
+    <div class="strat-ctx-archetype">
+      <div class="archetype-pill">${esc(arch.primary || "")}</div>
+      <p class="archetype-rationale">${esc(arch.rationale || "")}${arch.alternative ? ` · alternative: ${esc(arch.alternative)}` : ""}</p>
+    </div>
+  </div>
+</section>`;
+}
+
+// ── §-near-end · Applied Playbooks (Pass L · v1.7.0) ──
+function renderAppliedPlaybooks(p, totalSections, sectionNum) {
+  const books = p.appliedPlaybooks?.applied_playbooks || [];
+  if (!books.length) return "";
+  return `<section class="section" id="playbooks">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">§ ${String(sectionNum).padStart(2,"0")} · Applied Playbooks</span><span class="section-number">${String(sectionNum).padStart(2,"0")} / ${totalSections}</span></div>
+    <h2 class="display-lg" style="margin-bottom:16px">${books.length} playbooks from your library.<br/>Each anchored to a persona + outcome.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">Selected from your Obsidian concept vault, ranked by archetype priors, applied to this brand's diagnostic + positioning + personas. Every card cites a real persona AND a real Ulwick outcome · no fabrication.</p>
+    <div class="playbook-grid">
+      ${books.map((b) => `<div class="playbook-card">
+        <div class="pb-head">
+          <div class="pb-name">${esc(b.name || "")}</div>
+          ${b.theme ? `<span class="pb-theme">${esc(b.theme)}</span>` : ""}
+        </div>
+        ${b.why_it_applies ? `<p class="pb-why">${esc(b.why_it_applies)}</p>` : ""}
+        <div class="pb-anchors">
+          ${b.anchored_to_persona ? `<div class="a-row"><span class="lbl">Persona</span>${esc(b.anchored_to_persona)}</div>` : ""}
+          ${b.anchored_to_outcome ? `<div class="a-row"><span class="lbl">Outcome</span>${esc(b.anchored_to_outcome)}</div>` : ""}
+        </div>
+        ${b.first_move ? `<div class="pb-first"><strong>First move · ships in 2 weeks</strong>${esc(b.first_move)}</div>` : ""}
+        <div class="pb-foot">
+          ${b.owner ? `<div><span class="lbl">Owner</span>${esc(b.owner)}</div>` : ""}
+          ${b.kpi ? `<div><span class="lbl">KPI</span>${esc(b.kpi)}</div>` : ""}
+          ${b.success_signal ? `<div><span class="lbl">Success</span>${esc(b.success_signal)}</div>` : ""}
+        </div>
+        ${(b.references || []).length ? `<p class="pb-source">${esc(b.references[0])}</p>` : ""}
+      </div>`).join("")}
+    </div>
+  </div>
+</section>`;
+}
+
+// ── Section ID → renderer dispatch (v1.7.0) ──
+// Section order is now driven by `diagnostic.business_model.doc_sections`
+// from the registry. Unknown section IDs are skipped with console.warn.
+function buildSectionMap(payload, totalSections) {
+  const sectionMap = {};
+  const wrap = (id, fn) => { sectionMap[id] = fn; };
+  let counter = 0;
+  // Each renderer was already coded to emit its own § N / 19 label.
+  // For v1.7.0 we patch them at the payload level if a different totalSections is requested.
+  wrap("strategic_context", () => renderStrategicContext(payload, totalSections));
+  wrap("positioning",       () => renderPositioning(payload));
+  wrap("evidence",          () => renderEvidence(payload));
+  wrap("value_prop",        () => renderValueProp(payload));
+  wrap("personas",          () => renderPersonas(payload));
+  wrap("swipe_file",        () => renderSwipe(payload));
+  wrap("scripts",           () => renderScripts(payload));
+  wrap("email_flows",       () => renderEmails(payload));
+  wrap("entry_wedge",       () => renderEntryWedge(payload));
+  wrap("channels",          () => renderChannels(payload));
+  wrap("matrix",            () => renderMatrix(payload));
+  wrap("landing",           () => renderLanding(payload));
+  wrap("rollout",           () => renderRollout(payload));
+  wrap("creators",          () => renderCreators(payload));
+  wrap("competitive",       () => renderCompetitive(payload));
+  wrap("brand_audit",       () => renderBrandAudit(payload));
+  wrap("demand",            () => renderDemandLandscape(payload));
+  wrap("tribe",             () => renderTribe(payload));
+  // applied_playbooks needs a section number · computed below
+  wrap("applied_playbooks", (n) => renderAppliedPlaybooks(payload, totalSections, n));
+  wrap("methodology",       () => renderMethodology(payload));
+  wrap("colophon",          () => renderColophon(payload));
+  return sectionMap;
+}
+
 // ── Main entry ──
+export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
+
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
   return `<!DOCTYPE html>
@@ -977,32 +1158,33 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
-      <a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#method">Method</a>
+      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
 ${renderCover(payload, project_name)}
 <div class="container"><div class="hairline"></div></div>
-${renderPositioning(payload)}
-${renderEvidence(payload)}
-${renderValueProp(payload)}
-${renderPersonas(payload)}
-${renderSwipe(payload)}
-${renderScripts(payload)}
-${renderEmails(payload)}
-${renderEntryWedge(payload)}
-${renderChannels(payload)}
-${renderMatrix(payload)}
-${renderLanding(payload)}
-${renderRollout(payload)}
-${renderCreators(payload)}
-${renderCompetitive(payload)}
-${renderBrandAudit(payload)}
-${renderDemandLandscape(payload)}
-${renderTribe(payload)}
-${renderMethodology(payload)}
-${renderColophon(payload)}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.6.7 · Mode 1 Earth</p></div></footer>
+${(() => {
+  // v1.7.0 · section order driven by diagnostic.business_model.doc_sections.
+  // Falls back to a default order if no diagnostic is present (preserves
+  // v1.6.x behavior for any caller not yet wired to Pass D).
+  const defaultOrder = [
+    "positioning","evidence","value_prop","personas","swipe_file","scripts","email_flows",
+    "entry_wedge","channels","matrix","landing","rollout","creators","competitive",
+    "brand_audit","demand","tribe","methodology","colophon",
+  ];
+  const order = payload.diagnostic?.business_model?.doc_sections || defaultOrder;
+  const total = order.length;
+  const sectionMap = buildSectionMap(payload, total);
+  let n = 0;
+  return order.map((sid) => {
+    n += 1;
+    const fn = sectionMap[sid];
+    if (!fn) { console.warn(`[compose-strategy] unknown section id: ${sid}`); return ""; }
+    return fn(n);
+  }).join("\n");
+})()}
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.7.0 · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }

@@ -16,9 +16,11 @@
 import { useState, useCallback, useEffect } from "react";
 import { parseFiles } from "./lib/parse-files";
 import { scrapeUrl } from "./lib/scrape-url";
-import { summarizeProjectContext } from "./lib/anthropic";
+import { summarizeProjectContext, diagnoseStrategicContext } from "./lib/anthropic";
 import { AirtableClient } from "./lib/airtable";
 import { ingestFolder } from "./lib/google-drive";
+import { BUSINESS_MODELS, resolveBusinessModel, listSupported, listUnsupported } from "./lib/business-models";
+import { ingestConceptVault, loadCachedIndex, persistIndex } from "./lib/library-reader";
 
 // Engine v1.6.12 · ProjectSetup now accepts an optional `priorBrandMemory`
 // prop · when present (loaded from a previously-saved project's brand_memory
@@ -48,6 +50,97 @@ export default function ProjectSetup({ config, onProjectReady, onCancel, priorBr
   const [refocusText, setRefocusText] = useState("");
   const [refocusCount, setRefocusCount] = useState(0);
   const REFOCUS_CAP = 5;
+
+  // Engine v1.7.0 · Strategic Diagnostic (Pass D) state
+  const [diagnostic, setDiagnostic] = useState(null);
+  const [diagBusy, setDiagBusy] = useState(false);
+  const [overrideUnsupported, setOverrideUnsupported] = useState(false);
+  const [businessModelOverride, setBusinessModelOverride] = useState(null);
+
+  // Engine v1.7.0 · Concept Library Vault state
+  const [vaultPath, setVaultPath] = useState(() => {
+    try { return localStorage.getItem("alchemy:library:lastPath") || ""; } catch { return ""; }
+  });
+  const [vaultIndex, setVaultIndex] = useState(null);
+  const [vaultBusy, setVaultBusy] = useState(false);
+
+  // Auto-load cached library index if a path was saved last session
+  useEffect(() => {
+    if (vaultPath) {
+      const cached = loadCachedIndex(vaultPath);
+      if (cached?.concepts?.length) setVaultIndex(cached);
+    }
+  }, [vaultPath]);
+
+  // Auto-trigger Pass D after Pass 0 succeeds (only first time per ingest run)
+  useEffect(() => {
+    if (!contextSummary || diagnostic || diagBusy || !config.anthropicKey) return;
+    let cancelled = false;
+    (async () => {
+      setDiagBusy(true);
+      setPhase("Pass D: classifying business model + market stages…");
+      try {
+        const d = await diagnoseStrategicContext(config.anthropicKey, contextSummary);
+        if (!cancelled) {
+          setDiagnostic(d);
+          setBusinessModelOverride(d.business_model.primary);
+          setPhase(`Pass D complete · classified as ${d.business_model.primary} (${d.business_model.is_supported ? "supported" : `coming in phase ${d.business_model.phase_target}`})`);
+        }
+      } catch (e) {
+        if (!cancelled) setError(`Pass D failed: ${e.message}`);
+      } finally {
+        if (!cancelled) setDiagBusy(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [contextSummary, config.anthropicKey, diagnostic, diagBusy]);
+
+  // ── Concept Library vault picker ──
+  const handleVaultPick = useCallback(async (fileList) => {
+    if (!fileList || !fileList.length) return;
+    setVaultBusy(true);
+    setPhase("Ingesting concept vault…");
+    try {
+      const result = await ingestConceptVault(fileList, (i, total, name) => {
+        setPhase(`Vault ${i}/${total}: ${name}`);
+      });
+      const firstPath = fileList[0]?.webkitRelativePath || "vault";
+      const rootName = firstPath.split(/[/\\]/)[0] || "vault";
+      setVaultPath(rootName);
+      try { localStorage.setItem("alchemy:library:lastPath", rootName); } catch {}
+      persistIndex(rootName, result);
+      setVaultIndex({ vault_path: rootName, ingested_at: new Date().toISOString(), ...result });
+      setPhase(`Vault loaded · ${result.stats.parsed} concepts across ${result.stats.themes_seen.length} themes`);
+    } catch (e) {
+      setError(`Vault ingest failed: ${e.message}`);
+    } finally {
+      setVaultBusy(false);
+    }
+  }, []);
+
+  const handleVaultReload = useCallback(() => {
+    // Trigger a fresh folder picker
+    const input = document.getElementById("vault-input");
+    if (input) input.click();
+  }, []);
+
+  // ── Business model override handler ──
+  const handleBmChange = useCallback((newId) => {
+    const bm = resolveBusinessModel(newId);
+    setBusinessModelOverride(newId);
+    if (diagnostic) {
+      setDiagnostic({
+        ...diagnostic,
+        business_model: {
+          ...diagnostic.business_model,
+          primary: newId,
+          is_supported: bm.is_supported,
+          phase_target: bm.phase_target,
+          library_priors: bm.library_priors,
+        },
+      });
+    }
+  }, [diagnostic]);
 
   // When Pass 0 produces a new summary (initial run or refocus), reseed the
   // editable state. Stay in sync, but only one-way: editedSummary drift is
@@ -265,14 +358,22 @@ export default function ProjectSetup({ config, onProjectReady, onCancel, priorBr
           ...parsedFiles.map(f => `file: ${f.fileName}`),
         ],
       });
+      // v1.7.0 · persist diagnostic + override acknowledgment on the project
+      let finalDiagnostic = diagnostic;
+      if (diagnostic && !diagnostic.business_model.is_supported && overrideUnsupported) {
+        finalDiagnostic = { ...diagnostic, _override_acknowledged: true };
+      }
+      if (finalDiagnostic && project?.airtableId) {
+        await client.saveDiagnostic(project.airtableId, finalDiagnostic);
+      }
       setPhase(`Saved as Project ${project.airtableId}.`);
-      onProjectReady({ project, contextSummary: cleaned });
+      onProjectReady({ project, contextSummary: cleaned, diagnostic: finalDiagnostic, vaultIndex });
     } catch (e) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
-  }, [editedSummary, projectName, scraped, parsedFiles, config, onProjectReady]);
+  }, [editedSummary, projectName, scraped, parsedFiles, config, onProjectReady, diagnostic, overrideUnsupported, vaultIndex]);
 
   return (
     <div className="min-h-screen" style={{ background: "#06080c", color: "#e0ddd5", fontFamily: "'IBM Plex Mono', monospace" }}>
@@ -479,6 +580,134 @@ export default function ProjectSetup({ config, onProjectReady, onCancel, priorBr
             </div>
           )}
         </Section>
+
+        {/* Step 3b · Strategic Diagnostic (Pass D · v1.7.0) */}
+        {editedSummary && (diagnostic || diagBusy) && (
+          <Section step="03b" title="Strategic Diagnostic">
+            {diagBusy && !diagnostic && (
+              <div style={{ padding: "14px 18px", background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 8, fontSize: 12, color: "#c8a45c" }}>
+                ↻ Pass D running · classifying business model + market stages + emotional journey…
+              </div>
+            )}
+            {diagnostic && (
+              <div style={{ background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 10, padding: 24 }}>
+                {/* Business model row · with override dropdown */}
+                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, padding: "10px 0", borderBottom: "1px solid #1e2a3a", alignItems: "center" }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: diagnostic.business_model.is_supported ? "#6E8C5B" : "#c8a45c" }}>
+                    Business Model
+                  </span>
+                  <div>
+                    <select
+                      value={businessModelOverride || diagnostic.business_model.primary}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        const bm = resolveBusinessModel(v);
+                        if (!bm.is_supported && !overrideUnsupported) {
+                          // Don't apply yet · the user must flip the override toggle first
+                          return;
+                        }
+                        handleBmChange(v);
+                      }}
+                      disabled={busy}
+                      style={{ width: "100%", background: "#06080c", border: "1px solid #1e2a3a", borderRadius: 4, padding: "8px 12px", color: "#e0ddd5", fontFamily: "inherit", fontSize: 12 }}
+                    >
+                      {listSupported().map((bm) => (
+                        <option key={bm.id} value={bm.id}>{bm.label} · supported</option>
+                      ))}
+                      {overrideUnsupported && listUnsupported().map((bm) => (
+                        <option key={bm.id} value={bm.id}>🔒 {bm.label} · phase {bm.phase_target} (override)</option>
+                      ))}
+                    </select>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 10, color: "#a09989", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={overrideUnsupported}
+                        onChange={(e) => setOverrideUnsupported(e.target.checked)}
+                      />
+                      Override anyway · accept fit gap (unlocks unsupported archetypes)
+                    </label>
+                    {!diagnostic.business_model.is_supported && overrideUnsupported && (
+                      <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(246,211,141,0.18)", borderLeft: "3px solid #b8911c", borderRadius: 4, fontSize: 11, color: "#a07a1a", lineHeight: 1.55 }}>
+                        ⚠ <strong>Fit gap acknowledged.</strong> {BUSINESS_MODELS[diagnostic.business_model.primary]?.not_yet_supported_message || ""}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {/* Maturity */}
+                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, padding: "10px 0", borderBottom: "1px solid #1e2a3a", fontSize: 12 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#6a7585" }}>Market Maturity</span>
+                  <div>
+                    <div><strong>Stage {diagnostic.market_maturity?.stage}</strong> · {diagnostic.market_maturity?.stage_label}</div>
+                    <div style={{ fontSize: 11, color: "#a09989", marginTop: 4, fontStyle: "italic" }}>{diagnostic.market_maturity?.positioning_implication}</div>
+                  </div>
+                </div>
+                {/* Sophistication */}
+                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, padding: "10px 0", borderBottom: "1px solid #1e2a3a", fontSize: 12 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#6a7585" }}>Sophistication</span>
+                  <div>
+                    <div><strong>Stage {diagnostic.market_sophistication?.stage}</strong> · {diagnostic.market_sophistication?.stage_label}</div>
+                    <div style={{ fontSize: 11, color: "#a09989", marginTop: 4, fontStyle: "italic" }}>{diagnostic.market_sophistication?.messaging_approach}</div>
+                  </div>
+                </div>
+                {/* Emotional journey */}
+                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, padding: "10px 0", borderBottom: "1px solid #1e2a3a", fontSize: 12 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#6a7585" }}>From → To</span>
+                  <div>
+                    <strong>{diagnostic.emotional_journey?.from_state}</strong> ({diagnostic.emotional_journey?.from_paradigm})
+                    {" → "}
+                    <strong>{diagnostic.emotional_journey?.to_state}</strong> ({diagnostic.emotional_journey?.to_paradigm})
+                  </div>
+                </div>
+                {/* Archetype */}
+                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: 16, padding: "10px 0", fontSize: 12 }}>
+                  <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fontWeight: 600, letterSpacing: "0.22em", textTransform: "uppercase", color: "#6a7585" }}>Brand Archetype</span>
+                  <div>
+                    <strong>{diagnostic.recommended_archetype?.primary}</strong> (alt: {diagnostic.recommended_archetype?.alternative})
+                    <div style={{ fontSize: 11, color: "#a09989", marginTop: 4, fontStyle: "italic" }}>{diagnostic.recommended_archetype?.rationale}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Section>
+        )}
+
+        {/* Step 3c · Concept Library Vault (v1.7.0) */}
+        {editedSummary && (
+          <Section step="03c" title="Concept Library Vault · optional">
+            <div style={{ background: "#0d1117", border: "1px solid #1e2a3a", borderRadius: 10, padding: 20 }}>
+              <p style={{ fontSize: 11, color: "#a09989", marginBottom: 12, lineHeight: 1.55 }}>
+                Point at your Obsidian vault folder (typically "Brain Map" with theme subfolders of .md playbooks). Pass L will apply 8–12 of these playbooks to your brand, ranked by archetype priors, anchored to real personas + outcomes.
+              </p>
+              <input
+                type="file"
+                multiple
+                webkitdirectory=""
+                id="vault-input"
+                onChange={(e) => handleVaultPick(e.target.files)}
+                style={{ display: "none" }}
+              />
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <label htmlFor="vault-input"
+                  style={{ background: "transparent", border: "1px solid #1e2a3a", color: "#e0ddd5", padding: "10px 18px", borderRadius: 6, fontFamily: "'Space Grotesk', sans-serif", fontSize: 10, fontWeight: 600, letterSpacing: "0.18em", textTransform: "uppercase", cursor: vaultBusy ? "not-allowed" : "pointer", opacity: vaultBusy ? 0.4 : 1 }}>
+                  {vaultIndex ? "↻ Reload library" : "📚 Pick vault folder"}
+                </label>
+                {vaultIndex && (
+                  <span style={{ fontSize: 11, color: "#6E8C5B" }}>
+                    ✓ {vaultIndex.concepts?.length || vaultIndex.stats?.parsed || 0} concepts · {vaultIndex.stats?.themes_seen?.length || 0} themes · vault: <code style={{ background: "#1c2536", padding: "1px 5px", borderRadius: 3 }}>{vaultPath}</code>
+                  </span>
+                )}
+              </div>
+              {vaultIndex?.stats?.parse_errors?.length > 0 && (
+                <details style={{ marginTop: 10, fontSize: 10, color: "#c8a45c" }}>
+                  <summary style={{ cursor: "pointer" }}>{vaultIndex.stats.parse_errors.length} parse warnings</summary>
+                  <ul style={{ marginTop: 6, paddingLeft: 18 }}>
+                    {vaultIndex.stats.parse_errors.slice(0, 8).map((pe, i) => <li key={i}>{pe.file} — {pe.error}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+          </Section>
+        )}
 
         {/* Step 4: Save + Refocus (Engine v1.7) */}
         {editedSummary && (

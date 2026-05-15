@@ -1246,6 +1246,360 @@ Rules:
   return extractJSON(data);
 }
 
+// ── PASS D · Strategic Diagnostic (Engine v1.7.0) ──
+//
+// Classifies a project across four axes BEFORE any downstream pass runs:
+//   1. Business Model Archetype (one of 11 controlled-vocab values)
+//   2. Market Maturity (3 stages, Demand Curve PM101)
+//   3. Market Sophistication (5 stages, Schwartz/Halbert)
+//   4. Emotional Journey (From → To paradigm, Map of Consciousness)
+// Plus a recommended Brand Archetype + awareness distribution.
+//
+// is_supported + phase_target are populated DETERMINISTICALLY from the
+// BUSINESS_MODELS registry · Claude classifies, the registry gates.
+//
+// PM101 framework definitions are embedded VERBATIM (no paraphrase) per
+// the v3 build-plan spec. When the user ports PM101 to their vault,
+// these definitions can be loaded from there instead.
+import { BUSINESS_MODELS, DEFAULT_BUSINESS_MODEL, getControlledVocabulary, resolveBusinessModel } from "./business-models.js";
+
+const PM101_DEFINITIONS = `
+─── MARKET MATURITY (3 stages · Demand Curve) ───
+Measures how familiar the Target Customer is with the activity / workflow your product enables.
+
+Stage 1 · Immature Market
+  Customers are not yet performing the core activity your product enables. They are unaware
+  that the activity is a path to their desired outcome.
+  Customer Mindset: "Why should I even consider doing this new activity?"
+  Positioning Approach: Position your new Activity against Alternative Activities to prove
+  it's the best way to achieve a desired Outcome.
+
+Stage 2 · Emerging Market
+  Customers are now performing the activity, but often with a mix of ill-fitting, generic,
+  or manual tools.
+  Customer Mindset: "What is the best type of tool for this activity I'm already doing?"
+  Positioning Approach: Position your Product Category against Alternative Categories to
+  prove it's the best tool for an established Activity.
+
+Stage 3 · Mature Market
+  The market is well-defined. Customers know the activity, the correct product category,
+  and the major players.
+  Customer Mindset: "Why is your specific product better than the others I already know?"
+  Positioning Approach: Position Your Product against Alternative Products to prove
+  superior Differentiation within an established Category.
+
+─── MARKET SOPHISTICATION (5 stages · Schwartz/Halbert) ───
+Measures the market's exposure to claims related to a desire. More claims seen = more
+sophisticated = more specific message required.
+
+Stage 1 · The First to Market
+  Market has never heard a claim like yours. No competition.
+  Messaging: Direct and simple. Name the desire and your solution.
+  Example: "Now you can lose weight."
+
+Stage 2 · The Claim Elaborated
+  Market has heard the initial claim from competitors. Simple promise no longer enough.
+  Messaging: Make the original claim bigger, better, or more extreme.
+  Example: "Lose 30 pounds in 30 days."
+
+Stage 3 · The Mechanism
+  Market is skeptical of big claims. Needs to know HOW it works.
+  Messaging: Introduce a unique Mechanism — the specific process or component that
+  makes your claim possible.
+  Example: "Lose weight by boosting your metabolism with our unique herbal formula."
+
+Stage 4 · The Mechanism Elaborated
+  Competitors have copied your mechanism. Market understands how this type of product works.
+  Messaging: Make your mechanism better, faster, or more efficient than competitors.
+  Example: "Our new formula boosts your metabolism 2X faster than anything else."
+
+Stage 5 · Identification
+  Market is saturated and exhausted. Doesn't believe new claims about features or mechanisms.
+  Desire remains but belief in new solutions is gone.
+  Messaging: Shift from what the product DOES to who it's FOR. Connect product to identity.
+  Example: "The weight loss solution for busy moms."
+
+─── MAP OF CONSCIOUSNESS (Hawkins · 4 paradigms · 17 levels) ───
+Vertical measure of emotional state. The From→To journey defines the emotional transformation
+your product promises.
+
+Survival Paradigm (Shame → Pride) · Realm of Pain
+  Shame · Guilt · Apathy · Grief · Fear · Desire (as Craving) · Anger · Pride
+  Customers driven by negative emotions, problems feel threatening or overwhelming.
+  Marketing meets them where they are (validate the fear) then shows path to higher state.
+
+Tipping Point · Courage
+  Customer must be at Courage or higher to actively seek a new solution.
+  View of Life becomes Feasible. Believes change is possible.
+
+Reason & Integrity Paradigm (Neutrality → Reason) · Realm of solution evaluation
+  Neutrality · Willingness · Acceptance · Reason
+  Customers have Trust + Optimism to explore your Solution. Reason-level customers logically
+  evaluate Value Proposition, Features, Advantages.
+
+Spiritual Paradigm (Love and Above) · Realm of ultimate Benefit + brand evangelism
+  Love · Joy · Peace · Enlightenment
+  When product delivers on promise, can elevate customer to evangelist state.
+
+─── BRAND ARCHETYPES (Jung · 12) ───
+The personality that delivers your Value Proposition. Chosen based on customer's emotional
+From→To journey.
+
+PROVIDE STRUCTURE: Creator (LEGO, Adobe · enduring value via creation) · Ruler
+  (Mercedes, Rolex · order via control and quality) · Caregiver (Johnson & Johnson, Dove ·
+  protect and care)
+
+CONNECT WITH OTHERS: Everyman (IKEA · belong via authenticity) · Jester (Old Spice, M&M's ·
+  enjoy via humor) · Lover (Victoria's Secret · intimate sensory pleasure)
+
+YEARN FOR PARADISE: Innocent (Coca-Cola, Disney · goodness via simplicity) · Sage (Google,
+  BBC News · truth via intelligence) · Explorer (North Face, Jeep · find self via adventure)
+
+LEAVE A MARK: Outlaw (Harley-Davidson, early Apple · overturn what isn't working) · Magician
+  (Dyson, Tesla · transformative experiences) · Hero (Nike · prove worth via mastery)
+
+─── AWARENESS LEVELS (Schwartz · 7) ───
+Customer's knowledge of Problem → Outcome → Solution. Marketing must match level.
+
+1 Unaware · doesn't know they have a problem · symptoms felt but unnamed
+2 Problem-Aware · has named the problem · focused on pain
+3 Outcome-Aware · focus on desired Outcome / JTBD · envisioning a better future
+4 Use Case-Aware · comparing methods/strategies (not products) to achieve outcome
+5 Product Category-Aware · evaluating tool TYPES that enable the use case
+6 Product-Aware · comparing specific brands/products in chosen category
+7 Most Aware · decided on product · needs the close (offer + urgency)
+
+Audience is largest at Unaware, smallest at Most Aware.
+`.trim();
+
+const DIAGNOSTIC_SYSTEM_PROMPT = `You are a senior product-marketing strategist classifying a brand across 4 strategic axes BEFORE any downstream marketing plan is built. The classification drives pass routing + persona variant + library priors. Be honest · classifying a brand into the wrong archetype produces a wrong-shape strategy doc.
+
+CONTROLLED VOCABULARY · business_model.primary MUST be one of:
+${getControlledVocabulary().map((id) => `  - ${id} · ${BUSINESS_MODELS[id].label}`).join("\n")}
+
+${PM101_DEFINITIONS}
+
+Return ONLY JSON, no markdown:
+{
+  "business_model": {
+    "primary": "<one of the controlled vocab IDs>",
+    "sub_signals": ["specific signals from project_context that drove this classification"],
+    "confidence": 0.0-1.0,
+    "evidence": "1-2 sentences from project_context grounding the classification"
+  },
+  "market_maturity": {
+    "stage": 1|2|3,
+    "stage_label": "Immature Market" | "Emerging Market" | "Mature Market",
+    "rationale": "1-2 sentences",
+    "positioning_implication": "What this means for positioning approach (Activity-vs-Activity / Category-vs-Category / Product-vs-Product)"
+  },
+  "market_sophistication": {
+    "stage": 1|2|3|4|5,
+    "stage_label": "The First to Market" | "The Claim Elaborated" | "The Mechanism" | "The Mechanism Elaborated" | "Identification",
+    "rationale": "1-2 sentences citing competitor claims observed in project_context",
+    "messaging_approach": "What the message must do at this stage"
+  },
+  "emotional_journey": {
+    "from_state": "<one of the 17 MoC levels>",
+    "from_paradigm": "Survival" | "Reason & Integrity" | "Spiritual",
+    "to_state": "<one of the 17 MoC levels · must be higher than from_state>",
+    "to_paradigm": "Survival" | "Reason & Integrity" | "Spiritual",
+    "rationale": "1-2 sentences"
+  },
+  "recommended_archetype": {
+    "primary": "<one of the 12 archetypes>",
+    "alternative": "<another archetype as backup>",
+    "rationale": "Why this archetype fits the From→To journey"
+  },
+  "awareness_distribution": {
+    "unaware": 0.0-1.0,
+    "problem_aware": 0.0-1.0,
+    "outcome_aware": 0.0-1.0,
+    "use_case_aware": 0.0-1.0,
+    "product_category_aware": 0.0-1.0,
+    "product_aware": 0.0-1.0,
+    "most_aware": 0.0-1.0
+  }
+}
+
+Rules:
+- Every classification anchored to specific evidence from the project_context. No invention.
+- business_model.primary MUST be from controlled vocab.
+- awareness_distribution sums to 1.0 ± 0.02.
+- from_state and to_state must both be valid MoC levels; to_state must be higher than from_state.
+- recommended_archetype must be from the 12 Jung archetypes.`;
+
+export async function diagnoseStrategicContext(apiKey, projectContext) {
+  const ctxBlock = projectContext
+    ? `Project context (Pass 0 output):\n${JSON.stringify(projectContext, null, 2)}`
+    : "No project context provided · derive from the brand's sector field if available.";
+
+  const data = await callClaude(apiKey, DIAGNOSTIC_SYSTEM_PROMPT, ctxBlock, { maxTokens: 3000 });
+  const parsed = extractJSON(data);
+
+  // ── Post-process · registry decides support, not Claude ──
+  const primaryId = parsed.business_model?.primary;
+  const inVocab = !!BUSINESS_MODELS[primaryId];
+  if (!inVocab) {
+    console.warn(`[Pass D] business_model.primary "${primaryId}" not in vocab · coerced to ${DEFAULT_BUSINESS_MODEL}`);
+    parsed.business_model = { ...(parsed.business_model || {}), primary: DEFAULT_BUSINESS_MODEL };
+  }
+  const resolvedBm = resolveBusinessModel(parsed.business_model.primary);
+  parsed.business_model.is_supported = resolvedBm.is_supported;
+  parsed.business_model.phase_target = resolvedBm.phase_target;
+  parsed.business_model.library_priors = resolvedBm.library_priors;
+
+  // ── Validate + normalize awareness_distribution ──
+  const aw = parsed.awareness_distribution || {};
+  const keys = ["unaware","problem_aware","outcome_aware","use_case_aware","product_category_aware","product_aware","most_aware"];
+  keys.forEach((k) => { if (typeof aw[k] !== "number") aw[k] = 0; });
+  const sum = keys.reduce((s, k) => s + aw[k], 0);
+  if (Math.abs(sum - 1.0) > 0.02 && sum > 0) {
+    const factor = 1.0 / sum;
+    keys.forEach((k) => { aw[k] = Math.round(aw[k] * factor * 100) / 100; });
+    // round-drift fix on the largest bucket
+    const newSum = keys.reduce((s, k) => s + aw[k], 0);
+    if (Math.abs(newSum - 1.0) > 0.001) {
+      const largest = keys.reduce((max, k) => aw[k] > aw[max] ? k : max, keys[0]);
+      aw[largest] = Math.round((aw[largest] + (1 - newSum)) * 100) / 100;
+    }
+  }
+  parsed.awareness_distribution = aw;
+
+  parsed.diagnostic_version = "1.0";
+  parsed.generated_at = new Date().toISOString();
+  return parsed;
+}
+
+// ── PASS L · Apply Playbook Library (Engine v1.7.0) ──
+//
+// Three-step:
+//   1. rankByPriors against the resolved archetype's library_priors
+//   2. LLM retrieval call · select 8-12 from top-80 by applicability
+//   3. Per-concept apply · pull full markdown, generate anchored card
+//
+// Anchoring rule: every playbook MUST anchor to a real persona name
+// AND a real Ulwick outcome statement from the input · drop if can't.
+// Same discipline as v1.3 verify-creators · no fabrication.
+import { rankByPriors } from "./library-reader.js";
+
+const PL_RETRIEVAL_SYSTEM = `You are a marketing-playbook curator. You have a library of growth playbooks (each is a single named tactic/framework). Given a brand's strategic diagnostic + positioning + personas + a ranked candidate list of playbooks, pick the 8-12 that would most concretely move the needle for THIS brand in the next 12 weeks.
+
+Return ONLY JSON:
+{ "selected": [{ "id": "<concept id from candidates>", "rationale": "1 sentence on why this brand specifically" }, ...] }
+
+Rules:
+- Pick 8-12. No fewer, no more.
+- Every "id" must match a candidate exactly.
+- Rationale must reference the brand · not the playbook generically.
+- Prefer playbooks the brand could actually start within 2 weeks.`;
+
+const PL_APPLY_SYSTEM = `You are translating a generic marketing playbook into a project-specific applied entry. You see the playbook's full content, plus the brand's diagnostic, positioning, personas list, and ranked Ulwick outcomes.
+
+You MUST anchor the applied entry to:
+- A REAL persona name from the personas list (exact spelling)
+- A REAL Ulwick outcome statement from the merged jobs (exact verbatim or close paraphrase)
+- A concrete first_move shippable in 2 weeks
+
+If you cannot anchor BOTH a real persona AND a real outcome, return { "drop": true, "reason": "..." }.
+
+Otherwise return ONLY JSON:
+{
+  "anchored_to_persona": "<exact persona name>",
+  "anchored_to_outcome": "<exact Ulwick outcome statement>",
+  "why_it_applies": "1-2 sentences tied to THIS brand's diagnostic + positioning · no generic claims",
+  "first_move": "Concrete project-specific first move · 8-20 words · ships in 2 weeks",
+  "owner": "Founder | Marketing lead | Agency",
+  "kpi": "What to measure with a numeric target",
+  "success_signal": "1 line · what makes this a hit"
+}`;
+
+export async function applyPlaybookLibrary(apiKey, {
+  projectContext,
+  diagnostic,
+  positioning,
+  personas,
+  mergedJobs,
+  conceptIndex,
+}) {
+  const concepts = conceptIndex?.concepts || conceptIndex || [];
+  if (!concepts.length) {
+    return { applied_playbooks: [], note: "No concept library loaded · skip" };
+  }
+
+  // Step 1 · rank by priors
+  const ranked = rankByPriors({ concepts }, diagnostic?.business_model?.library_priors || {});
+  const top80 = ranked.slice(0, 80);
+
+  // Step 2 · retrieval call
+  const ctxSummary = [
+    projectContext?.sector ? `Brand: ${projectContext.sector}` : null,
+    diagnostic?.business_model?.primary ? `Archetype: ${diagnostic.business_model.primary}` : null,
+    diagnostic?.market_maturity?.stage_label ? `Maturity: ${diagnostic.market_maturity.stage_label}` : null,
+    diagnostic?.market_sophistication?.stage_label ? `Sophistication: ${diagnostic.market_sophistication.stage_label}` : null,
+    positioning?.primary?.sentence ? `Positioning: "${positioning.primary.sentence}"` : null,
+    `Personas: ${(personas || []).map((p) => p.name).join(", ") || "(none)"}`,
+  ].filter(Boolean).join("\n");
+
+  const candidateList = top80.map((c) => `  - id: ${c.id} · ${c.name} (${c.theme}) · ${c.summary || ""}`).join("\n");
+
+  const retrieval = await callClaude(apiKey, PL_RETRIEVAL_SYSTEM,
+    `${ctxSummary}\n\nCandidates (ranked by archetype priors · top 80):\n${candidateList}`,
+    { maxTokens: 4000 });
+  const retParsed = extractJSON(retrieval);
+  const selected = retParsed?.selected || [];
+
+  // Step 3 · per-concept apply
+  const applied_playbooks = [];
+  const outcomesList = (mergedJobs || [])
+    .flatMap((j) => (j.outcomes || []).map((o) => o.statement))
+    .filter(Boolean);
+  const personaNames = (personas || []).map((p) => p.name).filter(Boolean);
+
+  for (const sel of selected) {
+    const concept = concepts.find((c) => c.id === sel.id);
+    if (!concept) continue;
+    if (!concept.full_content && !concept.summary) continue;
+
+    const applyCtx = `Brand diagnostic + positioning:\n${ctxSummary}\n\nPersonas available (anchor to one by exact name):\n${personaNames.map((n) => `  - ${n}`).join("\n") || "(no personas available · drop)"}\n\nRanked Ulwick outcomes (anchor to one verbatim or close paraphrase):\n${outcomesList.slice(0, 12).map((o) => `  - ${o}`).join("\n") || "(no outcomes available · drop)"}\n\nPlaybook · "${concept.name}" (${concept.theme}):\n${concept.full_content || concept.summary}`;
+
+    try {
+      const applyRes = await callClaude(apiKey, PL_APPLY_SYSTEM, applyCtx, { maxTokens: 1500 });
+      const applied = extractJSON(applyRes);
+      if (applied?.drop) continue;
+      if (!applied?.anchored_to_persona || !applied?.anchored_to_outcome) continue;
+      // Sanity-check the persona/outcome are real
+      if (!personaNames.includes(applied.anchored_to_persona)) continue;
+      const matchedOutcome = outcomesList.find((o) =>
+        o === applied.anchored_to_outcome ||
+        o.toLowerCase().includes(applied.anchored_to_outcome.toLowerCase().slice(0, 40)) ||
+        applied.anchored_to_outcome.toLowerCase().includes(o.toLowerCase().slice(0, 40))
+      );
+      if (!matchedOutcome) continue;
+
+      applied_playbooks.push({
+        id: concept.id,
+        name: concept.name,
+        theme: concept.theme,
+        category: concept.category,
+        why_it_applies: applied.why_it_applies || sel.rationale || "",
+        anchored_to_persona: applied.anchored_to_persona,
+        anchored_to_outcome: matchedOutcome,
+        first_move: applied.first_move || "",
+        owner: applied.owner || "Marketing lead",
+        kpi: applied.kpi || "",
+        success_signal: applied.success_signal || "",
+        references: [concept.source || `Library: ${concept.id}`],
+      });
+    } catch (e) {
+      // per-concept failure · skip
+      console.warn(`[Pass L] apply failed for ${concept.id}:`, e.message);
+    }
+  }
+
+  return { applied_playbooks };
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

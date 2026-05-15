@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary } from "./lib/anthropic";
+import { resolveBusinessModel } from "./lib/business-models";
+import { loadCachedIndex } from "./lib/library-reader";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
 import { deployStrategyDoc, isVercelDeployConfigured } from "./lib/vercel-deploy";
 import { generateSwipeImagery } from "./lib/image-gen";
@@ -38,6 +40,45 @@ const difficultyColor = (d) => d === "low" ? "#22c55e" : d === "high" ? "#ef4444
 // Renders after a Strategy Doc run completes. Shows the meta-pass output:
 // overall verdict, prompt-improvement candidates (Accept/Reject per row),
 // and wins. Accepted candidates append to brand_learned via Pattern B.
+// v1.7.0 · Archetype Gate Modal · blocks strategy-doc generation for
+// unsupported archetypes unless the user has explicitly acknowledged
+// the fit gap in Project Setup. Two paths forward: wait for the phase
+// that ships this archetype's pass roster, or return to Setup and
+// either override or pick a supported archetype.
+function ArchetypeGateModal({ diagnostic, onClose, onReturnToSetup }) {
+  const bm = diagnostic?.business_model || {};
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-surface-1 border border-[#1e2a3a] rounded-xl w-full max-w-xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-baseline justify-between gap-3 mb-3">
+          <div className="font-display text-base font-bold">🔒 Archetype Gate</div>
+          <button onClick={onClose} className="text-[10px] text-dim border border-[#1e2a3a] px-2 py-1 rounded hover:border-accent hover:text-accent">✕ close</button>
+        </div>
+        <p className="text-[12px] text-[#e0ddd5] leading-relaxed mb-3">
+          Your project classifies as <strong className="text-accent">{bm.primary}</strong>. This archetype isn't yet supported — it ships in <strong>phase {bm.phase_target}</strong> with its own dedicated pass roster.
+        </p>
+        <p className="text-[11px] text-dim leading-relaxed mb-4">
+          Generating a DTC-shaped doc for this archetype would produce wrong-shape output (e.g. consumer personas instead of ICPs, Klaviyo flows instead of cold-email sequences). The system is blocking strategy-doc generation by design — no fallback, no silent downgrade.
+        </p>
+        <div className="p-3 rounded-lg mb-4" style={{ background: "rgba(246,211,141,0.12)", borderLeft: "3px solid #c8a45c" }}>
+          <div className="text-[9px] tracking-widest uppercase font-bold mb-2 text-[#c8a45c]">Two paths forward</div>
+          <ol className="text-[11px] leading-relaxed pl-4 list-decimal">
+            <li className="mb-2"><strong>Wait for phase {bm.phase_target}</strong> · we'll ship a fully thorough pass roster for this archetype with ICPs / buying committee / channel mix specific to it.</li>
+            <li><strong>Override consciously</strong> · return to Project Setup, flip "Override anyway (accept fit gap)" on the business-model dropdown, save again. The doc will then generate with DTC's pass plan applied to your archetype's library priors as a deliberate, user-acknowledged scaffold.</li>
+          </ol>
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onReturnToSetup}
+            className="flex-1 bg-accent text-[#06080c] font-display font-bold text-xs tracking-wider uppercase py-3 rounded-lg">
+            Return to Setup
+          </button>
+          <button onClick={onClose} className="px-6 border border-[#1e2a3a] text-dim text-xs rounded-lg">Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RetrospectiveModal({ retro, onAccept, onClose, brandLearnedSize, brandMemorySize }) {
   const candidates = retro.candidates || [];
   const wins = retro.wins || [];
@@ -224,6 +265,12 @@ export default function App() {
   const [brandMemory, setBrandMemory] = useState("");     // loaded with active project
   const [brandLearned, setBrandLearned] = useState("");
 
+  // Engine v1.7.0: Strategic Diagnostic + Library + Gate state
+  const [diagnostic, setDiagnostic] = useState(null);      // Pass D output for active project
+  const [vaultIndex, setVaultIndex] = useState(null);      // Library reader result for current vault
+  const [showGateModal, setShowGateModal] = useState(false);
+  const [appliedPlaybooks, setAppliedPlaybooks] = useState(null); // Pass L output
+
   // Engine v1.4: Project Setup flow + active project context
   const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
   const [projects, setProjects] = useState([]);
@@ -282,6 +329,10 @@ export default function App() {
     setRetroPhase("");
     setBrandMemory("");
     setBrandLearned("");
+    // v1.7.0 · diagnostic + applied playbooks reset too
+    setDiagnostic(null);
+    setAppliedPlaybooks(null);
+    setShowGateModal(false);
   }, []);
 
   const loadProjectAsContext = useCallback((project) => {
@@ -316,13 +367,37 @@ export default function App() {
         setBrandLearned(brand_learned || "");
         if (brand_memory) log(`Pattern B · loaded ${brand_memory.length} chars of brand_memory from prior runs`, "ok");
       }).catch(() => {});
+      // v1.7.0 · load Pass D diagnostic if previously saved
+      airtable.loadDiagnostic(project.airtableId).then((d) => {
+        if (d) {
+          setDiagnostic(d);
+          log(`Pass D · loaded · archetype=${d.business_model?.primary} (${d.business_model?.is_supported ? "supported" : "override · fit gap"})`, "ok");
+        }
+      }).catch(() => {});
     }
+    // v1.7.0 · load cached library index if any vault was used
+    try {
+      const lastPath = localStorage.getItem("alchemy:library:lastPath");
+      if (lastPath) {
+        const cached = loadCachedIndex(lastPath);
+        if (cached?.concepts?.length) setVaultIndex(cached);
+      }
+    } catch {}
   }, [resetProjectScopedState, airtable, log]);
 
   // ── Engine v1.5 · Generate full Strategy Doc ──
   const generateStrategyDoc = useCallback(async () => {
     if (!data || !data.length) { setError("Run analysis first"); return; }
     if (!config.anthropicKey) { setError("Anthropic key required"); return; }
+
+    // v1.7.0 · Archetype gate · block unsupported archetypes unless the
+    // user has explicitly acknowledged the fit gap during Project Setup.
+    if (diagnostic && diagnostic.business_model && !diagnostic.business_model.is_supported && !diagnostic._override_acknowledged) {
+      setShowGateModal(true);
+      log(`Archetype gate · blocking strategy doc · archetype=${diagnostic.business_model.primary} not yet supported (phase ${diagnostic.business_model.phase_target})`, "warn");
+      return;
+    }
+
     setStratDocBusy(true);
     setError(null);
     try {
@@ -429,11 +504,39 @@ export default function App() {
       } catch (e) { log(`Pass 17 skipped: ${e.message}`, "error"); }
 
       setStratDocPhase("Pass 18: tribe readout (web_search verification, slow)…");
-      log("Pass 18/18: tribe readout · web_search-verified handles only");
+      log("Pass 18/19: tribe readout · web_search-verified handles only");
       let tribe = { tribe_summary: "", creators: [], search_paths: [], honest_caveats: [] };
       try {
         tribe = await generateTribeReadout(config.anthropicKey, projectContext, personas, creators);
       } catch (e) { log(`Pass 18 skipped: ${e.message}`, "error"); }
+
+      // v1.7.0 · Pass L · apply playbooks from the user's vault library
+      let pl = { applied_playbooks: [] };
+      if (vaultIndex?.concepts?.length && diagnostic) {
+        setStratDocPhase(`Pass L: applying ${vaultIndex.concepts.length} library concepts (rank → select 8-12 → anchor)…`);
+        log(`Pass L/19: applying playbook library · vault: ${vaultIndex.concepts.length} concepts`);
+        try {
+          pl = await applyPlaybookLibrary(config.anthropicKey, {
+            projectContext,
+            diagnostic,
+            positioning: positioningSpine,
+            personas,
+            mergedJobs: data,
+            conceptIndex: vaultIndex,
+          });
+          setAppliedPlaybooks(pl);
+          log(`Pass L · ${pl.applied_playbooks.length} playbooks applied + anchored`, "ok");
+          // Persist to Airtable
+          if (airtable && activeProject?.airtableId && pl.applied_playbooks.length) {
+            try { await airtable.saveAppliedPlaybooks(activeProject.airtableId, pl.applied_playbooks); }
+            catch (e) { log(`Pass L · Airtable save skipped: ${e.message}`, "warn"); }
+          }
+        } catch (e) {
+          log(`Pass L skipped: ${e.message}`, "warn");
+        }
+      } else if (!vaultIndex?.concepts?.length) {
+        log("Pass L skipped: no concept vault loaded · pick one in Project Setup → Concept Library Vault", "warn");
+      }
 
       setStratDocPhase("Composing HTML doc…");
       const html = composeStrategyDoc({
@@ -455,6 +558,8 @@ export default function App() {
         brandAudit,
         demandLandscape,
         tribe,
+        diagnostic,            // v1.7.0 · drives §00 + section order
+        appliedPlaybooks: pl,  // v1.7.0 · §-near-end playbooks
       });
 
       const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
@@ -515,7 +620,7 @@ export default function App() {
     } finally {
       setStratDocBusy(false);
     }
-  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, generateImagery, log]);
+  }, [data, config, projectContext, positioningSpine, entryRecs, activeProject, sector, adIntelData, generateImagery, diagnostic, vaultIndex, airtable, log]);
 
   // v1.6.12 · accept a retrospective candidate → append its brand_learned_entry
   const acceptRetroCandidate = useCallback(async (idx) => {
@@ -578,11 +683,13 @@ export default function App() {
     }
   }, [data, config, projectContext, activeProject, sector, airtable, log]);
 
-  const handleProjectReady = useCallback(({ project, contextSummary }) => {
+  const handleProjectReady = useCallback(({ project, contextSummary, diagnostic: diag, vaultIndex: vi }) => {
     setProjects((prev) => [project, ...prev]);
     setActiveProject(project);
     setProjectContext(contextSummary);
     if (contextSummary?.sector) setSector(contextSummary.sector);
+    if (diag) setDiagnostic(diag);                   // v1.7.0
+    if (vi) setVaultIndex(vi);                       // v1.7.0
     setViewMode("analyze");
   }, []);
 
@@ -781,6 +888,7 @@ export default function App() {
     <div className="flex h-screen bg-[#06080c] text-[#e0ddd5] font-mono">
       {showConfig && <ConfigPanel config={config} setConfig={setConfig} onClose={() => setShowConfig(false)} />}
       {retroData && <RetrospectiveModal retro={retroData} onAccept={acceptRetroCandidate} onClose={() => setRetroData(null)} brandLearnedSize={brandLearned.length} brandMemorySize={brandMemory.length} />}
+      {showGateModal && <ArchetypeGateModal diagnostic={diagnostic} onClose={() => setShowGateModal(false)} onReturnToSetup={() => { setShowGateModal(false); setViewMode("setup"); }} />}
 
       {/* Sidebar */}
       <SessionList sessions={sessions} activeId={activeSession}
@@ -867,6 +975,41 @@ export default function App() {
               </div>
               {projectContext?.red_flags?.length > 0 && (
                 <div className="mt-2 text-[10px] text-red-400">⚑ {projectContext.red_flags.length} red flag{projectContext.red_flags.length !== 1 ? "s" : ""} in Pass 0 output — see project record</div>
+              )}
+            </div>
+          )}
+
+          {/* v1.7.0 · Strategic Context header tile */}
+          {diagnostic && (
+            <div className="bg-surface-1 border border-[#1e2a3a] rounded-lg p-4 mb-5" style={diagnostic.business_model && !diagnostic.business_model.is_supported ? { borderColor: "#c8a45c" } : {}}>
+              <div className="flex items-baseline justify-between mb-2 flex-wrap gap-2">
+                <span className="text-[10px] font-display font-bold tracking-widest uppercase text-accent">Strategic Context (Pass D)</span>
+                {!diagnostic.business_model?.is_supported && (
+                  <span className="text-[9px] tracking-widest uppercase font-bold" style={{ color: "#c8a45c" }}>
+                    {diagnostic._override_acknowledged ? "⚠ override active · fit gap" : `🔒 unsupported · phase ${diagnostic.business_model?.phase_target}`}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-[11px]">
+                <div className="p-2 rounded" style={{ background: "#0d1117" }}>
+                  <div className="text-[9px] uppercase text-dim tracking-widest mb-1">Archetype</div>
+                  <div className="font-display text-sm">{diagnostic.business_model?.primary || "?"}</div>
+                </div>
+                <div className="p-2 rounded" style={{ background: "#0d1117" }}>
+                  <div className="text-[9px] uppercase text-dim tracking-widest mb-1">Maturity</div>
+                  <div className="font-display text-sm">S{diagnostic.market_maturity?.stage || "?"} · {diagnostic.market_maturity?.stage_label}</div>
+                </div>
+                <div className="p-2 rounded" style={{ background: "#0d1117" }}>
+                  <div className="text-[9px] uppercase text-dim tracking-widest mb-1">Sophistication</div>
+                  <div className="font-display text-sm">S{diagnostic.market_sophistication?.stage || "?"}</div>
+                </div>
+                <div className="p-2 rounded" style={{ background: "#0d1117" }}>
+                  <div className="text-[9px] uppercase text-dim tracking-widest mb-1">Brand</div>
+                  <div className="font-display text-sm">{diagnostic.recommended_archetype?.primary || "?"}</div>
+                </div>
+              </div>
+              {vaultIndex?.concepts?.length > 0 && (
+                <div className="mt-3 text-[10px] text-dim">📚 Concept library loaded · {vaultIndex.concepts.length} playbooks · {vaultIndex.stats?.themes_seen?.length || 0} themes · Pass L will apply 8–12 ranked by archetype priors</div>
               )}
             </div>
           )}
