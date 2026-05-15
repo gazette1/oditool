@@ -138,12 +138,18 @@ a shared helper.
 
 - `src/lib/compose-strategy.js` — sectionTag helper, 21 renderer
   refactors, dispatcher cleanup, 0-based numbering with legacy offset
+- `src/lib/library-reader.js` — Obsidian interop (title alias, wiki-link
+  brackets, type:theme skip, theme-tag fallback, dash-normalized priors)
 - `src/lib/airtable.js` — `loadDiagnostic` registry re-resolve;
   business-models static import
 - `src/ProjectSetup.jsx` — slim-cache surfacing in vaultIndex + UI
 - `src/App.jsx` — log line cosmetic fix
 - Vault: `09 - Strategy Doc Composer.md` + `06 - Project Setup &
   Ingestion.md` — awareness wireframes corrected to 7 levels
+- Vault: `15 - Concept Library Architecture.md` — documents both
+  Layout A (folder-per-theme) and Layout B (concepts/themes split ·
+  the user's actual Demand Curve Map structure); frontmatter resolution
+  rules updated for v1.7.1 field-aliasing behavior
 
 ### Pending for v1.7.1 release
 
