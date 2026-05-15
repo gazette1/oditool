@@ -54,10 +54,19 @@ function slugify(s) {
 }
 
 // Strip leading "01 - " / "02_" patterns from a folder name.
+// v1.7.1 · also strip Obsidian wiki-link brackets [[...]] and trailing
+// pipe-alias forms so a theme like "[[Above-the-Fold Optimization]]" or
+// "[[ad-creative-testing|Ad Creative Testing]]" resolves cleanly.
 function cleanThemeName(raw) {
   return String(raw)
+    .replace(/^\[\[/, "").replace(/\]\]$/, "")     // strip [[ ]] wiki link brackets
+    .replace(/^[^|]+\|/, "")                        // strip "slug|" alias prefix, keep display
     .replace(/^\d+\s*[-_·]\s*/, "")
     .replace(/_/g, " ")
+    .replace(/-/g, " ")                             // dash-separated slugs → spaces
+    .split(" ").filter(Boolean)
+    .map((w) => w[0] ? w[0].toUpperCase() + w.slice(1) : w)  // Title Case
+    .join(" ")
     .trim();
 }
 
@@ -145,14 +154,31 @@ export async function ingestConceptVault(fileList, onProgress) {
       const text = await f.text();
       const { meta, body } = parseFrontmatter(text);
 
+      // v1.7.1 · skip aggregator/index pages: `type: theme` files exist as
+      // tables of contents inside the user's Demand Curve Map structure;
+      // they're not playbooks themselves. Skip with stats.skipped++.
+      if ((meta.type || "").toLowerCase() === "theme" || (meta.type || "").toLowerCase() === "index") {
+        stats.skipped++; continue;
+      }
+
       // Derive fields with fallbacks
       const fileName = f.name.replace(/\.md$/i, "");
       const relativePath = f.webkitRelativePath || f.name;
       const pathParts = relativePath.split(/[/\\]/);
       const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : "";
 
-      const name = (meta.name || "").trim() || fileName.replace(/_/g, " ");
-      const theme = cleanThemeName((meta.theme || "").trim() || folderName);
+      // v1.7.1 · `title` is the Obsidian convention; accept it as alias for `name`.
+      const name = ((meta.name || meta.title || "").trim()) || fileName.replace(/[-_]/g, " ");
+      // v1.7.1 · clean Obsidian wiki-link brackets out of theme; fall back to
+      // a tag of the form `theme/<slug>` if no explicit theme field, then
+      // finally the parent folder name (which may be "concepts" — that's OK).
+      let themeRaw = (meta.theme || "").trim();
+      if (!themeRaw && Array.isArray(meta.tags)) {
+        const themeTag = meta.tags.find((t) => typeof t === "string" && t.startsWith("theme/"));
+        if (themeTag) themeRaw = themeTag.slice("theme/".length);
+      }
+      if (!themeRaw) themeRaw = folderName;
+      const theme = cleanThemeName(themeRaw);
       const category = (meta.category || "").trim() || THEME_TO_CATEGORY[theme] || "general";
       const tags = Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []);
       const source = (meta.source || "").trim() || `Obsidian: ${relativePath}`;
@@ -180,17 +206,29 @@ export async function ingestConceptVault(fileList, onProgress) {
  * Re-rank a concept index against an archetype's library priors.
  * Every concept stays eligible · this is a SOFT signal, not a filter.
  * Returns a re-ranked array of concepts (in-place not modified).
+ *
+ * v1.7.1 · theme comparison now normalizes punctuation (dashes, &, etc.)
+ * to spaces before matching so "Above-the-Fold Optimization" (registry)
+ * matches "Above the Fold Optimization" (vault-derived after dash strip)
+ * and "Review & Social Proof" matches "Review and Social Proof".
  */
+const _normTheme = (s) => String(s || "")
+  .toLowerCase()
+  .replace(/&/g, " and ")
+  .replace(/[-_·\/]/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
+
 export function rankByPriors(index, libraryPriors) {
   const concepts = index?.concepts || index || [];
-  const priority = new Set((libraryPriors?.priority_themes || []).map((t) => t.toLowerCase()));
-  const deprio = new Set((libraryPriors?.deprioritize || []).map((t) => t.toLowerCase()));
+  const priority = new Set((libraryPriors?.priority_themes || []).map(_normTheme));
+  const deprio = new Set((libraryPriors?.deprioritize || []).map(_normTheme));
   return concepts
     .map((c) => {
-      const themeLc = (c.theme || "").toLowerCase();
+      const themeKey = _normTheme(c.theme);
       let weight = 0;
-      if (priority.has(themeLc)) weight += 10;
-      if (deprio.has(themeLc)) weight -= 3;
+      if (priority.has(themeKey)) weight += 10;
+      if (deprio.has(themeKey)) weight -= 3;
       return { ...c, _weight: weight };
     })
     .sort((a, b) => {

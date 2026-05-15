@@ -12,6 +12,51 @@ the output template version is independent of the React app version.
 of bugs, mismatches, and drift surfaced by reading the v1.7.0 code with
 fresh eyes before user end-to-end test. Listed in priority order.
 
+### Fixed — vault interop (CRITICAL · would have made Pass L priors a no-op)
+
+The v1.7.0 `library-reader.js` was written against an aspirational
+`Brain Map/<Theme>/<Concept>.md` folder structure with vanilla
+frontmatter (`name:`, `theme: "Theme Name"`). The user's actual
+`Demand Curve Map` vault uses Obsidian conventions:
+
+- `title:` (not `name:`) is the convention key
+- `theme: "[[Wiki Link]]"` (with Obsidian double-bracket wiki-link syntax)
+- Theme aggregator files marked `type: theme` (should be skipped — they're
+  index/TOC pages, not playbooks themselves)
+- Optional `tags: ["theme/<slug>"]` form when explicit theme field absent
+
+Running v1.7.0 against this vault would have produced concepts where:
+- `name = fileName` (because `meta.name` was empty)
+- `theme = "[[Above-the-Fold Optimization]]"` (literal brackets retained)
+- After lowercase normalization: priors-match key was
+  `"[[above-the-fold optimization]]"` which matches **zero** DTC priors
+
+Result: Pass L would have run, picked 8-12 concepts, but the
+rank-by-priors step would have been entirely defeated · all concepts
+weighted 0, ranking effectively alphabetical, top-80 → random first
+80 alphabetical concepts → wrong shape.
+
+**Fix:** `library-reader.js` now:
+
+- Treats `title` as an alias for `name`
+- Strips `[[...]]` wiki-link brackets in `cleanThemeName`
+- Strips dashes (vault uses kebab-case slugs) and Title-Cases the result
+  so `ad-creative-testing` → `Ad Creative Testing` (matches DTC prior)
+- Skips files with `type: theme` or `type: index` (they're aggregators)
+- Falls back to `tags: ["theme/<slug>"]` form when `theme:` field absent
+- `rankByPriors` now normalizes both sides via shared `_normTheme` helper
+  that lowercases + converts dashes/`&`/etc. to spaces · so
+  "Above-the-Fold Optimization" (registry) matches
+  "Above The Fold Optimization" (vault-derived) AND
+  "Review & Social Proof" matches "Review and Social Proof"
+
+Verified against the user's actual 375-concept vault:
+- 0 type:theme files skipped (the aggregator files live in a separate
+  `themes/` subfolder · only `concepts/` content is ingested)
+- 39 distinct themes derived
+- 126/375 concepts (33%) matched at least one DTC priority theme
+- All 11 DTC priors hit at least one concept · interop confirmed
+
 ### Fixed — section numbering across all renderers (the big one)
 
 v1.7.0 shipped with `TOTAL_SECTIONS = 21` exported but **never threaded
