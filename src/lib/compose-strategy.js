@@ -63,14 +63,23 @@ em,.italic{font-style:italic;font-family:"Cormorant Garamond",serif;font-weight:
 .section-number{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
 .wordmark{font-family:"DM Serif Display",serif;font-weight:400;font-size:28px;letter-spacing:0.04em;background:linear-gradient(110deg,var(--moss-deep),var(--moss-light),var(--moss-lime));-webkit-background-clip:text;background-clip:text;color:transparent}
 nav.top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(106,153,78,.3)}
-nav.top .container{height:64px;display:flex;align-items:center;justify-content:space-between}
+nav.top .container{height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
+/* v1.7.1 · nav-links area scrolls horizontally on narrow viewports
+   instead of wrapping ugly. The wordmark stays anchored left. */
+nav.top .nav-links{flex:1;display:flex;gap:24px;font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary);overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin;justify-content:flex-end;padding:8px 0}
+nav.top .nav-links::-webkit-scrollbar{height:3px}
+nav.top .nav-links::-webkit-scrollbar-thumb{background:rgba(106,153,78,.4);border-radius:2px}
+nav.top .nav-links a{flex-shrink:0;padding:4px 0;transition:color .15s var(--enter)}
+nav.top .nav-links a:hover{color:var(--moss-deep)}
 .cover{padding:120px 0 96px;background:radial-gradient(ellipse at 80% 20%,rgba(167,201,87,.25),transparent 50%),radial-gradient(ellipse at 20% 80%,rgba(56,102,65,.18),transparent 50%),var(--bg-base)}
 .cover-tag{display:flex;align-items:center;gap:16px;margin-bottom:32px;flex-wrap:wrap}
 .cover-tag .doc-num{padding:6px 14px;border:1px solid var(--moss-mid);border-radius:999px;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)}
 .cover-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:64px;padding-top:32px;border-top:1px solid rgba(106,153,78,.4)}
 @media (max-width:720px){.cover-meta{grid-template-columns:1fr 1fr}}
+.cover-meta-item{transition:transform .18s var(--enter), opacity .18s var(--enter);cursor:pointer}
+.cover-meta-item:hover{transform:translateY(-2px);opacity:.82}
 .cover-meta-item .label{font-size:9px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:8px}
-.cover-meta-item .value{font-family:"DM Serif Display",serif;font-size:20px;line-height:1.2}
+.cover-meta-item .value{font-family:"DM Serif Display",serif;font-size:20px;line-height:1.2;color:var(--ink-primary)}
 .position-primary{background:linear-gradient(135deg,var(--bg-card),var(--bg-base));border:2px solid var(--moss-deep);border-radius:16px;padding:56px 40px;margin-top:32px;position:relative}
 .position-primary .tag{position:absolute;top:-12px;left:32px;background:var(--moss-deep);color:var(--ink-primary);padding:4px 12px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
 .position-primary .claim{font-family:"DM Serif Display",serif;font-size:clamp(28px,4.5vw,44px);line-height:1.1;letter-spacing:-0.015em;margin-bottom:24px}
@@ -110,6 +119,7 @@ nav.top .container{height:64px;display:flex;align-items:center;justify-content:s
 .persona-fields{display:grid;grid-template-columns:140px 1fr;gap:12px 24px;margin-top:16px}
 .persona-fields .pf-label{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);padding-top:4px}
 .persona-fields .pf-value{font-size:13px;line-height:1.65;padding-bottom:14px;border-bottom:1px solid rgba(106,153,78,.25)}
+.persona-fields .pf-value .handle-chip{display:inline-block;margin:2px 4px 2px 0;padding:2px 9px;background:var(--bg-warm);border-radius:3px;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;color:var(--ink-secondary);letter-spacing:0.02em;border:1px solid rgba(106,153,78,.2)}
 .swipe-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-top:32px}
 @media (max-width:720px){.swipe-grid{grid-template-columns:1fr}}
 .swipe-card{background:var(--bg-base);border:1px solid rgba(106,153,78,.3);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
@@ -452,13 +462,33 @@ footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(1
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
+// v1.7.1 · Claude often wraps quoted lines in markdown `*emphasis*` even
+// when the schema asks for plain text. The CSS already italicizes the
+// container in several places (one-liner, first_message, ws-test, etc.)
+// so the asterisks render literally and the user sees `*…*`. Strip a
+// single wrapping pair before escape. Inner asterisks are left alone
+// because they may be intentional (e.g. "5*-rated" emphasis).
+const stripWrappingEmphasis = (s) => {
+  const str = String(s ?? "").trim();
+  if (str.length < 2) return str;
+  if ((str.startsWith("*") && str.endsWith("*")) || (str.startsWith("_") && str.endsWith("_"))) {
+    return str.slice(1, -1).trim();
+  }
+  return str;
+};
+
+// Convenience: strip wrapping emphasis THEN escape for HTML. Use this
+// wherever the renderer is about to drop a string into a container that
+// already has `font-style: italic` in the CSS.
+const escEm = (s) => esc(stripWrappingEmphasis(s));
+
 // ── Renderers ──
 function renderCover(p, project_name) {
   const pc = p.project_context || {};
   return `<section class="cover" id="cover">
   <div class="container">
     <div class="cover-tag">
-      <span class="doc-num">Phase 1 Strategy · Engine v1.7.0</span>
+      <span class="doc-num">Phase 1 Strategy · Engine ${ENGINE_VERSION}</span>
       <span class="caption">Generated ${new Date().toISOString().split("T")[0]}</span>
     </div>
     <h1 class="display-xl" style="margin-bottom:32px">${esc(project_name || "Untitled Project")}</h1>
@@ -469,10 +499,10 @@ function renderCover(p, project_name) {
       ${esc(pc.audience || "")}
     </p>
     <div class="cover-meta">
-      <div class="cover-meta-item"><div class="label">Jobs</div><div class="value">${(p.mergedJobs || []).length}</div></div>
-      <div class="cover-meta-item"><div class="label">Personas</div><div class="value">${(p.personas || []).length}</div></div>
-      <div class="cover-meta-item"><div class="label">Swipe ads</div><div class="value">${(p.swipeFile || []).length}</div></div>
-      <div class="cover-meta-item"><div class="label">Scripts</div><div class="value">${(p.scripts || []).length}</div></div>
+      <a href="#evidence" class="cover-meta-item"><div class="label">Jobs</div><div class="value">${(p.mergedJobs || []).length}</div></a>
+      <a href="#personas" class="cover-meta-item"><div class="label">Personas</div><div class="value">${(p.personas || []).length}</div></a>
+      <a href="#swipe" class="cover-meta-item"><div class="label">Swipe ads</div><div class="value">${(p.swipeFile || []).length}</div></a>
+      <a href="#scripts" class="cover-meta-item"><div class="label">Scripts</div><div class="value">${(p.scripts || []).length}</div></a>
     </div>
   </div>
 </section>`;
@@ -550,15 +580,15 @@ function renderPersonas(p, n, total) {
       <div class="persona-body">
         <div class="number">Persona ${String(i+1).padStart(2,"0")} · ${esc(per.archetype || "")}</div>
         <div class="name">${esc(per.name || "")}, ${esc(per.age || "")}</div>
-        <div class="one-liner">${esc(per.one_liner || "")}</div>
+        <div class="one-liner">${escEm(per.one_liner || "")}</div>
         <div class="persona-fields">
           <div class="pf-label">Job to be done</div><div class="pf-value">${esc(per.job_to_be_done || "")}</div>
           <div class="pf-label">Underserved outcome</div><div class="pf-value">${esc(per.underserved_outcome || "")}</div>
           <div class="pf-label">Currently uses</div><div class="pf-value">${esc(per.currently_uses || "")}</div>
           <div class="pf-label">Trigger</div><div class="pf-value">${esc(per.trigger_moment || "")}</div>
-          <div class="pf-label">Lives online at</div><div class="pf-value">${esc(per.lives_online_at || "")}</div>
+          <div class="pf-label">Lives online at</div><div class="pf-value">${(per.lives_online_at || "").split(",").map(h => h.trim()).filter(Boolean).map(h => `<span class="handle-chip">${esc(h)}</span>`).join("")}</div>
           <div class="pf-label">Switch cost</div><div class="pf-value">${esc(per.switch_cost || "")}</div>
-          <div class="pf-label">First message</div><div class="pf-value italic">${esc(per.first_message || "")}</div>
+          <div class="pf-label">First message</div><div class="pf-value italic">${escEm(per.first_message || "")}</div>
         </div>
       </div>
     </div>`).join("")}
@@ -995,11 +1025,17 @@ function renderTribe(p, n, total) {
 
 function renderMethodology(p, n, total) {
   const pc = p.project_context || {};
+  // v1.7.1 · auto-derive version + pass-count from the build instead of
+  // hard-coding. Pass D and Pass L are counted only if their outputs exist
+  // on the payload (i.e. they actually fired this run).
+  const hasD = !!p.diagnostic;
+  const hasL = !!(p.appliedPlaybooks?.applied_playbooks?.length);
+  const passCount = 18 + (hasD ? 1 : 0) + (hasL ? 1 : 0);
   return `<section class="section" id="method">
   <div class="container">
     ${sectionTag("Methodology", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine v1.6.7 · 18 Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages · ${(p.tribe?.creators || []).filter(c => c.verified !== false).length} verified creators.</p>
+    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine ${ENGINE_VERSION} · ${passCount} Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages · ${(p.tribe?.creators || []).filter(c => c.verified !== false).length} verified creators${hasD ? ` · 1 strategic diagnostic` : ""}${hasL ? ` · ${p.appliedPlaybooks.applied_playbooks.length} library playbooks applied` : ""}.</p>
     <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
     <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
     ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#bc4749">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
@@ -1150,6 +1186,9 @@ function buildSectionMap(payload, totalSections) {
 
 // ── Main entry ──
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
+// v1.7.1 · single source of truth for the version stamp · used by cover,
+// methodology, and footer. Bump this in one place per release.
+export const ENGINE_VERSION = "v1.7.1";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -1168,7 +1207,7 @@ export function composeStrategyDoc(payload) {
 <nav class="top">
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
-    <div style="display:flex;gap:24px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-secondary)">
+    <div class="nav-links">
       <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
     </div>
   </div>
@@ -1200,7 +1239,7 @@ ${(() => {
     return fn(n);
   }).join("\n");
 })()}
-<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine v1.7.0 · Mode 1 Earth</p></div></footer>
+<footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine ${ENGINE_VERSION} · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }
