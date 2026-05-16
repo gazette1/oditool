@@ -6,6 +6,45 @@ the output template version is independent of the React app version.
 
 ---
 
+## [Unreleased · v1.8 scaffold] — 2026-05-16
+
+### Added · `src/lib/adyntel.js` (NEW · v1.8 scaffold)
+
+Self-contained Adyntel API client per the v2 spec at
+`<vault>/08a - Ad-Intel Stage B Spec (v2 · Adyntel Canonical).md`.
+Importable but **not yet wired into stageB** — the wire-in is a separate
+v1.8 PR once the user confirms credentials work via a live test.
+
+- `AdyntelClient` class · 10 platform-split endpoints
+- `CreditCounter` class · local decrement counter (Adyntel doesn't expose
+  remaining credits in any response)
+- `validateKey()` workaround for the missing 0-cost validation endpoint
+- Async-job polling for `JobStartedResponse{jobId}` shape (Facebook,
+  Google, LinkedIn, Google Shopping)
+- 5xx retry with exponential backoff (200ms, 1s) · 4xx surfaces immediately
+- 30s per-request timeout via AbortController · 60s job-poll timeout
+- `ADYNTEL_COSTS` pinned per-endpoint credit costs from docs.adyntel.com
+- `PLATFORM_PRIORITY = ['facebook', 'tiktok', 'google']` per spec §6
+- `createAdyntelClient(cfg)` returns null when credentials absent ·
+  caller falls back to existing web_search Stage B path cleanly
+- `checkCachedAds()` helper for the 24h TTL cache (degrades gracefully
+  until `AirtableClient.queryRecentSwipeAds` lands in a follow-up PR)
+
+`.env.local` (gitignored) gains:
+
+```
+VITE_ADYNTEL_API_KEY=hd-d726930582fc4d8045-8  (saved 2026-05-16)
+# VITE_ADYNTEL_EMAIL=                         ← REQUIRED before first call
+```
+
+Adyntel auth requires `email` + `api_key` together (NOT a header, NOT
+Bearer). User must supply their account email before any call succeeds.
+
+Bundle unchanged · scaffold only · no imports added to App.jsx or
+ad-intel.js yet.
+
+---
+
 ## [1.7.1] — 2026-05-16
 
 **Hot-fix sweep + first-run polish.** Two rounds:
