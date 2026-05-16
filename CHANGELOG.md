@@ -6,11 +6,33 @@ the output template version is independent of the React app version.
 
 ---
 
-## [1.7.1] — 2026-05-15 (unreleased · v1.7.0 polish in progress)
+## [1.7.1] — 2026-05-16
 
-**Hot-fix sweep after v1.7.0 audit.** No new features · entirely cleanup
-of bugs, mismatches, and drift surfaced by reading the v1.7.0 code with
-fresh eyes before user end-to-end test. Listed in priority order.
+**Hot-fix sweep + first-run polish.** Two rounds:
+* Round 1 (2026-05-15) — bugs surfaced by code-audit before first run
+* Round 2 (2026-05-16) — bugs surfaced by user's first real strategy-doc generation walkthrough
+
+No new features. Entirely cleanup of bugs, mismatches, and drift.
+
+### Round 2 (2026-05-16) · first-run polish
+
+After the user generated their first v1.7.0 strategy doc and walked through the output, 5 cosmetic bugs surfaced:
+
+1. **Methodology renderer hardcoded "Engine v1.6.7 · 18 Anthropic passes"** despite the actual run being v1.7.0 with 19 passes. Replaced with the new `ENGINE_VERSION` constant + a derived `passCount` that adds 1 for each of Pass D and Pass L when they actually fired this run. Methodology paragraph also gains "1 strategic diagnostic" + "N library playbooks applied" suffixes when those payloads are present.
+
+2. **New `ENGINE_VERSION` constant** exported alongside `TOTAL_SECTIONS`. Used by the cover doc-num tag, the methodology paragraph, and the footer wordmark. One bump per release; no more stale strings hiding in renderers.
+
+3. **Persona one-liner and first_message rendered Claude's wrapping `*…*` markdown emphasis literally** — the renderer used `esc()` which passes asterisks through, and the container CSS already italicizes. Added `stripWrappingEmphasis(s)` helper + `escEm(s)` convenience. Now displays italic text without the literal asterisks.
+
+4. **Personas "Lives online at" field rendered as one run-together comma list** (`@a,@b,@c,@d`). Now split + trimmed + each handle wrapped in a `.handle-chip` (small monospaced pill with bg-warm background and moss border). Reads cleanly as chips.
+
+5. **Cover meta tiles (Jobs/Personas/Swipe ads/Scripts) were informational only.** Wrapped each in an anchor to the relevant section (`#evidence`, `#personas`, `#swipe`, `#scripts`). Added hover state (translateY −2px, opacity .82).
+
+6. **Top sticky nav crammed 20 links onto one row at 10px font**, wrapping ugly on narrow viewports. New `.nav-links` class adds `overflow-x:auto` + `white-space:nowrap` + thin scrollbar styling. Wordmark stays anchored left; links scroll horizontally on overflow.
+
+Bundle 439.04 KB / 127.15 KB gzip (+1.6 KB from helpers + nav CSS).
+
+### Round 1 (2026-05-15) · pre-test code audit
 
 ### Fixed — vault interop (CRITICAL · would have made Pass L priors a no-op)
 
@@ -151,11 +173,9 @@ a shared helper.
   the user's actual Demand Curve Map structure); frontmatter resolution
   rules updated for v1.7.1 field-aliasing behavior
 
-### Pending for v1.7.1 release
+### Released
 
-User has not yet tested v1.7.0 or v1.7.1 end-to-end. **Hold tag + push
-until user confirms the polish doesn't regress any v1.7.0 functionality
-when they run a real strategy-doc gen.** This entry is provisional.
+User ran their first v1.7.0 strategy doc, walked through it, surfaced the 5 cosmetic bugs above (now fixed in Round 2). Tagged + pushed as `v1.7.1` on 2026-05-16.
 
 ---
 
