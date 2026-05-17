@@ -449,6 +449,73 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .ar-caveats ul{margin:0;padding-left:18px;color:var(--ink-secondary)}
 .ar-caveats li{margin-bottom:3px}
 
+/* §05c · Ad Deep Dive (Pass 8.7 · v1.7.4) */
+.dd-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid rgba(106,153,78,0.25)}
+.dd-meta .dd-title{font-family:"DM Serif Display",serif;font-size:30px;line-height:1.1;flex:1;min-width:280px}
+.dd-meta .dd-runtime{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.12em;color:var(--moss-mid);background:var(--bg-warm);padding:5px 12px;border-radius:5px;white-space:nowrap}
+.dd-meta .dd-anchors{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary);flex-basis:100%}
+.dd-meta .dd-anchors strong{font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-right:8px}
+.dd-hook{padding:22px 26px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border:1px solid var(--moss-deep);border-radius:12px;margin-bottom:24px}
+.dd-hook h3{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:14px}
+.dd-hook .dd-hook-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+@media (max-width:720px){.dd-hook .dd-hook-grid{grid-template-columns:1fr}}
+.dd-hook .dd-hook-tile{padding:10px 12px;background:var(--bg-base);border-radius:6px}
+.dd-hook .dd-hook-tile .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px;display:block}
+.dd-hook .dd-hook-tile .val{font-family:"DM Serif Display",serif;font-size:15px;color:var(--ink-primary)}
+.dd-hook .dd-mechanic{font-style:italic;font-family:"Cormorant Garamond",serif;font-size:14.5px;line-height:1.55;padding:10px 14px;background:var(--bg-base);border-radius:6px;margin-bottom:12px}
+.dd-hook .dd-why{padding:14px 16px;background:rgba(56,102,65,0.08);border-left:3px solid var(--moss-deep);border-radius:0 6px 6px 0;font-size:13px;line-height:1.65}
+.dd-hook .dd-why strong{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:6px}
+.dd-hook .dd-retention{margin-top:14px;font-size:12px;line-height:1.7}
+.dd-hook .dd-retention .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);display:block;margin-bottom:6px}
+.dd-hook .dd-retention .rd-row{display:grid;grid-template-columns:60px 120px 1fr;gap:10px;padding:5px 0;font-size:12px}
+.dd-hook .dd-retention .rd-row .at{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--moss-mid)}
+.dd-hook .dd-retention .rd-row .dev{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)}
+.dd-arcs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:28px}
+@media (max-width:720px){.dd-arcs{grid-template-columns:1fr}}
+.dd-arc{padding:18px 20px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.25);border-radius:10px}
+.dd-arc h4{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(106,153,78,0.25)}
+.dd-arc .arc-row{display:grid;grid-template-columns:48px 1fr;gap:8px;padding:6px 0;font-size:12px;line-height:1.5;border-bottom:1px solid rgba(106,153,78,0.12)}
+.dd-arc .arc-row:last-child{border-bottom:0}
+.dd-arc .arc-row .at{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--moss-mid);font-size:10px}
+.dd-arc .arc-row .text{color:var(--ink-primary)}
+.dd-arc .arc-row .purpose,.dd-arc .arc-row .emotion{display:block;font-style:italic;font-family:"Cormorant Garamond",serif;font-size:11px;color:var(--ink-muted);margin-top:2px}
+.dd-arc .music-row{font-size:12px;line-height:1.65}
+.dd-arc .music-row .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);display:inline-block;width:54px}
+.dd-arc .music-row .license{margin-top:8px;padding:8px 10px;background:var(--bg-warm);border-radius:5px;font-style:italic;font-family:"Cormorant Garamond",serif;font-size:11.5px;color:var(--ink-secondary)}
+.dd-storyboard{margin-bottom:28px}
+.dd-storyboard h3{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:14px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)}
+.dd-shot{background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:10px;padding:18px 20px;margin-bottom:14px;display:grid;grid-template-columns:60px 1fr;gap:18px}
+@media (max-width:720px){.dd-shot{grid-template-columns:1fr;gap:10px}}
+.dd-shot .shot-num{font-family:"DM Serif Display",serif;font-size:34px;color:var(--moss-mid);line-height:1;padding-top:4px}
+.dd-shot .shot-body{display:flex;flex-direction:column;gap:10px}
+.dd-shot .shot-time{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.18em;color:var(--moss-mid);background:var(--bg-warm);padding:3px 10px;border-radius:4px;width:fit-content}
+.dd-shot .shot-camera{font-family:"DM Serif Display",serif;font-size:17px;line-height:1.25;color:var(--ink-primary)}
+.dd-shot .shot-camera .frame{display:block;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary);margin-top:3px}
+.dd-shot .shot-action{font-size:13px;line-height:1.6;color:var(--ink-primary)}
+.dd-shot .shot-cues{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;padding:10px 12px;background:var(--bg-warm);border-radius:6px;font-size:12px;line-height:1.55}
+.dd-shot .shot-cues .cue{display:block}
+.dd-shot .shot-cues .cue .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);display:block;margin-bottom:2px}
+.dd-shot .shot-cues .cue .val{color:var(--ink-primary)}
+.dd-shot .shot-cues .cue .val.vo{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px}
+.dd-shot .shot-prompt{padding:12px 14px;background:linear-gradient(135deg,rgba(56,102,65,0.06),rgba(167,201,87,0.08));border:1px dashed rgba(56,102,65,0.45);border-radius:6px}
+.dd-shot .shot-prompt .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:5px;display:block}
+.dd-shot .shot-prompt .val{font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.55;color:var(--ink-primary);user-select:all}
+.dd-shot .shot-anchor{font-size:11px;line-height:1.5;color:var(--ink-secondary);padding-top:6px;border-top:1px solid rgba(106,153,78,0.15)}
+.dd-shot .shot-anchor strong{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-right:6px}
+.dd-shot .shot-why{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:12px;color:var(--ink-secondary);padding-top:4px}
+.dd-prod{padding:22px 26px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:12px;margin-bottom:24px}
+.dd-prod h3{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:14px}
+.dd-prod-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+@media (max-width:720px){.dd-prod-grid{grid-template-columns:1fr}}
+.dd-prod-block{display:flex;flex-direction:column;gap:6px;padding:12px 14px;background:var(--bg-warm);border-radius:7px}
+.dd-prod-block .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:3px}
+.dd-prod-block .val{font-size:12.5px;line-height:1.6;color:var(--ink-primary)}
+.dd-prod-block ul{margin:4px 0 0 0;padding-left:16px;font-size:12px;line-height:1.55}
+.dd-prod-block ul li{margin-bottom:3px;color:var(--ink-primary)}
+.dd-prod-block .sub{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11.5px;color:var(--ink-secondary);margin-top:4px}
+.dd-thesis{padding:20px 26px;background:linear-gradient(135deg,rgba(56,102,65,0.1),rgba(167,201,87,0.06));border-left:4px solid var(--moss-deep);border-radius:0 10px 10px 0;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15.5px;line-height:1.65;color:var(--ink-primary)}
+.dd-thesis strong{display:block;font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:8px}
+
 /* §17 · Tribe readout */
 .tribe-summary{padding:20px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-base));border:1px solid rgba(106,153,78,0.3);border-radius:12px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:16px;line-height:1.6;color:var(--ink-primary);margin-bottom:24px}
 .tribe-caveats{padding:14px 18px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;margin-bottom:24px}
@@ -490,6 +557,68 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .sp-row .why{color:var(--ink-secondary)}
 footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(106,153,78,.4);text-align:center}
 .footer-meta{font-size:11px;color:var(--ink-muted);letter-spacing:0.18em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace}
+
+/* ─────────────────────────────────────────────────────────────
+   v1.7.4 · Print stylesheet · Cmd-P → Save as PDF should produce
+   a usable multi-page PDF with no chopped content. Closes the v1.7
+   backlog item "no print stylesheet · 30 awkward pages".
+
+   User flow: open the .html in Chrome / Edge / Brave, Cmd-P,
+   destination Save as PDF, layout portrait, A4 or Letter, enable
+   "Background graphics" so moss-and-brick tokens print correctly.
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+  *,*::before,*::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  html,body { background: #fff !important; font-size: 10.5pt; line-height: 1.55; overflow: visible !important; }
+  nav.top { display: none !important; }
+  nav.top + * { padding-top: 0 !important; }
+  .cover { padding: 24pt 0 18pt !important; background: #fff !important; page-break-after: always; }
+  .cover .display-xl { font-size: 32pt !important; line-height: 1.05; color: var(--ink-primary) !important; }
+  .cover-meta { margin-top: 24pt !important; padding-top: 14pt !important; }
+  .cover-meta-item { cursor: default !important; transition: none !important; }
+  .cover-meta-item:hover { transform: none !important; opacity: 1 !important; }
+  .container { padding: 0 4mm !important; max-width: 100% !important; }
+  .section { padding: 18pt 0 16pt !important; page-break-inside: auto; }
+  .section-tag-row { margin-bottom: 14pt !important; }
+  .section-name { color: #4a5b3e !important; }
+  .display-lg { font-size: 22pt !important; line-height: 1.15; page-break-after: avoid; }
+  .display { font-size: 18pt !important; page-break-after: avoid; }
+  h2, h3, h4 { page-break-after: avoid; }
+  /* Card-style sections: keep each card on one page when possible */
+  .swipe-card, .script, .email-flow, .channel-card, .landing-variant, .phase-card,
+  .creator-card, .comp-card, .audit-card, .funnel-card, .tribe-card, .playbook-card,
+  .ar-card, .dd-shot, .ws-card { page-break-inside: avoid; }
+  /* Long sections: allow row-level breaks */
+  .ev-table, .vp-table, .matrix-table, .dd-storyboard { page-break-inside: auto; }
+  .ev-row, .vp-row, .matrix-row { page-break-inside: avoid; }
+  /* Hide horizontal-scroll affordances · no scrolling on paper */
+  nav.top .nav-links, .swipe-grid { overflow: visible !important; }
+  /* Flatten gradients that ink-blast on paper · keep accent on critical pills */
+  .position-primary { background: #fff !important; border: 2pt solid var(--moss-deep) !important; }
+  .dd-hook { background: #fdf8e8 !important; }
+  .dd-thesis { background: #f5f0d8 !important; border-left: 4pt solid var(--moss-deep) !important; }
+  .ar-prompt-block, .dd-shot .shot-prompt { background: #f5efde !important; }
+  /* Pill chips: solid backgrounds */
+  .ad-chip, .chip, .au-priority, .pb-theme, .ar-format, .dd-meta .dd-runtime { background: #f0e8d2 !important; color: #2a3328 !important; }
+  /* Wordmark gradient → solid ink (gradient text doesn't print) */
+  .wordmark { background: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; color: var(--ink-primary) !important; }
+  footer { padding: 36pt 0 24pt !important; }
+  footer .wordmark { font-size: 28pt !important; }
+  /* Print-only attribution line */
+  .footer-meta::after { content: " · printed " attr(data-print-date); }
+  /* Hairline rules */
+  .hairline { display: none; }
+  /* Storyboard shot grid → vertical stack at print width */
+  .dd-shot { grid-template-columns: 56pt 1fr !important; gap: 12pt !important; }
+  .dd-shot .shot-num { font-size: 28pt !important; }
+  /* Suppress accent moss-light bg that washes out body text */
+  .audit-card.no-visibility { background: #faf3df !important; }
+  /* Anchor-link text underlines clean up */
+  a { color: inherit !important; text-decoration: none !important; }
+  /* Hide the dashed border on prompt blocks once printed (still ink-cheap) */
+  .ar-prompt-block, .dd-shot .shot-prompt { border-style: solid !important; border-color: var(--moss-deep) !important; }
+}
 `;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -687,6 +816,105 @@ function renderAdRecreations(p, n, total) {
       </div>`).join("")}
     </div>
     ${caveats.length ? `<div class="ar-caveats"><span class="lbl">Honest caveats</span><ul>${caveats.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
+  </div>
+</section>`;
+}
+
+// ── §05c · Ad Deep Dive (Pass 8.7 · v1.7.4 · Phase A MVP) ──
+// Spec: <vault>/05b - Pass 8.7 Ad Deep Dive Spec.md
+function renderAdDeepDive(p, n, total) {
+  const dd = p.adDeepDive?.deep_dive;
+  if (!dd) return "";
+  const ha = dd.hook_anatomy || {};
+  const cb = dd.copy_breakdown || {};
+  const sb = dd.storyboard || {};
+  const pb = dd.production_brief || {};
+  const shots = sb.shots || [];
+  return `<section class="section" id="deepdive">
+  <div class="container">
+    ${sectionTag("Ad deep dive", n, total)}
+    <div class="dd-meta">
+      <div class="dd-title">${esc(dd.title || "Untitled deep dive")}</div>
+      <span class="dd-runtime">${esc(dd.runtime_sec ? `${dd.runtime_sec}s` : "")} · ${esc(dd.format || "4:5")}</span>
+      <div class="dd-anchors">
+        <strong>Inspired by</strong>${esc(dd.source_brand || "?")}${dd.source_summary ? ` · ${esc(dd.source_summary)}` : ""}<br/>
+        <strong>For</strong>${esc(dd.persona_anchor || "?")} · <strong>On</strong>${esc(dd.outcome_anchor || "?")}
+      </div>
+    </div>
+
+    <div class="dd-hook">
+      <h3>Hook anatomy · the reverse-engineering</h3>
+      <div class="dd-hook-grid">
+        <div class="dd-hook-tile"><span class="lbl">Pattern</span><div class="val">${esc(ha.pattern || "?")}</div></div>
+        <div class="dd-hook-tile"><span class="lbl">Schwartz level</span><div class="val">${esc(ha.schwartz_level || "?")}</div></div>
+        <div class="dd-hook-tile"><span class="lbl">Fires at</span><div class="val">${esc(ha.fires_at || "?")}</div></div>
+      </div>
+      ${ha.mechanic ? `<div class="dd-mechanic">${escEm(ha.mechanic)}</div>` : ""}
+      ${ha.why_it_blew_up ? `<div class="dd-why"><strong>Why it blew up</strong>${esc(ha.why_it_blew_up)}</div>` : ""}
+      ${(ha.retention_devices || []).length ? `<div class="dd-retention">
+        <span class="lbl">Retention devices</span>
+        ${ha.retention_devices.map(r => `<div class="rd-row"><span class="at">${esc(r.at || "")}</span><span class="dev">${esc(r.device || "")}</span><span>${esc(r.text || "")}</span></div>`).join("")}
+      </div>` : ""}
+      ${(ha.schwartz_progression || []).length ? `<div class="dd-retention" style="margin-top:10px"><span class="lbl">Schwartz progression</span><div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-secondary)">${ha.schwartz_progression.map(esc).join(" · ")}</div></div>` : ""}
+    </div>
+
+    <div class="dd-arcs">
+      <div class="dd-arc">
+        <h4>On-screen text · the read-while-watching arc</h4>
+        ${(cb.on_screen_text_arc || []).map(r => `<div class="arc-row"><span class="at">${esc(r.at || "")}</span><div><span class="text">${esc(r.text || "")}</span>${r.purpose ? `<span class="purpose">${esc(r.purpose)}</span>` : ""}</div></div>`).join("") || "<div style='font-size:11px;color:var(--ink-muted);font-style:italic'>No on-screen text in this concept</div>"}
+      </div>
+      <div class="dd-arc">
+        <h4>Voiceover · what the viewer hears</h4>
+        ${(cb.vo_arc || []).map(r => `<div class="arc-row"><span class="at">${esc(r.at || "")}</span><div><span class="text">${escEm(r.line || "")}</span>${r.emotion ? `<span class="emotion">${esc(r.emotion)}</span>` : ""}</div></div>`).join("") || "<div style='font-size:11px;color:var(--ink-muted);font-style:italic'>No VO in this concept</div>"}
+      </div>
+      <div class="dd-arc">
+        <h4>Music · the emotional spine</h4>
+        <div class="music-row">
+          ${cb.music_arc?.intro ? `<div><span class="lbl">Intro</span>${esc(cb.music_arc.intro)}</div>` : ""}
+          ${cb.music_arc?.build ? `<div style="margin-top:6px"><span class="lbl">Build</span>${esc(cb.music_arc.build)}</div>` : ""}
+          ${cb.music_arc?.peak ? `<div style="margin-top:6px"><span class="lbl">Peak</span>${esc(cb.music_arc.peak)}</div>` : ""}
+          ${cb.music_arc?.outro ? `<div style="margin-top:6px"><span class="lbl">Outro</span>${esc(cb.music_arc.outro)}</div>` : ""}
+          ${cb.music_arc?.license_direction ? `<div class="license">${esc(cb.music_arc.license_direction)}</div>` : ""}
+        </div>
+      </div>
+    </div>
+
+    <div class="dd-storyboard">
+      <h3>Storyboard · ${shots.length} shots · shot-by-shot production map</h3>
+      ${shots.map(s => `<div class="dd-shot">
+        <div class="shot-num">${String(s.n || "?").padStart(2, "0")}</div>
+        <div class="shot-body">
+          <span class="shot-time">${esc(s.t || "?")} · ${esc(String(s.duration_sec || "?"))}s</span>
+          <div class="shot-camera">${esc(s.camera || "?")}${s.framing ? `<span class="frame">${esc(s.framing)}</span>` : ""}</div>
+          ${s.action ? `<div class="shot-action">${esc(s.action)}</div>` : ""}
+          <div class="shot-cues">
+            ${s.on_screen_text ? `<div class="cue"><span class="lbl">On-screen</span><span class="val">${esc(s.on_screen_text)}</span></div>` : ""}
+            ${s.vo ? `<div class="cue"><span class="lbl">VO</span><span class="val vo">${escEm(s.vo)}</span></div>` : ""}
+            ${s.sfx ? `<div class="cue"><span class="lbl">SFX</span><span class="val">${esc(s.sfx)}</span></div>` : ""}
+            ${s.music ? `<div class="cue"><span class="lbl">Music</span><span class="val">${esc(s.music)}</span></div>` : ""}
+          </div>
+          ${s.gpt_image_2_prompt ? `<div class="shot-prompt"><span class="lbl">Image prompt · paste into gpt-image-2 / Midjourney / Nano Banana</span><div class="val">${esc(s.gpt_image_2_prompt)}</div></div>` : ""}
+          ${s.anchor_outcome ? `<div class="shot-anchor"><strong>Anchor</strong>${esc(s.anchor_outcome)}</div>` : ""}
+          ${s.why_this_shot ? `<div class="shot-why">${escEm(s.why_this_shot)}</div>` : ""}
+        </div>
+      </div>`).join("")}
+    </div>
+
+    <div class="dd-prod">
+      <h3>Production brief · ready to hand to a DP / UGC creator</h3>
+      <div class="dd-prod-grid">
+        ${pb.talent ? `<div class="dd-prod-block"><span class="lbl">Talent</span><div class="val">${esc(pb.talent.description || "")}${pb.talent.count ? ` · count: ${esc(String(pb.talent.count))}` : ""}</div>${(pb.talent.wardrobe_supplied || []).length ? `<ul>${pb.talent.wardrobe_supplied.map(w => `<li>${esc(w)}</li>`).join("")}</ul>` : ""}${pb.talent.wardrobe_minimal ? `<div class="sub">${esc(pb.talent.wardrobe_minimal)}</div>` : ""}</div>` : ""}
+        ${pb.location ? `<div class="dd-prod-block"><span class="lbl">Location</span><div class="val">${esc(pb.location.type || "?")}${pb.location.spec ? ` — ${esc(pb.location.spec)}` : ""}</div>${pb.location.alt ? `<div class="sub">Backup: ${esc(pb.location.alt)}</div>` : ""}</div>` : ""}
+        ${(pb.props || []).length ? `<div class="dd-prod-block"><span class="lbl">Props</span><ul>${pb.props.map(p2 => `<li>${esc(p2)}</li>`).join("")}</ul></div>` : ""}
+        ${pb.music_direction ? `<div class="dd-prod-block"><span class="lbl">Music direction</span><div class="val">${esc(pb.music_direction)}</div></div>` : ""}
+        ${(pb.sfx_list || []).length ? `<div class="dd-prod-block"><span class="lbl">SFX list</span><ul>${pb.sfx_list.map(s2 => `<li>${esc(s2)}</li>`).join("")}</ul></div>` : ""}
+        ${pb.estimated_cost_usd ? `<div class="dd-prod-block"><span class="lbl">Estimated cost</span><div class="val">UGC route: ${esc(pb.estimated_cost_usd.ugc_route || "?")}<br/>Studio route: ${esc(pb.estimated_cost_usd.studio_route || "?")}</div>${pb.estimated_cost_usd.notes ? `<div class="sub">${esc(pb.estimated_cost_usd.notes)}</div>` : ""}</div>` : ""}
+        ${pb.timeline ? `<div class="dd-prod-block"><span class="lbl">Timeline</span><div class="val">Prep: ${esc(String(pb.timeline.prep_days || "?"))}d · Shoot: ${esc(String(pb.timeline.shoot_days || "?"))}d · Edit: ${esc(pb.timeline.edit_days || "?")}d<br/>Total calendar: ${esc(pb.timeline.total_calendar || "?")}</div></div>` : ""}
+        ${pb.delivery_specs ? `<div class="dd-prod-block"><span class="lbl">Delivery specs</span><div class="val">Master: ${esc(pb.delivery_specs.master || "?")}</div>${(pb.delivery_specs.derivatives || []).length ? `<ul>${pb.delivery_specs.derivatives.map(d => `<li>${esc(d)}</li>`).join("")}</ul>` : ""}</div>` : ""}
+      </div>
+    </div>
+
+    ${dd.strategic_thesis ? `<div class="dd-thesis"><strong>Strategic thesis · why this is worth shooting</strong>${esc(dd.strategic_thesis)}</div>` : ""}
   </div>
 </section>`;
 }
@@ -1252,6 +1480,7 @@ function buildSectionMap(payload, totalSections) {
     personas:          (n) => renderPersonas(payload, n, t),
     swipe_file:        (n) => renderSwipe(payload, n, t),
     ad_recreations:    (n) => renderAdRecreations(payload, n, t),
+    ad_deep_dive:      (n) => renderAdDeepDive(payload, n, t),
     scripts:           (n) => renderScripts(payload, n, t),
     email_flows:       (n) => renderEmails(payload, n, t),
     entry_wedge:       (n) => renderEntryWedge(payload, n, t),
@@ -1274,7 +1503,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.7.3";
+export const ENGINE_VERSION = "v1.7.4";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -1294,7 +1523,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div class="nav-links">
-      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#recreations">Recreations</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
+      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#recreations">Recreations</a><a href="#deepdive">Deep Dive</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -1305,7 +1534,7 @@ ${(() => {
   // Falls back to a default order if no diagnostic is present (preserves
   // v1.6.x behavior for any caller not yet wired to Pass D).
   const defaultOrder = [
-    "positioning","evidence","value_prop","personas","swipe_file","ad_recreations","scripts","email_flows",
+    "positioning","evidence","value_prop","personas","swipe_file","ad_recreations","ad_deep_dive","scripts","email_flows",
     "entry_wedge","channels","matrix","landing","rollout","creators","competitive",
     "brand_audit","demand","tribe","methodology","colophon",
   ];

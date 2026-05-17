@@ -6,6 +6,78 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.4] — 2026-05-17
+
+**Pass 8.7 · Ad Deep Dive (Phase A MVP) + whole-doc print stylesheet.** Closes the user's "analyze frame-by-frame → reverse-engineer why it blew up → build storyboard → design scene mockups, animation timing, voiceover, audio cues → production-ready PDF" ask at ~70% capability without video ingestion (which is Phase B / v1.7.5).
+
+### Added · `generateAdDeepDive()` in `anthropic.js`
+
+Auto-runs on Pass 8.6's TOP recreation. Single LLM call (maxTokens 8000) that explodes one recreation into a full production deliverable:
+
+- **Hook anatomy** — pattern (HOOK_TYPES vocab) · Schwartz level · fires_at timestamp · mechanic · why_it_blew_up paragraph · retention_devices list (with timestamps) · Schwartz progression across the runtime
+- **Copy breakdown** — on_screen_text_arc · vo_arc with emotion tags · music_arc (intro/build/peak/outro + license_direction)
+- **Storyboard** — 8-12 shots, each with `n` · `t` (time range) · `duration_sec` · `camera` · `framing` · `action` · `on_screen_text` · `vo` · `sfx` · `music` · `gpt_image_2_prompt` (≤ 220 chars, brand-safe) · `anchor_outcome` · `why_this_shot`
+- **Production brief** — talent (count + description + wardrobe) · location (type + spec + backup) · props list · music_direction · sfx_list · estimated_cost_usd (ugc_route + studio_route + notes) · timeline (prep/shoot/edit days + total calendar) · delivery_specs (master + derivatives across platforms)
+- **Strategic thesis** — 1-paragraph closer tying the storyboard back to persona + outcome + positioning
+
+**Anchoring rule** (same as Pass L + Pass 8.6): `persona_anchor` must match a real Pass 7 persona name; `outcome_anchor` must match a real Pass 2 Ulwick outcome; every `shot.anchor_outcome` must be one of the top 5 scored outcomes. One retry on anchor failure; ships partial if still failing rather than dropping the whole section.
+
+**Brand safety:** every shot's `gpt_image_2_prompt` is regex-scrubbed for the source competitor's brand name before render. Source brand preserved separately in `dd.source_brand` for credit/traceability.
+
+**Cost:** ~$0.40 per deep-dive (single large output-token call) · ~60s wall time.
+
+### Added · `renderAdDeepDive()` in `compose-strategy.js`
+
+New §05c "Ad deep dive" section between §05b (Recreations) and §06 (Scripts). Layout:
+
+1. **Header** — title + runtime/format pill + "Inspired by / For / On" anchor strip
+2. **Hook anatomy panel** — moss-deep bordered gradient · 3-tile grid (pattern + Schwartz + fires_at) + mechanic italic + "why it blew up" callout + retention-devices time table + Schwartz progression strip
+3. **Copy arcs** — 3-column grid: on-screen text · VO (with emotion italic) · music arc (intro/build/peak/outro + license direction sub)
+4. **Storyboard** — vertical stack of shot cards · each card has 2-col layout (big serif shot number + body) · body contains time pill, camera + framing, action sentence, cues grid (on-screen / VO / SFX / music with mono labels), copy-able image-prompt block (dashed moss border + monospaced text + select-all), anchor outcome line, why-this-shot italic
+5. **Production brief** — 2-col grid of dd-prod-block tiles (talent + location + props + music + SFX + cost + timeline + delivery)
+6. **Strategic thesis** — moss-deep left-border italic callout · 1 paragraph
+
+### Added · Whole-doc print stylesheet (`@media print` block in TOKENS)
+
+Closes the long-standing v1.7 backlog item ("doc currently produces 30+ awkward pages on print; need explicit @media print rules").
+
+User flow: open the downloaded `.html` in Chrome / Edge / Brave → Cmd-P (or Ctrl-P) → Save as PDF destination → portrait, A4 or Letter, "Background graphics" ON → save.
+
+Print-specific rules:
+
+- A4 portrait at 14mm/12mm margins (works for Letter too)
+- `nav.top` (sticky nav) hidden — paper doesn't scroll
+- Cover page break-after so each major section can start cleanly
+- All card-style components (swipe-card, script, audit-card, dd-shot, ar-card, playbook-card, comp-card, tribe-card, funnel-card, creator-card, phase-card) get `page-break-inside: avoid`
+- Long tables (evidence, value-prop, matrix, storyboard) allow row-level breaks via `page-break-inside: auto` on the container + `avoid` on each row
+- Gradients flattened to solid colors (printer-ink-blast hostile)
+- Wordmark gradient → solid ink (gradient text doesn't print)
+- All `*::after { -webkit-print-color-adjust: exact }` so background tokens print correctly
+- Storyboard shot grid recompose narrower for portrait page width
+- `text-decoration: none` on links (no visible underlines on paper)
+- Storyboard shot-number serif scales to 28pt for print readability
+
+### Wired in `App.jsx`
+
+`generateAdDeepDive` added to the anthropic.js import list. Pass 8.7 runs immediately after Pass 8.6 when `adRecreations.recreations[0]` is present. `adDeepDive` threaded into `composeStrategyDoc` payload.
+
+DTC `doc_sections` updated: 22 → 23 sections. `ad_deep_dive` slots at index 7 between `ad_recreations` and `scripts`. DTC `pass_plan` gains `P8_7`.
+
+### Spec doc
+
+Full Phase A MVP spec at `<vault>/05b - Pass 8.7 Ad Deep Dive Spec.md`. Documents acceptance criteria (10 items), phasing (A → B → C across v1.7.4 → v1.7.5 → v1.7.6), input/output schema in full detail, and the ASCII layout wireframe.
+
+### ENGINE_VERSION → v1.7.4
+
+Bundle 492.80 KB / 141.06 KB gzip (+31 KB · new Pass + new renderer + new ~5 KB print stylesheet + new spec wiring).
+
+### Phase B + Phase C deferred
+
+- **Phase B (v1.7.5)** — Video frame ingestion via `engine/video/extract-frames.mjs` CLI (yt-dlp + ffmpeg). Pass 8.7 upgraded to consume frame logs for grounded hook_anatomy instead of inference.
+- **Phase C (v1.7.6)** — `html2pdf.js` one-click `↓ PDF` button + UI to pick which Pass 8.6 recreation to deep-dive on (instead of auto-top).
+
+---
+
 ## [1.7.3] — 2026-05-17
 
 **Pass 8.6 · Ad Recreations** — the user's "I want to see already-successfully-performing ads and the prompts to recreate them" ask, now shipped as §05b in the strategy doc.

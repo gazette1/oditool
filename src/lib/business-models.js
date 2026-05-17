@@ -19,7 +19,7 @@
 // → 21 sections (v5 reference parity).
 const DTC_PASS_PLAN = [
   "P1", "P2", "P3", "P4",                  // discovery (run by Run-Analysis)
-  "P5", "P7", "P8", "P8_5", "P8_6",         // creative + imagery + ad recreations
+  "P5", "P7", "P8", "P8_5", "P8_6", "P8_7", // creative + imagery + ad recreations + deep dive
   "P9", "P10",                              // scripts + email
   "P11", "P12", "P13", "P14",               // operational
   "P15", "P16", "P17", "P18",               // strategic + audit + demand + tribe
@@ -33,22 +33,23 @@ const DTC_DOC_SECTIONS = [
   "value_prop",              // §03
   "personas",                // §04
   "swipe_file",              // §05
-  "ad_recreations",          // §06 NEW v1.7.3 · real ads + recreation prompts
-  "scripts",                 // §07
-  "email_flows",             // §08
-  "entry_wedge",             // §09
-  "channels",                // §10
-  "matrix",                  // §11
-  "landing",                 // §12
-  "rollout",                 // §13
-  "creators",                // §14
-  "competitive",             // §15
-  "brand_audit",             // §16
-  "demand",                  // §17
-  "tribe",                   // §18
-  "applied_playbooks",       // §19
-  "methodology",             // §20
-  "colophon",                // §21
+  "ad_recreations",          // §06 (v1.7.3)
+  "ad_deep_dive",            // §07 NEW v1.7.4 · single-ad storyboard + production brief
+  "scripts",                 // §08
+  "email_flows",             // §09
+  "entry_wedge",             // §10
+  "channels",                // §11
+  "matrix",                  // §12
+  "landing",                 // §13
+  "rollout",                 // §14
+  "creators",                // §15
+  "competitive",             // §16
+  "brand_audit",             // §17
+  "demand",                  // §18
+  "tribe",                   // §19
+  "applied_playbooks",       // §20
+  "methodology",             // §21
+  "colophon",                // §22
 ];
 
 export const BUSINESS_MODELS = {

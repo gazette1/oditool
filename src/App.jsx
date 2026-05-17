@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations, generateAdDeepDive } from "./lib/anthropic";
 import { resolveBusinessModel } from "./lib/business-models";
 import { loadCachedIndex } from "./lib/library-reader";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
@@ -511,6 +511,35 @@ export default function App() {
         log("Pass 8.6 skipped · no ad data available · run 🎯 Ad-Intel first (or wait for Adyntel-canonical Stage B in v1.8)", "warn");
       }
 
+      // v1.7.4 · Pass 8.7 · Ad Deep Dive (Phase A MVP · auto-runs on top Pass 8.6 recreation)
+      // Explodes the top recreation into a single production-ready storyboard
+      // + production brief. Renders as §05c. Skipped silently when Pass 8.6
+      // returned zero recreations.
+      let adDeepDive = { deep_dive: null };
+      const topRec = adRecreations?.recreations?.[0];
+      if (topRec) {
+        setStratDocPhase(`Pass 8.7: ad deep-dive · exploding ${topRec.id} into a shot-by-shot storyboard…`);
+        log(`Pass 8.7/19: ad deep-dive · seed = ${topRec.id} · ${topRec.source_brand}`);
+        try {
+          adDeepDive = await generateAdDeepDive(config.anthropicKey, {
+            topRecreation: topRec,
+            projectContext,
+            positioning: positioningSpine,
+            personas,
+            mergedJobs: data,
+            brandName: activeProject?.name || projectContext?.sector,
+          });
+          if (adDeepDive?.deep_dive) {
+            const shotCount = adDeepDive.deep_dive.storyboard?.shots?.length || 0;
+            log(`Pass 8.7 · deep-dive built · "${adDeepDive.deep_dive.title}" · ${shotCount} shots · ${adDeepDive.deep_dive.runtime_sec}s`, "ok");
+          } else {
+            log(`Pass 8.7 · ${adDeepDive?.note || "no deep_dive returned"}`, "warn");
+          }
+        } catch (e) { log(`Pass 8.7 skipped: ${e.message}`, "warn"); }
+      } else {
+        log("Pass 8.7 skipped · no Pass 8.6 recreations available to seed the deep dive", "warn");
+      }
+
       setStratDocPhase("Pass 9: TikTok scripts…");
       log("Pass 9/18: 8 shot-by-shot TikTok scripts");
       const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
@@ -634,6 +663,7 @@ export default function App() {
         diagnostic,            // v1.7.0 · drives §00 + section order
         appliedPlaybooks: pl,    // v1.7.0 · §-near-end playbooks
         adRecreations,           // v1.7.3 · §05b proven-ad recreations
+        adDeepDive,              // v1.7.4 · §05c production-ready storyboard
       });
 
       const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();

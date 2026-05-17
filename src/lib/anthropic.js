@@ -1908,6 +1908,266 @@ RESPOND WITH ONLY RAW JSON:
   return { recreations, caveats };
 }
 
+// ── PASS 8.7 · Ad Deep Dive (Engine v1.7.4 · Phase A MVP) ──
+//
+// Renders as §05c immediately after §05b Ad Recreations. Takes Pass 8.6's
+// TOP recreation and explodes it into a production-ready single deliverable:
+//
+//   1. HOOK ANATOMY · reverse-engineer the hook + retention devices
+//   2. COPY BREAKDOWN · on-screen text arc + VO arc + music arc
+//   3. STORYBOARD · 8-12 shots with time, camera, action, VO, SFX, music,
+//      gpt-image-2 prompt, anchor_outcome
+//   4. PRODUCTION BRIEF · talent, location, props, music, cost, timeline
+//   5. STRATEGIC THESIS · why this is worth shooting (ties back to persona +
+//      outcome + positioning)
+//
+// Phase A scope: single LLM call · no video ingestion · auto-runs on the
+// first item in Pass 8.6's recreations[]. Spec: <vault>/05b - Pass 8.7…
+//
+// Anchoring rule: persona_anchor + outcome_anchor + every shot.anchor_outcome
+// must trace back to real Pass 7 personas + Pass 2 outcomes. Same discipline
+// as Pass L and Pass 8.6.
+//
+// Brand safety: every gpt_image_2_prompt is regex-scrubbed for the source
+// competitor's brand name before render.
+
+export async function generateAdDeepDive(apiKey, {
+  topRecreation,
+  projectContext,
+  positioning,
+  personas,
+  mergedJobs,
+  brandName,
+}) {
+  if (!topRecreation || !topRecreation.id) {
+    return { deep_dive: null, note: "No Pass 8.6 recreation passed to Pass 8.7 · §05c will omit" };
+  }
+
+  const personaNames = (personas || []).map(p => p.name).filter(Boolean);
+  const outcomesList = (mergedJobs || [])
+    .flatMap(j => (j.outcomes || []).map(o => ({ statement: o.statement, opportunity_score: o.opportunity_score, job_id: j.id })))
+    .filter(o => o.statement)
+    .sort((a, b) => (b.opportunity_score || 0) - (a.opportunity_score || 0))
+    .slice(0, 8);
+
+  const ctxBlock = `BRAND: ${brandName || projectContext?.sector || "the brand"}
+SECTOR: ${projectContext?.sector || ""}
+AUDIENCE: ${projectContext?.audience || ""}
+VOICE RULES: ${projectContext?.brand_voice || "natural, sentence-case, no exclamation points"}
+POSITIONING: "${positioning?.primary?.sentence || ""}"
+
+PERSONAS (the deep_dive.persona_anchor MUST be one of these by exact name):
+${personaNames.map(n => `  - ${n}`).join("\n") || "(no personas)"}
+
+TOP UNDERSERVED OUTCOMES (deep_dive.outcome_anchor + every shot.anchor_outcome must be one of these):
+${outcomesList.map(o => `  - [opp ${o.opportunity_score} · Job ${o.job_id}] ${o.statement}`).join("\n") || "(no outcomes)"}
+
+TOP RECREATION FROM PASS 8.6 (the seed for this deep dive):
+  id: ${topRecreation.id}
+  source_brand: ${topRecreation.source_brand}
+  source_summary: ${topRecreation.source_summary}
+  adapted_headline: ${topRecreation.adapted_headline}
+  adapted_body: ${topRecreation.adapted_body}
+  adapted_cta: ${topRecreation.adapted_cta}
+  persona_anchor: ${topRecreation.persona_anchor}
+  outcome_anchor: ${topRecreation.outcome_anchor}
+  hook_type: ${topRecreation.hook_type}
+  format: ${topRecreation.format}
+  why_it_works: ${topRecreation.why_it_works}
+  image_prompt: ${topRecreation.image_prompt}`;
+
+  const SYSTEM = `You are an integrated creative director producing a single-ad deep-dive production brief. The user picked one ad concept and now needs the full deliverable: hook analysis, copy arcs, shot-by-shot storyboard, and a production plan they can hand to a video editor / DP / UGC creator.
+
+This is a PRODUCTION DOCUMENT — every field needs to be concrete enough that someone could shoot from it tomorrow.
+
+RETURN ONLY RAW JSON in this exact shape:
+
+{
+  "ar_id": "<echo back from input>",
+  "title": "<6-10 word title for this concept>",
+  "source_brand": "<echo back from input>",
+  "source_summary": "<echo back from input>",
+  "runtime_sec": 28,
+  "format": "<4:5 | 9:16 | 1:1 | 16:9>",
+  "persona_anchor": "<exact persona name from list>",
+  "outcome_anchor": "<exact outcome statement from list>",
+
+  "hook_anatomy": {
+    "pattern": "<one of: problem_statement | founder_pov | ugc_testimonial | demonstration | ritual_pov | before_after | social_proof | category_pivot | pattern_interrupt | list | comparison | seasonal_deal>",
+    "schwartz_level": "<Unaware | Problem aware | Solution aware | Product aware | Most aware>",
+    "fires_at": "<time range like '0:00-0:03'>",
+    "mechanic": "<1 sentence on the specific mechanical move>",
+    "why_it_blew_up": "<1 paragraph · references hook + retention + emotional valence · be specific>",
+    "retention_devices": [
+      {"at": "0:08", "device": "<open loop | pattern interrupt | reveal | callback>", "text": "<quote or description>"}
+    ],
+    "schwartz_progression": ["<level @ time>", "<level @ time>"]
+  },
+
+  "copy_breakdown": {
+    "on_screen_text_arc": [
+      {"at": "0:03", "text": "<short copy>", "purpose": "<credibility plant | category pivot | CTA prep | proof drop>"}
+    ],
+    "vo_arc": [
+      {"at": "0:00", "line": "<verbatim VO line in brand voice>", "emotion": "<intimate | weary | curious | soft pride | calm certainty | etc.>"}
+    ],
+    "music_arc": {
+      "intro": "<5-12 words describing intro music>",
+      "build": "<5-12 words>",
+      "peak": "<5-12 words>",
+      "outro": "<5-12 words>",
+      "license_direction": "<sentence telling user where to source · Artlist / Musicbed / etc · price range>"
+    }
+  },
+
+  "storyboard": {
+    "total_shots": <8 to 12>,
+    "shots": [
+      {
+        "n": 1,
+        "t": "0:00-0:02",
+        "duration_sec": 2,
+        "camera": "<short camera direction · 3-6 words>",
+        "framing": "<short framing description · 4-10 words>",
+        "action": "<what happens · 1 sentence>",
+        "on_screen_text": "<short text or null>",
+        "vo": "<VO line for this shot or null>",
+        "sfx": "<sound effect cue or null>",
+        "music": "<music description for this shot>",
+        "gpt_image_2_prompt": "<= 220 chars · brand-safe visual brief · no source brand name>",
+        "anchor_outcome": "<exact outcome statement from the top outcomes list>",
+        "why_this_shot": "<1 sentence on why this shot earns its place>"
+      }
+    ]
+  },
+
+  "production_brief": {
+    "talent": {
+      "count": <number>,
+      "description": "<1-2 sentences · age + look + ethnicity + hands/face emphasis>",
+      "wardrobe_supplied": ["<brand pieces to wear>"],
+      "wardrobe_minimal": "<jewelry/makeup/nails guidance>"
+    },
+    "location": {
+      "type": "<bedroom interior | kitchen | exterior | studio | etc.>",
+      "spec": "<1-2 sentences · light direction + materials + mood>",
+      "alt": "<backup location option>"
+    },
+    "props": ["<prop with brief spec>"],
+    "music_direction": "<1-2 sentences · genre + BPM + duration + price range + source>",
+    "sfx_list": ["<sfx cue with timestamp>"],
+    "estimated_cost_usd": {
+      "ugc_route": "<$X-Y range>",
+      "studio_route": "<$X-Y range>",
+      "notes": "<1 sentence explaining what's in each route>"
+    },
+    "timeline": {
+      "prep_days": <number>,
+      "shoot_days": <number>,
+      "edit_days": "<range like '4-6'>",
+      "total_calendar": "<range like '10-14 days'>"
+    },
+    "delivery_specs": {
+      "master": "<format · ratio · runtime · resolution>",
+      "derivatives": ["<each derivative platform with notes>"]
+    }
+  },
+
+  "strategic_thesis": "<1 paragraph · ties this storyboard back to the persona + outcome + positioning · this is the 'why we are doing this' for the founder + agency>"
+}
+
+ABSOLUTE RULES:
+1. persona_anchor MUST be an exact name from the persona list above. outcome_anchor MUST be exact text (or very close paraphrase ≥ 80% overlap) of one listed outcome.
+2. Every shot.anchor_outcome MUST be one of the listed outcomes. Distribute shots across 2-4 different outcomes (the storyboard should serve multiple unmet needs, not just one).
+3. NO mention of the source_brand name (${topRecreation.source_brand}) in any gpt_image_2_prompt. The source is preserved in the top-level source_brand field for credit.
+4. NO "Likely / Probably / Seems to / Appears to" in any field. Concrete observations or skip.
+5. Voice rules govern VO + on_screen_text + adapted_headline. If voice rules say no exclamation points, honor it.
+6. Every gpt_image_2_prompt ≤ 220 chars. Pure visual brief (lighting + composition + framing + subject + styling). No copy text overlays. No brand names.
+7. Total shots: between 8 and 12. runtime_sec between 15 and 60 (typical TikTok/Reels length).
+8. Costs in USD. Be realistic — don't quote $100 UGC routes (no creator works for that) or $50K studio routes (overkill for a single 4:5 ad).
+9. estimated_cost_usd MUST include both ugc_route and studio_route.
+10. delivery_specs.derivatives MUST include at least 3 platform-specific cuts.`;
+
+  let attempts = 0;
+  let lastError;
+  while (attempts < 2) {
+    attempts++;
+    try {
+      const raw = await callClaude(apiKey, SYSTEM, ctxBlock, { maxTokens: 8000 });
+      const parsed = extractJSON(raw);
+      if (!parsed || typeof parsed !== "object") {
+        lastError = new Error("Pass 8.7 returned non-object");
+        continue;
+      }
+
+      // ── Validate anchors ──
+      const personaOk = parsed.persona_anchor && personaNames.includes(parsed.persona_anchor);
+      const matchedOutcome = outcomesList.find(o =>
+        o.statement === parsed.outcome_anchor ||
+        (parsed.outcome_anchor && o.statement.toLowerCase().includes(parsed.outcome_anchor.toLowerCase().slice(0, 40))) ||
+        (parsed.outcome_anchor && parsed.outcome_anchor.toLowerCase().includes(o.statement.toLowerCase().slice(0, 40)))
+      );
+
+      if (!personaOk && attempts < 2) {
+        console.warn(`[Pass 8.7] persona anchor validation failed (got "${parsed.persona_anchor}") · retry once with stricter instruction`);
+        lastError = new Error("anchor validation failed");
+        continue;
+      }
+      if (!matchedOutcome && attempts < 2) {
+        console.warn(`[Pass 8.7] outcome anchor validation failed (got "${parsed.outcome_anchor}") · retry once`);
+        lastError = new Error("outcome validation failed");
+        continue;
+      }
+
+      // ── Brand safety: scrub source brand name from every shot's image prompt ──
+      const sourceBrand = topRecreation.source_brand;
+      if (sourceBrand && parsed.storyboard?.shots) {
+        for (const shot of parsed.storyboard.shots) {
+          if (shot.gpt_image_2_prompt) {
+            shot.gpt_image_2_prompt = _arBrandSafePrompt(shot.gpt_image_2_prompt, [sourceBrand]);
+          }
+        }
+      }
+
+      // ── Normalize the outcome anchor to the matched outcome text ──
+      if (matchedOutcome) {
+        parsed.outcome_anchor = matchedOutcome.statement;
+      }
+
+      // ── Validate every shot's anchor_outcome is one of the listed ──
+      if (parsed.storyboard?.shots) {
+        const validStatements = new Set(outcomesList.map(o => o.statement));
+        for (const shot of parsed.storyboard.shots) {
+          if (shot.anchor_outcome && !validStatements.has(shot.anchor_outcome)) {
+            // Try to fuzzy-match
+            const match = outcomesList.find(o =>
+              o.statement.toLowerCase().includes(shot.anchor_outcome.toLowerCase().slice(0, 30)) ||
+              shot.anchor_outcome.toLowerCase().includes(o.statement.toLowerCase().slice(0, 30))
+            );
+            if (match) shot.anchor_outcome = match.statement;
+          }
+        }
+      }
+
+      // Echo metadata from input if missing
+      if (!parsed.ar_id) parsed.ar_id = topRecreation.id;
+      if (!parsed.source_brand) parsed.source_brand = topRecreation.source_brand;
+      if (!parsed.source_summary) parsed.source_summary = topRecreation.source_summary;
+      if (!parsed.format) parsed.format = topRecreation.format || "4:5";
+
+      return { deep_dive: parsed };
+    } catch (e) {
+      lastError = e;
+      if (attempts >= 2) break;
+      console.warn(`[Pass 8.7] attempt ${attempts} failed: ${e.message} · retry`);
+    }
+  }
+
+  // Both attempts failed · log + return null (renderer omits §05c)
+  console.warn(`[Pass 8.7] giving up after ${attempts} attempts: ${lastError?.message || "unknown"}`);
+  return { deep_dive: null, note: `Pass 8.7 failed after ${attempts} attempts: ${lastError?.message || "unknown"}` };
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(
