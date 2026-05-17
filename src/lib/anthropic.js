@@ -1683,6 +1683,231 @@ export async function applyPlaybookLibrary(apiKey, {
   return { applied_playbooks };
 }
 
+// ── PASS 8.6 · Ad Recreations (Engine v1.7.3) ──
+//
+// Renders as §05b between Swipe File and Scripts. Spec at:
+//   <vault>/05a - Pass 8.6 Ad Recreations Spec.md
+//
+// Takes ads from Adyntel/web_search Stage B (or any other source) and
+// produces brand-voice adaptations + gpt-image-2-ready recreation prompts.
+// Every recreation MUST anchor to a real persona + real Ulwick outcome
+// (same anchoring rule as Pass L). Drops rows that can't anchor.
+//
+// Inputs:
+//   - projectContext (Pass 0) — sector + audience + voice
+//   - positioning (Pass 4 positioning_spine)
+//   - personas (Pass 7) — anchor source
+//   - mergedJobs (Pass 1+2) — outcomes anchor source
+//   - adsData (Array) — ads from Stage B / Airtable / manual
+//   - brandName (string) — used in the persona/outcome anchor instructions
+//
+// Output:
+//   { recreations: [...4-8], caveats: [...] }
+
+const AR_HOOK_DIVERSITY_CAP = 2; // max ads per hook_type
+const AR_MAX_RECREATIONS = 8;
+const AR_MIN_DAYS_LIVE = 30;     // proxy for "this ad works"
+
+function _arBrandSafePrompt(prompt, competitorBrands) {
+  // Sanitize · scrub competitor brand names + product line names from the
+  // image prompt so the recreation doesn't accidentally trademark anything.
+  let cleaned = String(prompt || "");
+  for (const b of competitorBrands || []) {
+    if (!b) continue;
+    const re = new RegExp(`\\b${b.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\b`, "gi");
+    cleaned = cleaned.replace(re, "the reference brand");
+  }
+  // Remove obvious trademark hedges
+  cleaned = cleaned
+    .replace(/the\s+(iconic|famous|signature|legendary)\s+/gi, "the ")
+    .trim();
+  return cleaned;
+}
+
+export async function generateAdRecreations(apiKey, {
+  projectContext,
+  positioning,
+  personas,
+  mergedJobs,
+  adsData,
+  brandName,
+}) {
+  const ads = Array.isArray(adsData) ? adsData.filter(Boolean) : [];
+  if (!ads.length) {
+    return { recreations: [], caveats: ["No ad data passed to Pass 8.6 · run Ad-Intel Stage B (or wait for Adyntel-canonical Stage B in v1.8) before regenerating the strategy doc."] };
+  }
+
+  // ── Step 1 · Filter by recency proxy ──
+  const caveats = [];
+  let pool = ads;
+  const withDate = ads.filter(a => a.active_since);
+  if (withDate.length >= Math.ceil(ads.length * 0.5)) {
+    const cutoff = Date.now() - AR_MIN_DAYS_LIVE * 24 * 3600 * 1000;
+    pool = withDate.filter(a => new Date(a.active_since).getTime() <= cutoff);
+    if (pool.length < 4) {
+      // Too aggressive · fall back to all dated ads
+      pool = withDate;
+      caveats.push(`Only ${pool.length} ads have run >= ${AR_MIN_DAYS_LIVE} days · using full dated set instead of strict filter.`);
+    }
+  } else {
+    caveats.push(`No active_since data on >= 50% of input ads · skipping recency filter · all ${ads.length} ads passed through.`);
+  }
+
+  // ── Step 2 · Diversify by hook_type, prefer cross-brand ──
+  const byHook = new Map();
+  for (const ad of pool) {
+    const hk = ad.hook_type || "_unknown";
+    if (!byHook.has(hk)) byHook.set(hk, []);
+    byHook.get(hk).push(ad);
+  }
+  const diversified = [];
+  const usedBrands = new Set();
+  // Round-robin across hook types, max AR_HOOK_DIVERSITY_CAP per hook
+  while (diversified.length < AR_MAX_RECREATIONS) {
+    let added = 0;
+    for (const [hk, list] of byHook.entries()) {
+      const takenForThisHook = diversified.filter(d => (d.hook_type || "_unknown") === hk).length;
+      if (takenForThisHook >= AR_HOOK_DIVERSITY_CAP) continue;
+      // Prefer an ad from a brand we haven't used yet
+      const cross = list.find(a => !usedBrands.has(a.source_brand) && !diversified.includes(a));
+      const next = cross || list.find(a => !diversified.includes(a));
+      if (next) {
+        diversified.push(next);
+        usedBrands.add(next.source_brand);
+        added++;
+      }
+      if (diversified.length >= AR_MAX_RECREATIONS) break;
+    }
+    if (!added) break; // exhausted
+  }
+
+  if (diversified.length < 4) {
+    caveats.push(`Ad sample size: ${diversified.length} ads across ${usedBrands.size} competitors · prefer to rerun Ad-Intel for fuller coverage.`);
+  }
+
+  // ── Step 3 · Per-ad apply ──
+  const personaNames = (personas || []).map(p => p.name).filter(Boolean);
+  const outcomesList = (mergedJobs || [])
+    .flatMap(j => (j.outcomes || []).map(o => ({ statement: o.statement, opportunity_score: o.opportunity_score, job_id: j.id })))
+    .filter(o => o.statement);
+
+  const baseCtx = `BRAND: ${brandName || projectContext?.sector || "the brand"}
+SECTOR: ${projectContext?.sector || ""}
+AUDIENCE: ${projectContext?.audience || ""}
+VOICE RULES: ${projectContext?.brand_voice || "natural, sentence-case, no exclamation points"}
+POSITIONING: "${positioning?.primary?.sentence || ""}"
+
+PERSONAS (anchor to one by exact name):
+${personaNames.map(n => `  - ${n}`).join("\n") || "(no personas)"}
+
+TOP UNDERSERVED OUTCOMES (anchor to one verbatim or close paraphrase):
+${outcomesList.slice(0, 8).map(o => `  - [opp ${o.opportunity_score} · Job ${o.job_id}] ${o.statement}`).join("\n") || "(no outcomes)"}`;
+
+  const SYSTEM = `You are translating a real, currently-running competitor ad into a brand-voice recreation packet.
+
+You will see one competitor ad's raw fields (headline / body / cta / hook_type / source_brand / format / image_description if available) plus the brand context above.
+
+Your job: produce ONE adaptation that the brand can ship within 2 weeks. The original is the strategic SCAFFOLD (what makes it work); your output must be in the brand's voice and anchored to ONE real persona + ONE real Ulwick outcome.
+
+ABSOLUTE RULES:
+1. NEVER use the competitor's brand name in the adapted_headline, adapted_body, adapted_cta, or image_prompt. The reference field captures the inspiration separately.
+2. The image_prompt MUST be a self-contained visual brief for gpt-image-2 / Midjourney / Nano Banana — describe lighting, composition, framing, model styling, product framing. NO trademarked references. NO competitor names. Cap at 220 characters.
+3. The adapted_headline must NOT be a direct rewrite of the original — same structural beat (problem-statement / founder-POV / etc.) but the brand's own claim.
+4. persona_anchor MUST be an EXACT persona name from the list above. outcome_anchor MUST be an exact (or very close paraphrase) of one of the listed outcomes.
+5. If you cannot find a real persona AND a real outcome that genuinely fit this ad, return { "drop": true, "reason": "..." }. Better to drop than fabricate.
+6. why_it_works: 1 sentence on the STRATEGIC insight to copy (not the surface · the underlying mechanism)
+7. The voice rules above govern adapted_headline + adapted_body + adapted_cta. No exclamation points unless explicitly allowed.
+
+RESPOND WITH ONLY RAW JSON:
+{
+  "adapted_headline": "...",
+  "adapted_body": "...",
+  "adapted_cta": "...",
+  "persona_anchor": "<exact name>",
+  "outcome_anchor": "<exact outcome statement>",
+  "image_prompt": "<= 220 chars · pure visual brief · no brand names>",
+  "why_it_works": "1 sentence on the strategic insight to copy",
+  "hook_type": "<one of: problem_statement | founder_pov | ugc_testimonial | demonstration | ritual_pov | before_after | social_proof | category_pivot | pattern_interrupt | list | comparison | seasonal_deal>",
+  "format": "<4:5 | 9:16 | 1:1 | 16:9>",
+  "drop": false
+}`;
+
+  const recreations = [];
+  const competitorBrands = [...new Set(diversified.map(a => a.source_brand).filter(Boolean))];
+
+  for (let i = 0; i < diversified.length; i++) {
+    const ad = diversified[i];
+    const adBlock = `COMPETITOR AD #${i + 1}:
+  Source brand: ${ad.source_brand || "unknown"}
+  Platform: ${ad.platform || "?"} · Format: ${ad.format || "?"}
+  Hook type: ${ad.hook_type || "?"}
+  Active since: ${ad.active_since || "unknown"}
+  Headline: ${ad.headline || "(image-only)"}
+  Body: ${ad.body || "(none)"}
+  CTA: ${ad.cta || "(none)"}
+  ${ad.image_description ? `Image description: ${ad.image_description}` : ""}`;
+
+    try {
+      const raw = await callClaude(apiKey, SYSTEM, `${baseCtx}\n\n${adBlock}`, { maxTokens: 1200 });
+      const parsed = extractJSON(raw);
+      if (parsed?.drop) {
+        console.info(`[Pass 8.6] drop AR-${String(i + 1).padStart(2, "0")} · ${parsed.reason || "no anchor"}`);
+        continue;
+      }
+      // Validate anchors against real persona/outcome lists
+      const personaOk = parsed.persona_anchor && personaNames.includes(parsed.persona_anchor);
+      const outcomeOk = parsed.outcome_anchor && outcomesList.some(o =>
+        o.statement === parsed.outcome_anchor ||
+        o.statement.toLowerCase().includes(parsed.outcome_anchor.toLowerCase().slice(0, 40)) ||
+        parsed.outcome_anchor.toLowerCase().includes(o.statement.toLowerCase().slice(0, 40))
+      );
+      if (!personaOk || !outcomeOk) {
+        console.info(`[Pass 8.6] drop AR-${String(i + 1).padStart(2, "0")} · anchor validation failed (persona=${personaOk}, outcome=${outcomeOk})`);
+        continue;
+      }
+      const matchedOutcome = outcomesList.find(o =>
+        o.statement === parsed.outcome_anchor ||
+        o.statement.toLowerCase().includes(parsed.outcome_anchor.toLowerCase().slice(0, 40)) ||
+        parsed.outcome_anchor.toLowerCase().includes(o.statement.toLowerCase().slice(0, 40))
+      );
+
+      // Brand-safety sanitize on the image_prompt
+      const safePrompt = _arBrandSafePrompt(parsed.image_prompt, competitorBrands);
+
+      recreations.push({
+        id: `AR-${String(recreations.length + 1).padStart(2, "0")}`,
+        source_brand: ad.source_brand || "unknown",
+        source_summary: ad.source_brand
+          ? `${ad.source_brand}${ad.headline ? ` · "${ad.headline.slice(0, 60)}${ad.headline.length > 60 ? "…" : ""}"` : ""}${ad.active_since ? ` · running since ${ad.active_since}` : ""}`
+          : "Source competitor not labeled",
+        adapted_headline: parsed.adapted_headline || "",
+        adapted_body: parsed.adapted_body || "",
+        adapted_cta: parsed.adapted_cta || "",
+        persona_anchor: parsed.persona_anchor,
+        outcome_anchor: matchedOutcome?.statement || parsed.outcome_anchor,
+        image_prompt: safePrompt,
+        why_it_works: parsed.why_it_works || "",
+        format: parsed.format || ad.format || "4:5",
+        hook_type: parsed.hook_type || ad.hook_type || "",
+        reference: {
+          brand: ad.source_brand || "",
+          url: ad.source_url || "",
+          active_since: ad.active_since || null,
+          platform: ad.platform || "",
+        },
+      });
+    } catch (e) {
+      console.warn(`[Pass 8.6] apply failed for ad ${i + 1}:`, e.message);
+    }
+  }
+
+  if (recreations.length < 4 && diversified.length >= 4) {
+    caveats.push(`Only ${recreations.length} of ${diversified.length} attempted recreations passed the anchor rule · others were dropped to avoid fabricated persona/outcome links.`);
+  }
+
+  return { recreations, caveats };
+}
+
 // ── PASS 3: Validate against search (uses Claude web_search tool) ──
 export async function validateWithSearch(apiKey, jobs) {
   const data = await callClaude(

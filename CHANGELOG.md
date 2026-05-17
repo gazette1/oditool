@@ -6,6 +6,65 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.3] — 2026-05-17
+
+**Pass 8.6 · Ad Recreations** — the user's "I want to see already-successfully-performing ads and the prompts to recreate them" ask, now shipped as §05b in the strategy doc.
+
+### Added · `generateAdRecreations()` in `anthropic.js`
+
+Takes ad data (from in-memory Ad-Intel `adIntelData.ads` OR persisted `Swipe Ads` table) and produces 4-8 brand-voice recreations. Each card includes:
+
+- A `gpt-image-2`-ready **image recreation prompt** (≤ 220 chars, sanitized to remove competitor brand names — the recreation is brand-safe)
+- An **adapted headline + body + CTA** in the brand's voice
+- **Anchored to a real persona** (Pass 7 output, exact name match) AND **a real Ulwick outcome** (Pass 2 output, verbatim or close paraphrase) — same anchoring rule as Pass L. Drops the row if either anchor can't be made.
+- A **"why it works"** single sentence on the strategic insight to copy
+- **Reference block** (source brand · URL · platform · active_since · hook_type) for traceability
+
+Three internal phases:
+
+1. **Filter by recency** — keep ads running ≥ 30 days when `active_since` is available (proxy for "this ad is working — they keep paying for it"). When < 50% of input ads have dates, skip the filter and note in caveats.
+2. **Diversify by hook_type** — round-robin across `HOOK_TYPES`, max 2 per hook, prefer cross-brand picks. Cap total at 8.
+3. **Per-ad apply** — sequential LLM calls (1200 maxTokens each) with the anchoring + brand-safety contract. ~50-80s wall time, ~$0.10-0.18 per run.
+
+### Added · `renderAdRecreations()` in `compose-strategy.js`
+
+New §05b "Ad recreations" section (after §05 Swipe file, before §06 Scripts). Renders with:
+
+- Dashed moss-green panel for each `image_prompt` (select-all-to-copy)
+- Brand-voice headline + body + CTA pill
+- Anchor block with persona + outcome (moss-bordered cream panel)
+- "Why it works" callout (light moss background)
+- Source attribution line at the foot
+- Caveats panel below the grid when applicable (sample size, missing recency data, anchor-rule drops)
+
+DTC `doc_sections` updated: 21 → **22 sections**. `ad_recreations` slots in at index 6 between `swipe_file` and `scripts`. All subsequent sections shift by one (dispatcher handles automatically).
+
+### Added · `AirtableClient.loadSwipeAds()` + `saveAdRecreations()`
+
+- `loadSwipeAds(projectId)` filters `Swipe Ads` by `project_id` (up to 100 records) and normalizes the row shape to the format Pass 8.6 expects
+- `saveAdRecreations(projectId, recreations)` chunked at 10 records per request with the v1.6.8 200ms throttle
+- New Airtable table required: `Ad Recreations` (schema documented in airtable.js block comments + the v2 spec)
+
+### Wired in `App.jsx`
+
+Pass 8.6 runs after Pass 8.5 (imagery), only when ad data is available. Source resolution order:
+
+1. `adIntelData.ads` (in-memory · Ad-Intel was run earlier in this session)
+2. `airtable.loadSwipeAds(projectId)` (persisted from a prior Ad-Intel run)
+3. Skipped (logged as warn · §05b silently omits from doc)
+
+`adRecreations` threaded into `composeStrategyDoc` payload. `generateAdRecreations` added to the `./lib/anthropic` import list.
+
+### Spec doc
+
+Full v2 spec at `<vault>/05a - Pass 8.6 Ad Recreations Spec.md` · phasing, acceptance criteria, cost breakdown, multimodal-upgrade plan (v1.7.4), Adyntel hand-off plan (v1.8).
+
+### ENGINE_VERSION → v1.7.3
+
+Bundle 461.95 KB / 133.81 KB gzip (+17 KB · new pass, new renderer, new CSS, new Airtable methods, new spec wiring).
+
+---
+
 ## [Unreleased · v1.8 scaffold] — 2026-05-16
 
 ### Added · `src/lib/adyntel.js` (NEW · v1.8 scaffold)

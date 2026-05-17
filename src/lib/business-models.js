@@ -19,34 +19,36 @@
 // → 21 sections (v5 reference parity).
 const DTC_PASS_PLAN = [
   "P1", "P2", "P3", "P4",                  // discovery (run by Run-Analysis)
-  "P5", "P7", "P8", "P9", "P10",            // creative
+  "P5", "P7", "P8", "P8_5", "P8_6",         // creative + imagery + ad recreations
+  "P9", "P10",                              // scripts + email
   "P11", "P12", "P13", "P14",               // operational
   "P15", "P16", "P17", "P18",               // strategic + audit + demand + tribe
   "PL",                                     // applied playbooks (vault)
 ];
 
 const DTC_DOC_SECTIONS = [
-  "strategic_context",       // §00 NEW
+  "strategic_context",       // §00 (v1.7.0)
   "positioning",             // §01
   "evidence",                // §02
   "value_prop",              // §03
   "personas",                // §04
   "swipe_file",              // §05
-  "scripts",                 // §06
-  "email_flows",             // §07
-  "entry_wedge",             // §08
-  "channels",                // §09
-  "matrix",                  // §10
-  "landing",                 // §11
-  "rollout",                 // §12
-  "creators",                // §13
-  "competitive",             // §14
-  "brand_audit",             // §15
-  "demand",                  // §16
-  "tribe",                   // §17
-  "applied_playbooks",       // §18 NEW
-  "methodology",             // §19
-  "colophon",                // §20
+  "ad_recreations",          // §06 NEW v1.7.3 · real ads + recreation prompts
+  "scripts",                 // §07
+  "email_flows",             // §08
+  "entry_wedge",             // §09
+  "channels",                // §10
+  "matrix",                  // §11
+  "landing",                 // §12
+  "rollout",                 // §13
+  "creators",                // §14
+  "competitive",             // §15
+  "brand_audit",             // §16
+  "demand",                  // §17
+  "tribe",                   // §18
+  "applied_playbooks",       // §19
+  "methodology",             // §20
+  "colophon",                // §21
 ];
 
 export const BUSINESS_MODELS = {

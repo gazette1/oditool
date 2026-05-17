@@ -70,6 +70,8 @@ const TABLES = {
   briefIterations: "Brief Iterations",
   // Engine v1.7.0 · Strategic Diagnostic + Applied Playbooks
   appliedPlaybooks: "Applied Playbooks",
+  // Engine v1.7.3 · Pass 8.6 · Ad Recreations
+  adRecreations: "Ad Recreations",
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -488,6 +490,94 @@ class AirtableClient {
         if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
       } catch (e) {
         console.warn("[Pass L] saveAppliedPlaybooks chunk failed (table may not exist yet):", e.message);
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Pass 8.6 · Ad Recreations (Engine v1.7.3)
+  //
+  // Required Airtable schema · create "Ad Recreations" table with columns:
+  //   project_id (Link → projects · required for project isolation)
+  //   ar_id (Single line · natural key · AR-01, AR-02, …)
+  //   source_brand (Single line)
+  //   source_url (URL)
+  //   adapted_headline (Long text)
+  //   adapted_body (Long text)
+  //   adapted_cta (Single line)
+  //   persona_anchor (Single line · real persona name from Pass 7)
+  //   outcome_anchor (Long text · real Ulwick outcome from Pass 2)
+  //   image_prompt (Long text · gpt-image-2-ready, sanitized)
+  //   why_it_works (Long text)
+  //   format (Single select: 4:5 · 9:16 · 1:1 · 16:9)
+  //   hook_type (Single line · HOOK_TYPES controlled vocab)
+  //   active_since (Date · proxy for "this ad is working")
+  //   platform (Single line)
+  //   created_at (Date)
+  // ─────────────────────────────────────────────────────────────
+
+  /**
+   * Load Swipe Ads rows for a project · used by Pass 8.6 to source ads
+   * persisted from a prior Ad-Intel run. Falls back to empty array when
+   * the table isn't populated or the request fails (caller handles).
+   */
+  async loadSwipeAds(projectId) {
+    if (!projectId) return [];
+    try {
+      const filter = encodeURIComponent(`{project_id} = '${projectId}'`);
+      const data = await this._request(`${TABLES.swipeAds}?filterByFormula=${filter}&maxRecords=100`, "GET");
+      return (data.records || []).map(r => ({
+        id: r.fields?.swipe_ad_id || r.id,
+        source_brand: r.fields?.brand_name || "",
+        source_url: r.fields?.creative_url || "",
+        platform: (r.fields?.platforms && JSON.parse(r.fields.platforms || "[]")[0]) || "Meta",
+        format: r.fields?.format || "4:5",
+        headline: r.fields?.headline || "",
+        body: r.fields?.copy_text || "",
+        cta: r.fields?.cta || "",
+        hook_type: r.fields?.hook_type || "",
+        active_since: r.fields?.run_start || null,
+        image_description: r.fields?.evidence || "",
+      })).filter(a => a.source_brand || a.headline || a.body);
+    } catch (e) {
+      console.warn("[Pass 8.6] loadSwipeAds failed:", e.message);
+      return [];
+    }
+  }
+
+  /**
+   * Persist Pass 8.6 output. Chunked at 10 records per request with the
+   * 200ms throttle from v1.6.8. Silently no-ops when the table doesn't
+   * exist yet so users see the warning rather than a hard failure.
+   */
+  async saveAdRecreations(projectId, recreations) {
+    if (!projectId || !recreations?.length) return;
+    const records = recreations.map(r => ({
+      fields: {
+        project_id: projectId,
+        ar_id: r.id || "",
+        source_brand: r.source_brand || "",
+        source_url: r.reference?.url || "",
+        adapted_headline: r.adapted_headline || "",
+        adapted_body: r.adapted_body || "",
+        adapted_cta: r.adapted_cta || "",
+        persona_anchor: r.persona_anchor || "",
+        outcome_anchor: r.outcome_anchor || "",
+        image_prompt: r.image_prompt || "",
+        why_it_works: r.why_it_works || "",
+        format: r.format || "4:5",
+        hook_type: r.hook_type || "",
+        active_since: r.reference?.active_since || null,
+        platform: r.reference?.platform || "",
+        created_at: new Date().toISOString().split("T")[0],
+      },
+    }));
+    for (let i = 0; i < records.length; i += 10) {
+      try {
+        await this._request(TABLES.adRecreations, "POST", { records: records.slice(i, i + 10) });
+        if (i + 10 < records.length) await _sleep(CHUNK_THROTTLE_MS);
+      } catch (e) {
+        console.warn("[Pass 8.6] saveAdRecreations chunk failed (table may not exist yet):", e.message);
       }
     }
   }

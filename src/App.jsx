@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations } from "./lib/anthropic";
 import { resolveBusinessModel } from "./lib/business-models";
 import { loadCachedIndex } from "./lib/library-reader";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
@@ -471,6 +471,46 @@ export default function App() {
         log("Pass 8.5 skipped: imagery toggle ON but no OPENAI_API_KEY in config · falling back to gradient mocks", "warn");
       }
 
+      // v1.7.3 · Pass 8.6 · Ad Recreations
+      // Consumes ads from adIntelData (in-memory) OR Swipe Ads Airtable
+      // table (persisted from a prior Ad-Intel run). Skipped when neither
+      // source has ads — §05b will simply omit from the doc.
+      let adRecreations = { recreations: [], caveats: [] };
+      let adsForRecreation = [];
+      if (adIntelData?.ads?.length) {
+        adsForRecreation = adIntelData.ads;
+        log(`Pass 8.6 · seeded ${adsForRecreation.length} ads from in-memory Ad-Intel run`);
+      } else if (airtable && activeProject?.airtableId && typeof airtable.loadSwipeAds === "function") {
+        try {
+          const persisted = await airtable.loadSwipeAds(activeProject.airtableId);
+          if (persisted?.length) {
+            adsForRecreation = persisted;
+            log(`Pass 8.6 · seeded ${adsForRecreation.length} ads from Airtable Swipe Ads table`);
+          }
+        } catch (e) { log(`Pass 8.6 · Airtable swipe-ads lookup skipped: ${e.message}`, "warn"); }
+      }
+      if (adsForRecreation.length) {
+        setStratDocPhase(`Pass 8.6: ad recreations · adapting ${Math.min(adsForRecreation.length, 8)} proven ads in brand voice…`);
+        log(`Pass 8.6/18: ad recreations (input ${adsForRecreation.length} ads · output up to 8)`);
+        try {
+          adRecreations = await generateAdRecreations(config.anthropicKey, {
+            projectContext,
+            positioning: positioningSpine,
+            personas,
+            mergedJobs: data,
+            adsData: adsForRecreation,
+            brandName: activeProject?.name || projectContext?.sector,
+          });
+          log(`Pass 8.6 · ${adRecreations.recreations.length} brand-voice recreations + ${adRecreations.caveats.length} caveats`, "ok");
+          if (airtable && activeProject?.airtableId && adRecreations.recreations.length && typeof airtable.saveAdRecreations === "function") {
+            try { await airtable.saveAdRecreations(activeProject.airtableId, adRecreations.recreations); }
+            catch (e) { log(`Pass 8.6 · Airtable save skipped: ${e.message}`, "warn"); }
+          }
+        } catch (e) { log(`Pass 8.6 skipped: ${e.message}`, "warn"); }
+      } else {
+        log("Pass 8.6 skipped · no ad data available · run 🎯 Ad-Intel first (or wait for Adyntel-canonical Stage B in v1.8)", "warn");
+      }
+
       setStratDocPhase("Pass 9: TikTok scripts…");
       log("Pass 9/18: 8 shot-by-shot TikTok scripts");
       const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
@@ -592,7 +632,8 @@ export default function App() {
         demandLandscape,
         tribe,
         diagnostic,            // v1.7.0 · drives §00 + section order
-        appliedPlaybooks: pl,  // v1.7.0 · §-near-end playbooks
+        appliedPlaybooks: pl,    // v1.7.0 · §-near-end playbooks
+        adRecreations,           // v1.7.3 · §05b proven-ad recreations
       });
 
       const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();

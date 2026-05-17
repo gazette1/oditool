@@ -421,6 +421,34 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .playbook-card .pb-foot .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px;display:block}
 .playbook-card .pb-source{font-family:"IBM Plex Mono",monospace;font-size:9px;color:var(--ink-muted);text-align:right;font-style:italic}
 
+/* §05b · Ad Recreations (Pass 8.6 · v1.7.3) */
+.ar-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:24px}
+@media (max-width:720px){.ar-grid{grid-template-columns:1fr}}
+.ar-card{background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.ar-card .ar-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:10px;border-bottom:1px solid rgba(106,153,78,0.2)}
+.ar-card .ar-id{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;color:var(--moss-mid);text-transform:uppercase}
+.ar-card .ar-inspired{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:12px;color:var(--ink-secondary)}
+.ar-card .ar-format{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;background:var(--bg-warm);padding:3px 9px;border-radius:4px;color:var(--ink-secondary);white-space:nowrap}
+.ar-card .ar-prompt-block{padding:14px 16px;background:linear-gradient(135deg,rgba(56,102,65,0.06),rgba(167,201,87,0.08));border:1px dashed rgba(56,102,65,0.45);border-radius:8px;position:relative}
+.ar-card .ar-prompt-lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:6px;display:block}
+.ar-card .ar-prompt-text{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.55;color:var(--ink-primary);user-select:all}
+.ar-card .ar-prompt-hint{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11px;color:var(--ink-muted);margin-top:8px}
+.ar-card .ar-headline{font-family:"DM Serif Display",serif;font-size:22px;line-height:1.22;color:var(--ink-primary)}
+.ar-card .ar-body{font-size:13px;line-height:1.65;color:var(--ink-primary)}
+.ar-card .ar-cta{display:inline-block;padding:7px 16px;background:var(--ink-primary);color:var(--bg-base);font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px;width:fit-content}
+.ar-card .ar-anchors{padding:12px 14px;background:var(--bg-warm);border-left:3px solid var(--moss-mid);border-radius:0 6px 6px 0;font-size:12px;line-height:1.55}
+.ar-card .ar-anchors .a-row{display:grid;grid-template-columns:80px 1fr;gap:10px;align-items:start}
+.ar-card .ar-anchors .a-row + .a-row{margin-top:6px}
+.ar-card .ar-anchors .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);padding-top:2px}
+.ar-card .ar-why{padding:10px 14px;background:rgba(56,102,65,0.06);border-radius:6px;font-size:12px;line-height:1.55;color:var(--ink-primary)}
+.ar-card .ar-why strong{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);display:block;margin-bottom:4px}
+.ar-card .ar-source{font-family:"IBM Plex Mono",monospace;font-size:9.5px;color:var(--ink-muted);padding-top:8px;border-top:1px solid rgba(106,153,78,0.15)}
+.ar-card .ar-source a{color:var(--moss-mid);text-decoration:underline}
+.ar-caveats{padding:14px 18px;background:rgba(200,164,92,0.1);border-left:3px solid #b8911c;border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;margin-top:18px}
+.ar-caveats .lbl{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;color:#5a4710;margin-bottom:6px;display:block;text-transform:uppercase}
+.ar-caveats ul{margin:0;padding-left:18px;color:var(--ink-secondary)}
+.ar-caveats li{margin-bottom:3px}
+
 /* §17 · Tribe readout */
 .tribe-summary{padding:20px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-base));border:1px solid rgba(106,153,78,0.3);border-radius:12px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:16px;line-height:1.6;color:var(--ink-primary);margin-bottom:24px}
 .tribe-caveats{padding:14px 18px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 6px 6px 0;font-size:12px;line-height:1.6;margin-bottom:24px}
@@ -617,6 +645,48 @@ function renderSwipe(p, n, total) {
         return `<div class="swipe-card"><div class="ad-mock" ${mockStyle}><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`;
       }).join("")}
     </div>
+  </div>
+</section>`;
+}
+
+// ── §05b · Ad Recreations (Pass 8.6 · v1.7.3) ──
+// Spec: <vault>/05a - Pass 8.6 Ad Recreations Spec.md
+function renderAdRecreations(p, n, total) {
+  const ar = p.adRecreations;
+  const recs = ar?.recreations || [];
+  if (!recs.length) return "";
+  const caveats = ar?.caveats || [];
+  return `<section class="section" id="recreations">
+  <div class="container">
+    ${sectionTag("Ad recreations", n, total)}
+    <h2 class="display-lg" style="margin-bottom:16px">${recs.length} proven ads.<br/>In your voice. Ready to ship.</h2>
+    <p class="body-lg" style="max-width:760px;color:var(--ink-secondary);margin-bottom:24px">Each card is a competitor ad observed running in market, rewritten in your brand voice and anchored to one of your personas + one underserved outcome. The image prompt is gpt-image-2-ready and brand-safe (no trademarked references).</p>
+    <div class="ar-grid">
+      ${recs.map(r => `<div class="ar-card">
+        <div class="ar-head">
+          <div>
+            <div class="ar-id">${esc(r.id || "")}</div>
+            <div class="ar-inspired">inspired by ${esc(r.source_brand || "competitor")}</div>
+          </div>
+          ${r.format ? `<span class="ar-format">${esc(r.format)}</span>` : ""}
+        </div>
+        <div class="ar-prompt-block">
+          <span class="ar-prompt-lbl">Recreation prompt · copy into gpt-image-2 / Midjourney / Nano Banana</span>
+          <div class="ar-prompt-text">${esc(r.image_prompt || "")}</div>
+          <div class="ar-prompt-hint">Select-all to copy · prompt is brand-safe (no trademarked references)</div>
+        </div>
+        ${r.adapted_headline ? `<div class="ar-headline">${escEm(r.adapted_headline)}</div>` : ""}
+        ${r.adapted_body ? `<p class="ar-body">${escEm(r.adapted_body)}</p>` : ""}
+        ${r.adapted_cta ? `<div class="ar-cta">${esc(r.adapted_cta)}</div>` : ""}
+        <div class="ar-anchors">
+          ${r.persona_anchor ? `<div class="a-row"><span class="lbl">Persona</span><span>${esc(r.persona_anchor)}</span></div>` : ""}
+          ${r.outcome_anchor ? `<div class="a-row"><span class="lbl">Outcome</span><span>${esc(r.outcome_anchor)}</span></div>` : ""}
+        </div>
+        ${r.why_it_works ? `<div class="ar-why"><strong>Why it works — the strategic insight to copy</strong>${esc(r.why_it_works)}</div>` : ""}
+        <div class="ar-source">▸ source: ${esc(r.source_brand || "?")}${r.reference?.url ? ` · <a href="${esc(r.reference.url)}" target="_blank" rel="noopener noreferrer">view ad</a>` : ""}${r.reference?.active_since ? ` · running since ${esc(r.reference.active_since)}` : ""}${r.reference?.platform ? ` · ${esc(r.reference.platform)}` : ""}${r.hook_type ? ` · hook: ${esc(r.hook_type)}` : ""}</div>
+      </div>`).join("")}
+    </div>
+    ${caveats.length ? `<div class="ar-caveats"><span class="lbl">Honest caveats</span><ul>${caveats.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
   </div>
 </section>`;
 }
@@ -1181,6 +1251,7 @@ function buildSectionMap(payload, totalSections) {
     value_prop:        (n) => renderValueProp(payload, n, t),
     personas:          (n) => renderPersonas(payload, n, t),
     swipe_file:        (n) => renderSwipe(payload, n, t),
+    ad_recreations:    (n) => renderAdRecreations(payload, n, t),
     scripts:           (n) => renderScripts(payload, n, t),
     email_flows:       (n) => renderEmails(payload, n, t),
     entry_wedge:       (n) => renderEntryWedge(payload, n, t),
@@ -1203,7 +1274,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.7.2";
+export const ENGINE_VERSION = "v1.7.3";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -1223,7 +1294,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div class="nav-links">
-      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
+      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#recreations">Recreations</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -1234,7 +1305,7 @@ ${(() => {
   // Falls back to a default order if no diagnostic is present (preserves
   // v1.6.x behavior for any caller not yet wired to Pass D).
   const defaultOrder = [
-    "positioning","evidence","value_prop","personas","swipe_file","scripts","email_flows",
+    "positioning","evidence","value_prop","personas","swipe_file","ad_recreations","scripts","email_flows",
     "entry_wedge","channels","matrix","landing","rollout","creators","competitive",
     "brand_audit","demand","tribe","methodology","colophon",
   ];
