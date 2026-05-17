@@ -510,30 +510,101 @@ RESPOND WITH ONLY RAW JSON:
 // available.
 //
 // `competitors` shape: [{ name, stated_value_prop, source_url, ad_quote? }]
-export async function comparePositioning(apiKey, brand, positioning, competitors, scoredOutcomes) {
-  if (!competitors?.length) return { comparisons: [] };
+//
+// v1.7.2 · Pass 5 now runs in two phases when no pre-discovered competitors
+// are passed:
+//   Phase A · Discovery — uses web_search to find 4-6 competitors with their
+//             actual stated value props quoted from their sites
+//   Phase B · Comparison — the original structured-comparison pass against
+//             the brand's chosen positioning and scored outcomes
+// The "every company on earth has a competitor" reality means Pass 5 should
+// NEVER silently drop § 03 because the user's key_facts didn't happen to
+// match a regex. If web_search comes back thin, the row carries a `data_note`
+// explaining what we know vs. don't.
+export async function comparePositioning(apiKey, brand, positioning, competitors, scoredOutcomes, projectContext = null) {
+  // ── Phase A · Auto-discover competitors when none were pre-supplied ──
+  let resolvedCompetitors = competitors || [];
 
+  if (!resolvedCompetitors.length) {
+    const sector = projectContext?.sector || "";
+    const audience = projectContext?.audience || "";
+    const productSummary = (projectContext?.product_context || "").slice(0, 800);
+
+    try {
+      const discoveryRaw = await callClaude(
+        apiKey,
+        `You are a competitive-research analyst. Given a brand, find 4-6 REAL competitors using web_search. For each one return:
+
+- name: the brand's actual trading name (no descriptors like "the leading…")
+- stated_value_prop: a verbatim quote ≤ 24 words from their homepage or hero, in their own words. Use double quotes. If you cannot find a clean quote, return null and explain in data_note.
+- source_url: the page the quote came from
+- ad_quote: optional · a verbatim quote from an active ad of theirs if visible in search results
+- evidence: 1 sentence on why this is a real competitor (same job, overlapping audience)
+
+CRITICAL RULES:
+1. Every named company must be a REAL brand you confirmed via search (not invented). If you can't find at least 3 real competitors, return what you found honestly · do not pad the list.
+2. NEVER use the word "Likely" or "Probably" in evidence · cite specific signals (price tier, channel mix, founder origin, etc.).
+3. Prefer brands one tier ABOVE and one tier BELOW the brand's price point, plus 1-2 aspirational. Avoid only-direct or only-aspirational lists.
+
+RESPOND WITH ONLY RAW JSON:
+{"competitors": [{"name":"...","stated_value_prop":"...","source_url":"https://...","ad_quote":null,"evidence":"...","data_note":null}]}`,
+        `BRAND: ${brand}\nSECTOR: ${sector}\nAUDIENCE: ${audience}\n\nPRODUCT CONTEXT:\n${productSummary}`,
+        { tools: [{ type: "web_search_20250305", name: "web_search" }], maxTokens: 4000 }
+      );
+      const discovered = extractJSON(discoveryRaw);
+      resolvedCompetitors = (discovered?.competitors || []).filter(c => c?.name);
+    } catch (e) {
+      // Discovery failed (web_search timeout, etc.) · fall through with empty.
+      // The compare step below will return a single placeholder row noting
+      // the data gap rather than silently dropping the section.
+      console.warn("[Pass 5] competitor auto-discovery failed:", e.message);
+    }
+  }
+
+  // If we STILL have zero competitors after discovery, return one honest
+  // placeholder row so § 03 renders rather than silently disappearing.
+  if (!resolvedCompetitors.length) {
+    return {
+      comparisons: [{
+        competitor_name: "(competitor discovery returned no results)",
+        their_stated_value_prop: "",
+        source_url: "",
+        outcome_they_price_for: "",
+        outcome_they_leave_unserved: "",
+        where_brand_wins: "",
+        citation_score: null,
+        data_note: "Pass 5 ran web_search for competitors but returned an empty set · check the Pass 0 sector + audience fields, or run Ad-Intel Stage A to discover competitors before regenerating the strategy doc.",
+      }],
+    };
+  }
+
+  // ── Phase B · Structured comparison ──
   const data = await callClaude(
     apiKey,
-    `You are an ODI analyst. For each named competitor, produce a structured comparison row against the brand's chosen positioning.
+    `You are an Outcome-Driven Innovation strategist. For each named competitor, produce ONE structured comparison row against the brand's chosen positioning.
 
 For each competitor, return:
-- competitor_name
-- their_stated_value_prop (quoted verbatim from source)
-- source_url (where the quote came from)
-- outcome_they_price_for: which outcome from the scored input they implicitly serve well
-- outcome_they_leave_unserved: which outcome from the scored input they fail to serve
-- where_brand_wins: 1-2 sentences naming the specific outcome and score where the brand can take this customer
+- competitor_name: their actual brand name
+- their_stated_value_prop: the quote we have (verbatim, in their words)
+- source_url: where the quote came from
+- outcome_they_price_for: which outcome from the scored list they implicitly serve well, in the exact Ulwick phrasing
+- outcome_they_leave_unserved: which outcome from the scored list they implicitly fail · prefer outcomes with high opportunity_score (>= 10)
+- where_brand_wins: 1-2 sentences naming the specific outcome statement AND its score (e.g. "We take this customer on 'Minimize the time it takes to mentally disconnect from work stress when changing into sleepwear' · opportunity 13.8") — be concrete and quote the outcome.
+- citation_score: the opportunity_score number behind where_brand_wins
+- data_note: optional · ONLY use when the source quote is genuinely thin (e.g. you couldn't find a clean homepage hero). Never use this to hedge; use it to flag a real data gap.
 
-CRITICAL: do not invent competitor positioning. Use only the quoted value props provided. If a quote is thin, say so in a "data_note" field on that row.
+ABSOLUTE RULES:
+1. Do NOT invent competitor copy. If we only have a name and no quote, leave their_stated_value_prop empty and note it.
+2. Do NOT use "Likely", "Probably", "Seems to", "Appears to". Either you have evidence or you say so in data_note.
+3. Where the brand wins must cite ONE specific scored outcome. If you can't pick one for a competitor, return data_note: "no clean outcome anchor against this competitor" rather than fudging.
 
 Brand: ${brand}
 Brand positioning: "${positioning}"
 
 RESPOND WITH ONLY RAW JSON:
 {"comparisons": [{"competitor_name": "...", "their_stated_value_prop": "...", "source_url": "...", "outcome_they_price_for": "...", "outcome_they_leave_unserved": "...", "where_brand_wins": "...", "citation_score": 14.4, "data_note": null}]}`,
-    `Competitors:\n${JSON.stringify(competitors, null, 2)}\n\nScored outcomes (use these in citations):\n${JSON.stringify(scoredOutcomes, null, 2)}`,
-    { maxTokens: 4000 }
+    `Competitors:\n${JSON.stringify(resolvedCompetitors, null, 2)}\n\nScored outcomes (use these EXACT statements in citations):\n${JSON.stringify(scoredOutcomes, null, 2)}`,
+    { maxTokens: 4500 }
   );
   return extractJSON(data);
 }
@@ -937,6 +1008,13 @@ Rules:
 //   - projectContext (Pass 0) — required, gives brand voice + key facts
 //   - mergedJobs (Pass 1+2) — required, gives the outcomes the audit anchors to
 //   - scrapedContent (optional) — raw scrape of brand site from ingestion
+// v1.7.2 · Pass 16 prompt rewritten to BAN the "Likely / Probably / Seems
+// to / Appears to" hedging the v1.6.6 version produced on every row when
+// the scrape was missing. New rule: each row is either OBSERVED (from
+// scrape) or marked `data_status: "no_visibility"` with explicit instruction
+// to skip the current_state field rather than guess. The renderer surfaces
+// no-visibility rows with a dashed border + "scrape required" tag so the
+// user sees the data gap instead of believing fabricated audit text.
 export async function generateBrandAudit(apiKey, projectContext, mergedJobs, scrapedContent = "") {
   const ctx = projectContext ? `Brand: ${projectContext.sector}\nAudience: ${projectContext.audience}\nVoice rules: ${projectContext.brand_voice}\nKey facts:\n${(projectContext.key_facts || []).map(f => `- ${f}`).join("\n")}` : "";
 
@@ -946,16 +1024,17 @@ export async function generateBrandAudit(apiKey, projectContext, mergedJobs, scr
 
   const outcomeBlock = topOutcomes.length
     ? `Top underserved outcomes the audit must anchor to (a surface is "broken" if it fails one of these):\n${topOutcomes.map(o => `- Job ${o.job_id} (opp ${o.score}): ${o.statement}`).join("\n")}`
-    : "No scored outcomes available — audit based on brand voice + best practices only.";
+    : "No scored outcomes available — audit will be limited.";
 
-  const sourcesBlock = scrapedContent && scrapedContent.length
-    ? `\n\nScraped brand site content (use as ground truth · do NOT fabricate copy not present):\n${scrapedContent.slice(0, 8000)}`
-    : "\n\nNo scraped site content provided. Reason about what the brand likely has at each surface based on the project context.";
+  const hasScrape = !!(scrapedContent && scrapedContent.length > 200);
+  const sourcesBlock = hasScrape
+    ? `\n\nSCRAPED BRAND SITE CONTENT (this is the ONLY source of truth · only audit surfaces you can SEE in this scrape · do NOT fabricate copy not present):\n${scrapedContent.slice(0, 12000)}`
+    : `\n\nNO SCRAPED SITE CONTENT WAS PROVIDED. You have ZERO direct visibility into this brand's public surfaces. You MUST mark every visual surface (homepage, PDP, about page, email opt-in, reviews, cart, FAQ, press) with data_status: "no_visibility" · current_state: "" · what_works: "" · what_breaks: "" · recommended_fix: "" instead of inferring from the project context. Only social-channel rows are exceptions IF the project context provides verbatim signals.`;
 
   const data = await callClaude(apiKey,
-    `You are auditing a brand's public-facing surfaces against its underserved-outcome targets. For each of 8-10 surfaces, return: what they have today, what works, what breaks (specifically against an underserved outcome), the anchor job ID, fix priority, and a concrete fix.
+    `You are auditing a brand's public-facing surfaces against its underserved-outcome targets. Return 8-10 surface rows. Each row is EITHER observed (you can see it in the scraped content) OR explicitly marked no_visibility — never hedged.
 
-Cover these surfaces (use the ones that apply to this brand · skip irrelevant ones):
+Cover these surfaces (skip ones that genuinely don't apply to this brand):
 - Homepage hero (the first 2 seconds above the fold)
 - Product detail page (PDP) — hero + benefit copy
 - About / Founder page
@@ -968,18 +1047,20 @@ Cover these surfaces (use the ones that apply to this brand · skip irrelevant o
 - Press / earned-media surface
 
 For each surface:
-- area_name (one of the surfaces above, exact label)
-- current_state (1-2 sentences describing what's there today — anchored to scraped content if available, else "likely state" inferred from project context)
-- what_works (1-2 sentences on what's already pointing at the right outcome · honest, can be "nothing yet")
-- what_breaks (1-2 sentences on the specific gap measured against an underserved outcome)
-- ulwick_anchor_job_id (number · which top-outcome job this surface should serve)
-- fix_priority ("high" / "medium" / "low")
-- recommended_fix (1 sentence on what to change · concrete, shippable in 2 weeks)
+- area_name (exact label from the list above)
+- data_status: "observed" if you can quote from the scrape · "no_visibility" if you cannot · "context_only" if the project context contains a verbatim signal about this surface (rare)
+- current_state: for "observed" → 1-2 sentences quoting/paraphrasing what's actually on the surface. For "no_visibility" → return EMPTY STRING "". Do NOT speculate.
+- what_works: 1-2 sentences on what's pointing at the right outcome · empty string for no_visibility rows
+- what_breaks: 1-2 sentences on the specific gap measured against an underserved outcome (cite the outcome by its exact phrasing or job_id) · empty string for no_visibility rows
+- ulwick_anchor_job_id: number · which top-outcome job this surface should serve
+- fix_priority: "high" / "medium" / "low" · for no_visibility rows, use "scrape_first" instead
+- recommended_fix: 1 sentence concrete + ship-in-2-weeks · for no_visibility rows return "" and put a scrape-instruction in scrape_hint instead
+- scrape_hint: optional · for no_visibility rows only · 1 sentence telling the user how to capture this surface (e.g. "Paste a PDF export of the homepage in the next Pass 0 run.")
 
-Plus:
-- audit_summary (1-2 sentence top-line verdict)
-- voice_consistency: { score: 1-10, strongest_surface, weakest_surface, drift_notes }
-- discoverability: { branded_search: "good"/"spotty"/"weak", unbranded_search: "good"/"spotty"/"weak", notes }
+Plus top-level:
+- audit_summary: 1-2 sentence top-line verdict · explicitly mention how many surfaces were observed vs. no_visibility (e.g. "Audited 8 surfaces: 5 observed via scrape, 3 require additional ingestion")
+- voice_consistency: { score: 1-10 ONLY on observed surfaces · strongest_surface (must be one in observed/context_only) · weakest_surface (same) · drift_notes }
+- discoverability: { branded_search: "good"/"spotty"/"weak" · unbranded_search: "good"/"spotty"/"weak" · notes — only assess if you can see the brand name in search-relevant context }
 
 Return ONLY JSON:
 {
@@ -989,12 +1070,14 @@ Return ONLY JSON:
   "discoverability": {...}
 }
 
-Rules:
-- Every "what_breaks" must reference an underserved outcome or a project-context key fact. No generic marketing complaints.
-- Every "recommended_fix" must be ship-in-2-weeks specific. No "improve brand awareness" filler.
-- Score voice consistency honestly — if the audit doesn't have visibility into a surface, set the score on what IS visible.`,
+ABSOLUTE RULES:
+1. The words "Likely", "Probably", "Seems to", "Appears to", "Should be", "May be", "Could be" are BANNED in every output field. If you don't have evidence, set data_status: "no_visibility" and leave the fields empty.
+2. Every "what_breaks" on an observed surface MUST quote or paraphrase a specific underserved outcome (use the exact Ulwick phrasing where possible) or a project-context key fact.
+3. Every "recommended_fix" must be ship-in-2-weeks specific with a named asset (e.g. "Add a 'Made by hand · TENCEL Modal' strip above the fold") · not generic ("improve brand awareness").
+4. voice_consistency.score must reflect ONLY observed surfaces · null if zero surfaces observed.
+5. If data_status === "no_visibility", do NOT fabricate fix recommendations · use scrape_hint instead.`,
     `${ctx}\n\n${outcomeBlock}${sourcesBlock}`,
-    { maxTokens: 7000 }
+    { maxTokens: 7500 }
   );
   return extractJSON(data);
 }

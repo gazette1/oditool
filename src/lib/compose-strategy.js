@@ -301,6 +301,10 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .audit-card .au-name{font-family:"DM Serif Display",serif;font-size:18px;line-height:1.2}
 .audit-card .au-priority{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:3px 9px;border-radius:4px}
 .audit-card .au-priority.high{background:rgba(188,71,73,0.15);color:#7a2c2e}
+.audit-card .au-priority.scrape{background:rgba(200,164,92,0.18);color:#5a4710}
+.audit-card.no-visibility{border:1px dashed rgba(200,164,92,0.6);background:rgba(200,164,92,0.04)}
+.audit-card .au-no-vis{padding:14px 16px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13.5px;line-height:1.55;color:#5a4710}
+.audit-card .au-no-vis strong{display:block;font-family:"IBM Plex Mono",monospace;font-style:normal;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#b8911c;margin-bottom:4px}
 .audit-card .au-priority.medium{background:rgba(167,201,87,0.2);color:#2a4a30}
 .audit-card .au-priority.low{background:var(--bg-warm);color:var(--ink-secondary)}
 .audit-card .au-current{font-size:12.5px;line-height:1.6;color:var(--ink-primary)}
@@ -878,18 +882,29 @@ function renderBrandAudit(p, n, total) {
     <h2 class="display-lg" style="margin-bottom:16px">${areas.length} surfaces.<br/>State of the brand today.</h2>
     ${a.audit_summary ? `<p class="audit-summary">${esc(a.audit_summary)}</p>` : ""}
     ${areas.length ? `<div class="audit-grid">
-      ${areas.map(area => `<div class="audit-card">
+      ${areas.map(area => {
+        // v1.7.2 · "no_visibility" rows render with a dashed border + scrape
+        // hint instead of fabricated audit text. Better to show the data gap
+        // than to ship "Likely…" speculation as a recommendation.
+        const noVis = area.data_status === "no_visibility";
+        const priorityCls = noVis ? "scrape" : (area.fix_priority || "");
+        return `<div class="audit-card${noVis ? " no-visibility" : ""}">
         <div class="au-head">
           <div class="au-name">${esc(area.area_name || "")}</div>
-          ${area.fix_priority ? `<span class="au-priority ${esc(area.fix_priority)}">${esc(area.fix_priority)}</span>` : ""}
+          ${noVis
+            ? `<span class="au-priority scrape">scrape first</span>`
+            : (area.fix_priority ? `<span class="au-priority ${esc(area.fix_priority)}">${esc(area.fix_priority)}</span>` : "")}
         </div>
-        ${area.current_state ? `<div class="au-current"><strong>Current state</strong>${esc(area.current_state)}</div>` : ""}
+        ${noVis
+          ? `<div class="au-no-vis"><strong>No visibility</strong>${esc(area.scrape_hint || "Re-run Pass 0 with a PDF or screenshot of this surface to get an actual audit.")}</div>`
+          : `${area.current_state ? `<div class="au-current"><strong>Current state</strong>${esc(area.current_state)}</div>` : ""}
         <div class="au-split">
           ${area.what_works ? `<div class="au-works"><span class="lbl">What works</span>${esc(area.what_works)}</div>` : ""}
           ${area.what_breaks ? `<div class="au-breaks"><span class="lbl">What breaks</span>${esc(area.what_breaks)}</div>` : ""}
         </div>
-        ${area.recommended_fix ? `<div class="au-fix"><strong>Recommended fix${area.ulwick_anchor_job_id ? `<span class="anchor">· anchor Job ${area.ulwick_anchor_job_id}</span>` : ""}</strong>${esc(area.recommended_fix)}</div>` : ""}
-      </div>`).join("")}
+        ${area.recommended_fix ? `<div class="au-fix"><strong>Recommended fix${area.ulwick_anchor_job_id ? `<span class="anchor">· anchor Job ${area.ulwick_anchor_job_id}</span>` : ""}</strong>${esc(area.recommended_fix)}</div>` : ""}`}
+      </div>`;
+      }).join("")}
     </div>` : ""}
     ${(Object.keys(voice).length || Object.keys(disc).length) ? `<div class="audit-bottom">
       ${Object.keys(voice).length ? `<div class="audit-voice">
@@ -1188,7 +1203,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.7.1";
+export const ENGINE_VERSION = "v1.7.2";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";

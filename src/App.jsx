@@ -405,15 +405,45 @@ export default function App() {
       log("Pass 7/18: personas");
       const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
 
-      setStratDocPhase("Pass 5: value-prop comparison…");
+      setStratDocPhase("Pass 5: value-prop comparison (auto-discovering competitors)…");
       log("Pass 5/18: competitor value-prop comparison");
-      // Pull competitor names from positioningHints / context if available; else skip
-      const competitors = (projectContext?.key_facts || []).filter(f => /competitor|vs\s/i.test(f)).slice(0, 4).map(name => ({ name, stated_value_prop: "", source_url: "" }));
+      // v1.7.2 · Pass 5 now ALWAYS runs · "every company has competitors."
+      // Competitor list resolved in this priority order:
+      //   1. Ad-Intel Stage A output (if user ran 🎯 Run Ad-Intel earlier)
+      //   2. key_facts regex match (legacy v1.6.x behavior)
+      //   3. Pass 5 internal web_search discovery (new in v1.7.2)
+      let competitors = [];
+      if (adIntelData?.competitors?.length) {
+        competitors = adIntelData.competitors.slice(0, 6).map(c => ({
+          name: c.brand_name || c.name || "",
+          stated_value_prop: c.evidence || "",
+          source_url: c.page_url || c.meta_page_url || "",
+        })).filter(c => c.name);
+        log(`Pass 5 · seeded ${competitors.length} competitors from Ad-Intel Stage A`, "ok");
+      }
+      if (!competitors.length) {
+        competitors = (projectContext?.key_facts || [])
+          .filter(f => /competitor|vs\s/i.test(f))
+          .slice(0, 4)
+          .map(name => ({ name, stated_value_prop: "", source_url: "" }));
+        if (competitors.length) log(`Pass 5 · seeded ${competitors.length} competitors from Pass 0 key_facts (regex match)`);
+      }
+      // Pass empty competitors[] when both sources are dry · Pass 5 will
+      // run its own web_search Phase A to discover them. No more silent
+      // section drop.
       let valueProp = { comparisons: [] };
-      if (competitors.length && positioningSpine?.primary?.sentence) {
+      if (positioningSpine?.primary?.sentence) {
         try {
           const scoredOutcomes = data.flatMap(j => (j.outcomes || []).map(o => ({ job_id: j.id, statement: o.statement, opportunity_score: o.opportunity_score })));
-          valueProp = await comparePositioning(config.anthropicKey, projectContext?.sector || "the brand", positioningSpine.primary.sentence, competitors, scoredOutcomes);
+          valueProp = await comparePositioning(
+            config.anthropicKey,
+            activeProject?.name || projectContext?.sector || "the brand",
+            positioningSpine.primary.sentence,
+            competitors,
+            scoredOutcomes,
+            projectContext,
+          );
+          log(`Pass 5 · ${(valueProp?.comparisons || []).length} comparisons returned${competitors.length === 0 ? " (via web_search discovery)" : ""}`, "ok");
         } catch (e) { log(`Pass 5 skipped (non-critical): ${e.message}`, "error"); }
       }
 
@@ -540,7 +570,10 @@ export default function App() {
 
       setStratDocPhase("Composing HTML doc…");
       const html = composeStrategyDoc({
-        project_name: activeProject?.name || projectContext?.sector || sector,
+        // v1.7.2 · Use the project name the user typed at Setup as the brand
+        // name. Never fall back to the sector field (which is a verbose
+        // descriptor, not a brand). If both are missing → "Untitled Brand".
+        project_name: (activeProject?.name && activeProject.name.trim()) || "Untitled Brand",
         project_context: projectContext,
         positioning: positioningSpine,
         personas,
