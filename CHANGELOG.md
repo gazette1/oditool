@@ -6,6 +6,91 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.5] — 2026-05-21
+
+**LI-Intel CLI sub-pipeline** · LinkedIn engagement scraping vendored from the user's `Marketing Bot/files/` folder into `engine/li-intel/`. This is the B2B-shaped mirror of the existing DTC-shaped `engine/ad-intel/` pipeline: where Ad-Intel scrapes Meta competitor ads, LI-Intel scrapes engagement signal from monitored LinkedIn profiles (who reacts, who comments, what their job title is, how senior they are).
+
+### Added · `engine/li-intel/` (NEW directory · 5 files + scoped package.json)
+
+```
+engine/li-intel/
+├── package.json                ← scoped {"type":"commonjs"} override
+├── run-all.js                  ← orchestrator (Part 1 → Part 2+3)
+├── scrape-posts.js             ← Part 1 · profiles → posts (Apify supreme_coder~linkedin-post)
+├── scrape-engagers.js          ← Part 2+3 · posts → engagers → enriched profiles
+│                                 (Apify harvestapi~reactions + ~comments + apimaestro~profile-detail)
+└── lib/
+    ├── airtable.js             ← Airtable client wrapper · withRetry / dedupe / per-run id caches
+    └── apify.js                ← Apify run-sync-get-dataset-items thin wrapper
+```
+
+Files vendored from `C:\Users\harri\Documents\Marketing Bot\files\` (the user's source folder). Two adjustments made during vendoring:
+
+1. **dotenv path** — original assumed `.env` at sibling-project root; adjusted to point at engine's repo-root `.env.local` (3 levels up from `lib/`)
+2. **Table-name env vars** — added `LI_` prefix (`AIRTABLE_TABLE_LI_PROFILES` instead of just `_PROFILES`) to avoid namespace collision with engine's existing 17-table schema
+
+### Added · 4 new Airtable tables (table count 17 → 21)
+
+| # | Table | Purpose |
+|---|---|---|
+| 18 | `LI Profiles` | Monitored LinkedIn profiles · `Enabled` checkbox gates which get scraped |
+| 19 | `LI Posts` | Posts pulled from each profile · `Status` enum drives downstream flow (`PENDING` → `PROCESSING` → `PROCESSED - 1`) |
+| 20 | `LI Engagers` | Enriched person-level records · 19 fields incl. `Lead Score` formula (🔥 Hot / 🌡 Warm / ❄️ Cold) |
+| 21 | `LI Engagements` | M:M join · one row per (engager, post) pair · denormalized URL fields for cheap dedup |
+
+Full schema (field-by-field types + the Hot/Warm/Cold Lead Score formula) at `docs/AIRTABLE_LI_SETUP.md` in repo. Mirror documented in vault at `08 - Airtable Data Layer.md` (table 18-21 row entries).
+
+### Added · `dotenv@^16.4.7` dep + 3 npm scripts
+
+```json
+{
+  "li-intel": "node engine/li-intel/run-all.js",
+  "li-intel:posts": "node engine/li-intel/scrape-posts.js",
+  "li-intel:engagers": "node engine/li-intel/scrape-engagers.js"
+}
+```
+
+### Added · `.env.local` placeholders
+
+New section in `.env.local` for `APIFY_TOKEN` + Airtable creds + table-name overrides. APIFY_TOKEN is empty until user pastes their Apify token from apify.com/account.
+
+> [!warning] Pipeline will exit 1 on first run until APIFY_TOKEN is provided. This is intentional — fail-fast on missing creds is safer than silent partial-runs.
+
+### Documentation
+
+- New vault page: `08b - LI-Intel Module.md` · full module reference · pipeline shape mermaid diagram · how to run · cron pattern · v1.8 integration roadmap
+- Updated vault page: `07 - Airtable Data Layer.md` · table count 17 → 21 · cross-links to 08b and the new repo docs
+- Updated vault page: `12 - Codebase Map.md` · new `engine/li-intel/` subtree in the repo tree
+- Updated vault page: `13 - Roadmap & Backlog.md` · v1.8 LI-Intel wire-in item added to the b2b_saas Phase 2 table · v1.7 backlog item "Print stylesheet" struck through (shipped v1.7.4)
+- New repo doc: `docs/AIRTABLE_LI_SETUP.md` · field-by-field schema reference for the 4 LI tables
+
+### Why this matters strategically
+
+The engine has been DTC-shaped to date. LinkedIn engagement scraping is the B2B-shaped mirror — and it unlocks:
+
+- **Pass D · archetype classification** gets a hard B2B signal: "this brand has a monitored LI profile feeding engagers" → strongly suggests `b2b_saas` or `b2b_services`
+- **Pass 7 · ICP profiles** can ground itself in real headlines / companies / titles instead of inferring from sector strings
+- **Pass 18 · Tribe Readout** becomes a B2B-flavored "who specifically engaged this month" instead of hypothetical creator archetypes
+- **Phase 2 (b2b_saas)** gains real prospecting data instead of synthetic personas
+
+### v1.7.5 status: CLI shipped · React wire-in is v1.8 work
+
+v1.7.5 ships the CLI **only**. Strategy docs generated today don't read LI tables. Wire-in is scoped for v1.8 alongside b2b_saas Phase 2 — that's when Pass 7b/18b consume engagers as ICP signal and Pass 19 cold-email sequences use engager `Engagement Value` quotes as personalization hooks.
+
+### Bundle
+
+React bundle unchanged (492.80 KB / 141.06 KB gzip) · LI-Intel is server-side only · doesn't touch the browser.
+
+### Smoke tests verified
+
+- `node --check` syntax-clean on all 5 scripts
+- `node -e "require('./engine/li-intel/lib/airtable.js')"` exports `base, TABLES, findByField, findEnabledProfiles, findPostsByStatus, createRecord, updateRecord, resolveRecordId, getRecordById, withRetry, escapeFormula`
+- `node -e "require('./engine/li-intel/lib/apify.js')"` exports `runActor`
+- `npm install` adds `dotenv@16.6.1` cleanly
+- `npm run build` produces identical output (LI-Intel scripts aren't bundled into the browser)
+
+---
+
 ## [1.7.4] — 2026-05-17
 
 **Pass 8.7 · Ad Deep Dive (Phase A MVP) + whole-doc print stylesheet.** Closes the user's "analyze frame-by-frame → reverse-engineer why it blew up → build storyboard → design scene mockups, animation timing, voiceover, audio cues → production-ready PDF" ask at ~70% capability without video ingestion (which is Phase B / v1.7.5).

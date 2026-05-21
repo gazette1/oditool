@@ -1,0 +1,12 @@
+{
+  "name": "li-intel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Engine v1.7.5 · LinkedIn engagement scraping pipeline (Apify-backed · Airtable-persisted). Sub-pipeline of the broader ad-intel/li-intel intelligence layer. Source files use CommonJS; root package.json is ESM, so this scoped package.json overrides the module system for everything under engine/li-intel/.",
+  "scripts": {
+    "posts": "node scrape-posts.js",
+    "engagers": "node scrape-engagers.js",
+    "all": "node run-all.js"
+  }
+}

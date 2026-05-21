@@ -6,10 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "li-intel": "node engine/li-intel/run-all.js",
+    "li-intel:posts": "node engine/li-intel/scrape-posts.js",
+    "li-intel:engagers": "node engine/li-intel/scrape-engagers.js"
   },
   "dependencies": {
     "airtable": "^0.12.2",
+    "dotenv": "^16.4.7",
     "mammoth": "^1.12.0",
     "pdfjs-dist": "^5.7.284",
     "react": "^18.3.1",
