@@ -6,6 +6,46 @@ the output template version is independent of the React app version.
 
 ---
 
+## [Unreleased · v1.7.6 scope cut] — 2026-05-21
+
+**Cold-email drafting removed from v1.8 b2b_saas Phase 2 scope.** Doc-only change · no code changed.
+
+The original v1.8 plan included a `P_cold_email` pass that would draft 5-7 step outbound sequences and a `Pass 19 · Cold Email Sequences` LI-Intel wire-in that would personalize each step using the engager's `Engagement Value` quote. **Both are dropped.**
+
+### Rationale
+
+The engine's job is **strategic positioning + creative direction**. Cold-email sequence drafting belongs in dedicated outbound tools (Lemlist, Smartlead, Instantly, Apollo) that already handle:
+- Per-step delivery scheduling + send windows
+- Reply detection + auto-pause
+- Inbox warmup + deliverability
+- A/B test mechanics on subject lines
+- Unsubscribe + suppression list management
+
+What the engine still provides for outbound:
+1. **Pass L surfaces vault playbooks** about cold-email strategy when `b2b_saas.library_priors.priority_themes` includes `Cold Email Outreach` — these are reference reading, not draft sequences
+2. **Pass 18b LI Tribe Readout** (v1.8) delivers the engager data + verbatim `Engagement Value` quotes ready to lift into outreach written **outside** the engine
+
+### Files updated (doc-only · no code)
+
+- `<vault>/13 - Roadmap & Backlog.md` · `P_cold_email` row struck through in the v1.8 b2b_saas table · LI-Intel wire-in row no longer references Pass 19
+- `<vault>/08b - LI-Intel Module.md` · Pass 19 row removed from v1.8 integration table · new explicit "out of scope" callout
+- `<vault>/16 - Business Model Archetypes.md` · b2b_saas doc roster strips "cold-email sequences" · Phase 2 pass-list strikes through `P_cold_email` with rationale link
+
+### Files explicitly NOT changed
+
+- `src/lib/business-models.js` · `b2b_saas.library_priors.priority_themes` still includes `Cold Email Outreach` — this surfaces vault PLAYBOOKS about cold-email *strategy* (reference reading) via Pass L, which is value-add. Different from drafting sequences.
+- Historical CHANGELOG entries (v1.7.5, v1.7.0) · they accurately describe what was planned at release time · don't rewrite history.
+
+### Net impact on v1.8
+
+| Before | After |
+|---|---|
+| 9 planned passes (P7_icp_b2b, P_buying_committee, P_cold_email, P_abm, P_demand_gen, P_sales_enablement, P_pricing_position, P_partnerships, P_nurture) | 8 planned passes (P_cold_email dropped) |
+| LI-Intel wire-in: Pass 7b + 18b + 19 | LI-Intel wire-in: Pass 7b + 18b |
+| Scope estimate: medium-large | Scope estimate: medium |
+
+---
+
 ## [1.7.5] — 2026-05-21
 
 **LI-Intel CLI sub-pipeline** · LinkedIn engagement scraping vendored from the user's `Marketing Bot/files/` folder into `engine/li-intel/`. This is the B2B-shaped mirror of the existing DTC-shaped `engine/ad-intel/` pipeline: where Ad-Intel scrapes Meta competitor ads, LI-Intel scrapes engagement signal from monitored LinkedIn profiles (who reacts, who comments, what their job title is, how senior they are).
