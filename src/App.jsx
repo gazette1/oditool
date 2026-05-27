@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
 import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations, generateAdDeepDive } from "./lib/anthropic";
+// v1.8.0 · Hormozi core passes (Pass O / M / G) · spec at <vault>/19 - Hormozi Core Architecture
+import { generateGrandSlamOffer, generateMoneyModel, generateLeadModel } from "./lib/hormozi-core";
 import { resolveBusinessModel } from "./lib/business-models";
 import { loadCachedIndex } from "./lib/library-reader";
 import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
@@ -479,6 +481,73 @@ export default function App() {
       const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
       persist("personas", personas);
 
+      // ─────────────────────────────────────────────────────────────
+      // v1.8.0 / v2.0-alpha · HORMOZI CORE PASSES · 3 new universal
+      // core passes that produce §01 The Offer · §02 The Money Model
+      // · §03 The Lead Model at the top of every strategy doc.
+      // Spec: <vault>/19 - Hormozi Core Architecture.
+      // Pass O is sequenced before M and G because both M and G
+      // consume the Grand Slam Offer as context (the money model
+      // stacks AROUND the offer, the lead model DELIVERS to the offer).
+      // ─────────────────────────────────────────────────────────────
+
+      const hormoziSharedCtx = {
+        projectContext,
+        diagnostic,
+        positioning: positioningSpine,
+        personas,
+        mergedJobs: data,
+        brandName: activeProject?.name || projectContext?.sector,
+      };
+
+      setStratDocPhase("Pass O: Grand Slam Offer (Value Equation + 5 enhancement layers)…");
+      log("Pass O · Hormozi $100M Offers · constructing Grand Slam Offer for §01");
+      let offerResult = { offer: null };
+      try {
+        offerResult = await generateGrandSlamOffer(config.anthropicKey, hormoziSharedCtx);
+        if (offerResult?.offer) {
+          log(`Pass O · offer "${offerResult.offer.name}" · Value Equation verdict: ${offerResult.offer.value_equation?.verdict} · weakest lever: ${offerResult.offer.value_equation?.weakest_lever}`, "ok");
+        } else {
+          log(`Pass O · ${offerResult?.note || "no offer returned"}`, "warn");
+        }
+      } catch (e) { log(`Pass O skipped: ${e.message}`, "warn"); }
+      persist("hormozi_offer", offerResult);
+
+      setStratDocPhase("Pass M: Money Model (stacking 2-4 of the 16 offer types + CFA economics)…");
+      log("Pass M · Hormozi $100M Money Models · stacking customer journey for §02");
+      let moneyModelResult = { money_model: null };
+      try {
+        moneyModelResult = await generateMoneyModel(config.anthropicKey, {
+          ...hormoziSharedCtx,
+          offer: offerResult?.offer,
+        });
+        if (moneyModelResult?.money_model) {
+          const stackSize = moneyModelResult.money_model.stack?.length || 0;
+          log(`Pass M · ${moneyModelResult.money_model.archetype} · ${stackSize} offers in stack · CFA: ${moneyModelResult.money_model.cfa_analysis?.cfa_status}`, "ok");
+        } else {
+          log(`Pass M · ${moneyModelResult?.note || "no money_model returned"}`, "warn");
+        }
+      } catch (e) { log(`Pass M skipped: ${e.message}`, "warn"); }
+      persist("hormozi_money_model", moneyModelResult);
+
+      setStratDocPhase("Pass G: Lead Model (Core Four + Lead Getters + Lead Magnets)…");
+      log("Pass G · Hormozi $100M Leads · designing acquisition machine for §03");
+      let leadModelResult = { lead_model: null };
+      try {
+        leadModelResult = await generateLeadModel(config.anthropicKey, {
+          ...hormoziSharedCtx,
+          offer: offerResult?.offer,
+        });
+        if (leadModelResult?.lead_model) {
+          const channelCount = leadModelResult.lead_model.core_four_selection?.length || 0;
+          const magnetCount = leadModelResult.lead_model.lead_magnets?.length || 0;
+          log(`Pass G · ${leadModelResult.lead_model.archetype} · ${channelCount} Core-Four channels · ${magnetCount} lead magnets`, "ok");
+        } else {
+          log(`Pass G · ${leadModelResult?.note || "no lead_model returned"}`, "warn");
+        }
+      } catch (e) { log(`Pass G skipped: ${e.message}`, "warn"); }
+      persist("hormozi_lead_model", leadModelResult);
+
       setStratDocPhase("Pass 5: value-prop comparison (auto-discovering competitors)…");
       log("Pass 5/18: competitor value-prop comparison");
       // v1.7.2 · Pass 5 now ALWAYS runs · "every company has competitors."
@@ -756,6 +825,10 @@ export default function App() {
         appliedPlaybooks: pl,
         adRecreations,
         adDeepDive,
+        // v1.8.0 · Hormozi Core · 3 new universal top-of-doc sections
+        hormoziOffer: offerResult,
+        hormoziMoneyModel: moneyModelResult,
+        hormoziLeadModel: leadModelResult,
       };
       persist("_full_payload", payload);
       setHasCachedRun(true);   // surfaces Resume button immediately

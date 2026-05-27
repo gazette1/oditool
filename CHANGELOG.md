@@ -6,6 +6,112 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.8.0] — 2026-05-27 · v2.0-alpha · HORMOZI CORE PHASE A SHIPPED
+
+**Three new universal core passes** that produce three new top-of-doc sections (§01 The Offer · §02 The Money Model · §03 The Lead Model) on every strategy doc, regardless of business archetype. This is Phase A of the v2.0 pivot from architectural spec [[19 - Hormozi Core Architecture]].
+
+### Added · `src/lib/hormozi-core.js` (NEW · 538 lines)
+
+Three new pass functions grounded in verbatim Hormozi framework text (mirror of the `PM101_DEFINITIONS` pattern):
+
+| Pass | Function | Output | Schema |
+|---|---|---|---|
+| **Pass O** | `generateGrandSlamOffer` | §01 The Offer | Value Equation breakdown (Dream × Likelihood / Time × Effort) + verdict (infinite/strong/moderate/weak) + weakest_lever identification + 5 enhancement layers (Scarcity / Urgency / Bonuses / Guarantees / Naming MAGIC formula) + Starving Crowd 4-indicator check (Massive Pain / Purchasing Power / Easy to Target / Growing) |
+| **Pass M** | `generateMoneyModel` | §02 The Money Model | Money model archetype (Attraction/Upsell/Downsell/Continuity/Hybrid-led) + 2-4 offer stack from the 16 Hormozi offer types + CFA economics (CAC target · first-offer revenue · cumulative LTV · LTV:CAC ratio · cfa_status verdict + next lever to pull) |
+| **Pass G** | `generateLeadModel` | §03 The Lead Model | Lead model archetype (Warm-Outreach / Content / Cold-Outreach / Paid / Hybrid-led) + 1-2 Core Four primary channels with first-30-days moves + 0-2 Lead Getters with stage-gate activation + 1-3 Lead Magnets (3 types × 4 formats = 12 variants per Hormozi) |
+
+**`HORMOZI_DEFINITIONS` constant** (~3500 tokens) embedded in each pass's system prompt · contains the canonical framework text from all 3 books · same pattern as `PM101_DEFINITIONS`:
+
+- Book 1 ($100M Offers) · Value Equation (ch 6) + Starving Crowd 4 indicators (ch 4) + 5 enhancement layers (ch 11-16)
+- Book 2 ($100M Leads) · Core Four 2×2 (Section III) + 4 Lead Getters (Section IV) + 3 Lead Magnet types × 4 formats
+- Book 3 ($100M Money Models) · 16 offer types across 4 categories + CFA principle + Money Model stacking rules
+
+**Anchoring rule** (carried from Pass L · Pass 8.6 · Pass 8.7 · Pass D): every output MUST anchor to a real Pass 7 persona name AND a real Pass 2 Ulwick outcome. One retry on anchor failure. Outcomes-list pre-sorted by opportunity_score so high-opp outcomes are surfaced first.
+
+**Pass O feeds Pass M and Pass G:** Pass M stacks AROUND the Grand Slam Offer (offer is usually stack[0]). Pass G's Lead Model DELIVERS prospects to the Grand Slam Offer. So Pass O runs first, then M and G consume Pass O's output as additional context.
+
+### Added · Pass D 3 new classification axes (in `anthropic.js`)
+
+Pass D now classifies projects across **8 axes** (was 4 + awareness):
+
+- (existing) business_model · market_maturity · market_sophistication · emotional_journey · awareness_distribution · recommended_archetype
+- **NEW: `money_model_archetype`** (Attraction-led / Upsell-led / Downsell-led / Continuity-led / Hybrid + rationale + signal)
+- **NEW: `lead_model_archetype`** (Warm-Outreach-led / Content-led / Cold-Outreach-led / Paid-led / Hybrid + rationale + signal)
+- **NEW: `starving_crowd_strength`** (starving / hungry / fed / sated + 4-indicator breakdown + rationale per $100M Offers ch 4)
+
+### Added · 3 stub renderers in `compose-strategy.js`
+
+- `renderHormoziOffer` · §01 · 4-tile Value Equation grid (Dream + Likelihood ↑ · Time + Effort ↓) + verdict callout + weakest-lever-with-unlock + Scarcity/Urgency/Guarantee/Naming row + Bonuses anchored-value list + Starving Crowd 4-indicator strip + anchor footer
+- `renderHormoziMoneyModel` · §02 · stacked offer cards with big serif position numbers + category chip + economics tile (price · take rate · margin) + first-test + CFA panel (CAC target · LTV · ratio · status · lever to pull)
+- `renderHormoziLeadModel` · §03 · 3-block layout: Core Four section + Lead Getters section + Lead Magnets grid · each magnet card has type+format chips + title + promise + delivery + narrow-problem-solved + first-test
+
+Phase A stubs are FUNCTIONAL not POLISHED. Phase B (next ship · ~3-4 days) replaces these with branded design — Value Equation visualization, money-flow diagram, Core Four 2×2 matrix. The data structure is locked in this release.
+
+### Updated · `business-models.js` doc_sections
+
+- `DTC_DOC_SECTIONS` gains `offer`, `money_model`, `lead_model` between `strategic_context` and `positioning` (21 → 24 sections)
+- `LOCAL_SERVICES_DOC_SECTIONS` gains the same 3 (24 → 27 sections)
+- All existing sections shift down by 3 in their § number display
+
+### Updated · `App.jsx` generateStrategyDoc wire-in
+
+Pass O / M / G fire immediately after Pass 7 (personas) and before Pass 5 (value-prop). Each output piped through `persist()` so v1.7.8's localStorage cache + Resume button still works for crashes. Three new log lines:
+
+```
+Pass O · Hormozi $100M Offers · constructing Grand Slam Offer for §01
+  → Pass O · offer "Soft Touch Founder POV" · Value Equation verdict: strong · weakest lever: time_delay
+Pass M · Hormozi $100M Money Models · stacking customer journey for §02
+  → Pass M · Attraction-led · 3 offers in stack · CFA: client-funded
+Pass G · Hormozi $100M Leads · designing acquisition machine for §03
+  → Pass G · Content-led · 2 Core-Four channels · 2 lead magnets
+```
+
+### Cost + time impact
+
+- Pass O: ~$0.10 · ~30s
+- Pass M: ~$0.15 · ~45s
+- Pass G: ~$0.15 · ~45s
+- **Combined: ~$0.40 per project · ~2 minutes added to wall time**
+
+Total project cost moves from ~$1.50 to ~$1.90.
+
+### ENGINE_VERSION bumped v1.7.8 → v1.8.0
+
+This is the v2.0-alpha milestone (we ship v2.0 GA only after Phase B/C/D land).
+
+Bundle 544.31 KB / 155.51 KB gzip (+46 KB from HORMOZI_DEFINITIONS + 3 system prompts + 3 stub renderers). Vite warns chunk > 500 KB — acceptable single-bundle trade-off for the new core.
+
+### What's next · Phase B (~3-4 days)
+
+Replace the 3 stub renderers with polished branded design:
+
+- §01 Value Equation visualization (animated SVG?) with the 4 levers as scales
+- §02 Money flow diagram showing customer journey through offer stack with $ flow
+- §03 Core Four 2×2 matrix as the primary visual + Lead Magnet cards rotating
+
+### What's deferred · Phase C (~1-2 weeks · v2.0-rc)
+
+Universal 24-section roster migration · all 11 archetypes collapse to one doc roster · per-archetype variants captured as renderer config flags. local_services Phase 2 dedicated passes (P10_sms etc.) become VARIANTS within universal renderers.
+
+### What's deferred · Phase D (~1 week · v2.0 GA)
+
+Cialdini Phase 1 integration INTO Pass O + Pass M · b2b_saas re-enabled · all 11 archetypes ship simultaneously.
+
+### Acceptance criteria
+
+1. ✅ `generateGrandSlamOffer` produces Value Equation + 5 enhancements + Starving Crowd check · anchored
+2. ✅ `generateMoneyModel` produces 2-4 stack from the 16 offer types + CFA economics · anchored
+3. ✅ `generateLeadModel` produces 1-2 Core Four selection + 0-2 Lead Getters + 1-3 Lead Magnets · anchored
+4. ✅ Pass D gains money_model_archetype + lead_model_archetype + starving_crowd_strength axes
+5. ✅ §01 / §02 / §03 render between §00 and §04 in every strategy doc
+6. ✅ Pass O output feeds Pass M and Pass G (so all three are coherent)
+7. ✅ Outputs persist via v1.7.8 cache system · Resume button recovers them on crash
+8. ✅ DTC backward-compat: existing DTC projects render with the 3 new sections at top · no regression in §04-§23
+9. ✅ local_services projects (v1.7.6 partial-support) get the 3 new sections + still 5 pending sections drop silently
+10. ✅ Build clean · bundle within reason (544 KB / 155 KB gzip)
+
+---
+
 ## [Unreleased · v2.0 planning] — 2026-05-27 · MAJOR ARCHITECTURAL PIVOT
 
 **The Hormozi trilogy becomes the engine's universal core.** Doc-only · no code changed tonight · full architectural spec captured for v2.0 implementation.

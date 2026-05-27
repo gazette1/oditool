@@ -28,10 +28,14 @@ const DTC_PASS_PLAN = [
 
 const DTC_DOC_SECTIONS = [
   "strategic_context",       // §00 (v1.7.0)
-  "positioning",             // §01
-  "evidence",                // §02
-  "value_prop",              // §03
-  "personas",                // §04
+  // v1.8.0 · Hormozi Core · 3 new universal top-of-doc sections
+  "offer",                   // §01 NEW · Pass O Grand Slam Offer + Value Equation
+  "money_model",             // §02 NEW · Pass M 16-offer-type customer journey + CFA
+  "lead_model",              // §03 NEW · Pass G Core Four + Lead Getters + Lead Magnets
+  "positioning",             // §04 (was §01)
+  "evidence",                // §05 (was §02)
+  "value_prop",              // §06 (was §03)
+  "personas",                // §07 (was §04)
   "swipe_file",              // §05
   "ad_recreations",          // §06 (v1.7.3)
   "ad_deep_dive",            // §07 NEW v1.7.4 · single-ad storyboard + production brief
@@ -92,7 +96,11 @@ const LOCAL_SERVICES_PASS_PLAN = [
 
 const LOCAL_SERVICES_DOC_SECTIONS = [
   "strategic_context",       // §00 · universal (Pass D)
-  "positioning",             // §01 · universal
+  // v1.8.0 · Hormozi Core · 3 new universal top-of-doc sections
+  "offer",                   // §01 NEW · Grand Slam Offer
+  "money_model",             // §02 NEW · 16-type customer journey + CFA
+  "lead_model",              // §03 NEW · Core Four + Lead Getters
+  "positioning",             // §04 · universal
   "evidence",                // §02 · universal (JTBD outcomes)
   "value_prop",              // §03 · universal (supply 1-800-GOT-JUNK / category leader as competitor)
   "personas",                // §04 · local_personas variant (P7_local) when renderer ships

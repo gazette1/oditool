@@ -1385,6 +1385,190 @@ function renderColophon(p, n, total) {
 </section>`;
 }
 
+// ─────────────────────────────────────────────────────────────
+// v1.8.0 · HORMOZI CORE RENDERERS (Phase A · MINIMAL STUB)
+// §01 The Offer · §02 The Money Model · §03 The Lead Model
+//
+// Phase A ships stub renderers that surface the data structurally
+// but don't have the polished design of Phase B. Each stub is
+// functional · readable · prints reasonably under @media print.
+// Phase B (next ship · ~3-4 days) replaces these with branded
+// renderers featuring Value Equation visualization, money-flow
+// diagram, Core Four 2×2 matrix, etc.
+// ─────────────────────────────────────────────────────────────
+
+function renderHormoziOffer(p, n, total) {
+  const off = p.hormoziOffer?.offer;
+  if (!off) return "";
+  const ve = off.value_equation || {};
+  const enh = off.enhancements || {};
+  const sc = off.starving_crowd_check || {};
+  return `<section class="section" id="offer">
+  <div class="container">
+    ${sectionTag("The Offer · Grand Slam", n, total)}
+    <h2 class="display-lg" style="margin-bottom:16px">${esc(off.name || "Grand Slam Offer")}.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-primary);font-style:italic;font-family:'Cormorant Garamond',serif;margin-bottom:32px">${escEm(off.one_line_pitch || "")}</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px">
+      <div style="padding:18px 22px;background:rgba(56,102,65,0.08);border-left:3px solid var(--moss-deep);border-radius:0 8px 8px 0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:8px">↑ Dream Outcome (maximize)</div>
+        <div style="font-size:14px;line-height:1.6">${esc(ve.dream_outcome || "")}</div>
+      </div>
+      <div style="padding:18px 22px;background:rgba(56,102,65,0.08);border-left:3px solid var(--moss-deep);border-radius:0 8px 8px 0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:8px">↑ Perceived Likelihood (maximize)</div>
+        <div style="font-size:14px;line-height:1.6">${esc(ve.perceived_likelihood || "")}</div>
+      </div>
+      <div style="padding:18px 22px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 8px 8px 0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin-bottom:8px">↓ Time Delay (minimize → 0)</div>
+        <div style="font-size:14px;line-height:1.6">${esc(ve.time_delay || "")}</div>
+      </div>
+      <div style="padding:18px 22px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 8px 8px 0">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin-bottom:8px">↓ Effort &amp; Sacrifice (minimize → 0)</div>
+        <div style="font-size:14px;line-height:1.6">${esc(ve.effort_sacrifice || "")}</div>
+      </div>
+    </div>
+
+    <div style="padding:18px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-radius:10px;margin-bottom:20px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:6px">Value Equation Verdict · ${esc(ve.verdict || "?")}</div>
+      <div style="font-size:13.5px;line-height:1.65;color:var(--ink-primary)">${esc(ve.rationale || "")}</div>
+      ${ve.biggest_unlock ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(106,153,78,0.3);font-size:13px;line-height:1.55"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;color:var(--moss-mid)">Biggest unlock · weakest lever: ${esc(ve.weakest_lever || "?")}</strong><div style="margin-top:4px">${esc(ve.biggest_unlock)}</div></div>` : ""}
+    </div>
+
+    <div class="ar-prompt-block" style="margin-bottom:20px">
+      <div class="lbl">Enhancement layers · per $100M Offers ch 11-16</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px">
+        ${enh.scarcity ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Scarcity · ${esc(enh.scarcity.type || "")}</strong><div style="font-size:12px;line-height:1.5;margin-top:3px">${esc(enh.scarcity.spec || "")}</div></div>` : ""}
+        ${enh.urgency ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Urgency · ${esc(enh.urgency.mechanism || "")}</strong><div style="font-size:12px;line-height:1.5;margin-top:3px">${esc(enh.urgency.spec || "")}</div></div>` : ""}
+        ${enh.guarantee ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Guarantee · ${esc(enh.guarantee.type || "")}</strong><div style="font-size:12px;line-height:1.5;margin-top:3px">${esc(enh.guarantee.terms || "")}</div></div>` : ""}
+        ${enh.naming?.final_offer_name ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Named · MAGIC</strong><div style="font-size:12px;line-height:1.5;margin-top:3px;font-family:'DM Serif Display',serif;font-size:14px">${esc(enh.naming.final_offer_name)}</div></div>` : ""}
+      </div>
+      ${(enh.bonuses || []).length ? `<div style="margin-top:14px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid);display:block;margin-bottom:6px">Bonuses · each removes an objection</strong>${enh.bonuses.map(b => `<div style="padding:6px 0;border-bottom:1px solid rgba(106,153,78,0.15);font-size:12.5px"><strong>${esc(b.name || "")}</strong> ${b.anchored_value_usd ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--moss-mid)">${esc(b.anchored_value_usd)}</span>` : ""} · removes <em>${esc(b.removes_objection || "")}</em></div>`).join("")}</div>` : ""}
+    </div>
+
+    <div style="padding:14px 18px;background:var(--bg-warm);border-radius:7px;margin-bottom:20px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:8px">Starving Crowd check · per $100M Offers ch 4</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;font-size:12px;line-height:1.55">
+        <div><strong>Pain</strong><br>${esc(sc.massive_pain || "?")}</div>
+        <div><strong>Power</strong><br>${esc(sc.purchasing_power || "?")}</div>
+        <div><strong>Target</strong><br>${esc(sc.easy_to_target || "?")}</div>
+        <div><strong>Growth</strong><br>${esc(sc.growing || "?")}</div>
+      </div>
+      <div style="margin-top:10px;font-size:13px;font-family:'DM Serif Display',serif">Verdict: <span style="color:${sc.verdict === "starving" ? "var(--moss-deep)" : sc.verdict === "sated" ? "var(--brick)" : "var(--ink-secondary)"}">${esc(sc.verdict || "?")}</span></div>
+    </div>
+
+    <div style="font-size:11px;color:var(--ink-muted);font-family:'IBM Plex Mono',monospace">
+      Anchored to ${esc(off.persona_anchor || "?")} · outcome: ${esc(off.outcome_anchor || "?")}
+    </div>
+  </div>
+</section>`;
+}
+
+function renderHormoziMoneyModel(p, n, total) {
+  const mm = p.hormoziMoneyModel?.money_model;
+  if (!mm) return "";
+  const cfa = mm.cfa_analysis || {};
+  return `<section class="section" id="money-model">
+  <div class="container">
+    ${sectionTag("The Money Model", n, total)}
+    <h2 class="display-lg" style="margin-bottom:8px">${esc(mm.archetype || "Money Model")}.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">${esc(mm.summary || "")}</p>
+
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+      ${(mm.stack || []).map((s, i) => `<div style="display:grid;grid-template-columns:60px 1fr;gap:18px;padding:20px 22px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:10px">
+        <div style="font-family:'DM Serif Display',serif;font-size:42px;color:var(--moss-mid);line-height:1">${String(s.position || i+1).padStart(2,"0")}</div>
+        <div>
+          <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);background:rgba(56,102,65,0.1);padding:3px 9px;border-radius:4px">${esc(s.category || "")}</span>
+            <span style="font-family:'DM Serif Display',serif;font-size:17px">${esc(s.type || "")}</span>
+          </div>
+          <div style="font-size:13.5px;line-height:1.6;margin-bottom:10px">${esc(s.specifics || "")}</div>
+          ${s.economics ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;padding:10px 12px;background:var(--bg-warm);border-radius:6px;font-size:12px;line-height:1.5">
+            <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Price</strong><br>${esc(s.economics.price_usd || "?")}</div>
+            <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Take rate</strong><br>${esc(s.economics.expected_take_rate || "?")}</div>
+            <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Margin</strong><br>${esc(s.economics.margin_pct || "?")}</div>
+          </div>` : ""}
+          ${s.first_test ? `<div style="margin-top:8px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12.5px;color:var(--ink-secondary)">First test: ${esc(s.first_test)}</div>` : ""}
+          ${s.target_persona ? `<div style="margin-top:6px;font-size:11px;color:var(--ink-muted);font-family:'IBM Plex Mono',monospace">Anchor: ${esc(s.target_persona)} · ${esc(s.target_outcome || "")}</div>` : ""}
+        </div>
+      </div>`).join("")}
+    </div>
+
+    <div style="padding:18px 24px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-radius:10px;margin-bottom:20px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:10px">CFA · Client-Funded Acquisition · ${esc(cfa.cfa_status || "?")}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;font-size:13px;line-height:1.55">
+        <div><strong>CAC target</strong><br>${esc(cfa.cac_target_usd || "?")}</div>
+        <div><strong>First offer net</strong><br>${esc(cfa.first_offer_revenue_usd || "?")}</div>
+        <div><strong>Cumulative LTV</strong><br>${esc(cfa.cumulative_ltv_usd || "?")}</div>
+        <div><strong>LTV : CAC</strong><br>${esc(cfa.ltv_cac_ratio || "?")}</div>
+      </div>
+      ${cfa.lever_to_pull ? `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(106,153,78,0.3);font-size:13px;line-height:1.6;font-family:'Cormorant Garamond',serif;font-style:italic">Next lever to pull: ${esc(cfa.lever_to_pull)}</div>` : ""}
+    </div>
+
+    <div style="font-size:11px;color:var(--ink-muted);font-family:'IBM Plex Mono',monospace">
+      Anchored to ${esc(mm.persona_anchor || "?")} · outcome: ${esc(mm.outcome_anchor || "?")}
+    </div>
+  </div>
+</section>`;
+}
+
+function renderHormoziLeadModel(p, n, total) {
+  const lm = p.hormoziLeadModel?.lead_model;
+  if (!lm) return "";
+  return `<section class="section" id="lead-model">
+  <div class="container">
+    ${sectionTag("The Lead Model", n, total)}
+    <h2 class="display-lg" style="margin-bottom:8px">${esc(lm.archetype || "Lead Model")}.</h2>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-bottom:24px">${esc(lm.summary || "")}</p>
+
+    <div style="margin-bottom:24px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Core Four · primary channels</div>
+      ${(lm.core_four_selection || []).map(c => `<div style="padding:18px 22px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:10px;margin-bottom:12px">
+        <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:8px;flex-wrap:wrap">
+          <span style="font-family:'DM Serif Display',serif;font-size:18px">${esc(c.type || "")}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);background:var(--bg-warm);padding:3px 9px;border-radius:4px">${esc(c.platform || "")}</span>
+          ${c.budget_or_time_per_week ? `<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-muted)">${esc(c.budget_or_time_per_week)}</span>` : ""}
+        </div>
+        <div style="font-size:13px;line-height:1.6;margin-bottom:10px">${esc(c.rationale || "")}</div>
+        ${(c.first_30_days || []).length ? `<div style="margin-bottom:8px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">First 30 days</strong><ul style="margin:4px 0 0 18px;font-size:12px;line-height:1.55">${c.first_30_days.map(m => `<li>${esc(m)}</li>`).join("")}</ul></div>` : ""}
+        ${c.skill_or_volume_gap ? `<div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12.5px;color:var(--ink-secondary)">Gap to close: ${esc(c.skill_or_volume_gap)}</div>` : ""}
+      </div>`).join("")}
+    </div>
+
+    ${(lm.lead_getters || []).length ? `<div style="margin-bottom:24px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Lead Getters · scale-stage amplifiers</div>
+      ${lm.lead_getters.map(g => `<div style="padding:14px 18px;background:var(--bg-warm);border-radius:7px;margin-bottom:10px;font-size:12.5px;line-height:1.55">
+        <div style="font-family:'DM Serif Display',serif;font-size:15px;margin-bottom:4px">${esc(g.type || "")}</div>
+        <div><strong>Activate</strong>: ${esc(g.when_to_activate || "?")}</div>
+        <div><strong>Comp</strong>: ${esc(g.comp_structure || "?")}</div>
+        <div><strong>KPI</strong>: ${esc(g.first_kpi || "?")}</div>
+        ${g.specifics ? `<div style="margin-top:6px;font-family:'Cormorant Garamond',serif;font-style:italic">${esc(g.specifics)}</div>` : ""}
+      </div>`).join("")}
+    </div>` : ""}
+
+    ${(lm.lead_magnets || []).length ? `<div style="margin-bottom:20px">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Lead Magnets · 3 types × 4 formats</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px">
+        ${lm.lead_magnets.map(m => `<div style="padding:16px 20px;background:linear-gradient(135deg,rgba(56,102,65,0.06),rgba(167,201,87,0.08));border:1px dashed rgba(56,102,65,0.45);border-radius:8px">
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:2px 7px;background:rgba(56,102,65,0.15);color:var(--moss-deep);border-radius:3px">${esc(m.type || "")}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:2px 7px;background:var(--bg-warm);color:var(--ink-secondary);border-radius:3px">${esc(m.format || "")}</span>
+          </div>
+          <div style="font-family:'DM Serif Display',serif;font-size:17px;line-height:1.2;margin-bottom:6px">${esc(m.title || "")}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--ink-secondary);margin-bottom:10px">${esc(m.promise || "")}</div>
+          <div style="font-size:12px;line-height:1.55;margin-bottom:8px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Delivery</strong>: ${esc(m.delivery_mechanism || "")}</div>
+          <div style="font-size:12px;line-height:1.55;margin-bottom:8px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid)">Solves</strong>: ${esc(m.narrow_problem_solved || "")}</div>
+          ${m.first_test ? `<div style="font-size:11.5px;line-height:1.5;color:var(--ink-secondary);padding-top:8px;border-top:1px solid rgba(106,153,78,0.2);font-family:'Cormorant Garamond',serif;font-style:italic">First test: ${esc(m.first_test)}</div>` : ""}
+        </div>`).join("")}
+      </div>
+    </div>` : ""}
+
+    <div style="font-size:11px;color:var(--ink-muted);font-family:'IBM Plex Mono',monospace">
+      Anchored to ${esc(lm.persona_anchor || "?")} · outcome: ${esc(lm.outcome_anchor || "?")}
+    </div>
+  </div>
+</section>`;
+}
+
 // ── §00 Strategic Context (Pass D · v1.7.0) ──
 // Note: signature is (p, totalSections, n) to match buildSectionMap dispatch.
 // Defaults n to 0 because §00 is conventionally rendered as "00 / TOTAL".
@@ -1492,6 +1676,10 @@ function buildSectionMap(payload, totalSections) {
   const t = totalSections;
   return {
     strategic_context: (n) => renderStrategicContext(payload, t, n),
+    // v1.8.0 · Hormozi Core · 3 new universal top-of-doc sections
+    offer:             (n) => renderHormoziOffer(payload, n, t),
+    money_model:       (n) => renderHormoziMoneyModel(payload, n, t),
+    lead_model:        (n) => renderHormoziLeadModel(payload, n, t),
     positioning:       (n) => renderPositioning(payload, n, t),
     evidence:          (n) => renderEvidence(payload, n, t),
     value_prop:        (n) => renderValueProp(payload, n, t),
@@ -1521,7 +1709,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.7.8";
+export const ENGINE_VERSION = "v1.8.0";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -1541,7 +1729,7 @@ export function composeStrategyDoc(payload) {
   <div class="container">
     <a href="#cover" class="wordmark">${esc(project_name.split(/\s/)[0] || "BRAND")}</a>
     <div class="nav-links">
-      <a href="#strategic">Strategic</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#recreations">Recreations</a><a href="#deepdive">Deep Dive</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
+      <a href="#strategic">Strategic</a><a href="#offer">Offer</a><a href="#money-model">Money</a><a href="#lead-model">Leads</a><a href="#position">Position</a><a href="#evidence">Evidence</a><a href="#vp">Value Prop</a><a href="#personas">Personas</a><a href="#swipe">Swipe</a><a href="#recreations">Recreations</a><a href="#deepdive">Deep Dive</a><a href="#scripts">Scripts</a><a href="#email">Email</a><a href="#wedge">Wedge</a><a href="#channels">Channels</a><a href="#matrix">Matrix</a><a href="#landing">Landing</a><a href="#rollout">Rollout</a><a href="#creators">Creators</a><a href="#competitive">Competitive</a><a href="#audit">Audit</a><a href="#demand">Demand</a><a href="#tribe">Tribe</a><a href="#playbooks">Playbooks</a><a href="#method">Method</a>
     </div>
   </div>
 </nav>
@@ -1552,6 +1740,9 @@ ${(() => {
   // Falls back to a default order if no diagnostic is present (preserves
   // v1.6.x behavior for any caller not yet wired to Pass D).
   const defaultOrder = [
+    // v1.8.0 · Hormozi Core (will be added to registry doc_sections in v2.0-rc · for now
+    // we put them in defaultOrder so any project without an explicit doc_sections gets them)
+    "offer","money_model","lead_model",
     "positioning","evidence","value_prop","personas","swipe_file","ad_recreations","ad_deep_dive","scripts","email_flows",
     "entry_wedge","channels","matrix","landing","rollout","creators","competitive",
     "brand_audit","demand","tribe","methodology","colophon",

@@ -1502,6 +1502,27 @@ Return ONLY JSON, no markdown:
     "product_category_aware": 0.0-1.0,
     "product_aware": 0.0-1.0,
     "most_aware": 0.0-1.0
+  },
+
+  "money_model_archetype": {
+    "label": "Attraction-led | Upsell-led | Downsell-led | Continuity-led | Hybrid",
+    "rationale": "1-2 sentences citing the brand's current revenue shape (one-time vs recurring · price tier · what they upsell)",
+    "signal": "what in the project_context drove this classification"
+  },
+
+  "lead_model_archetype": {
+    "label": "Warm-Outreach-led | Content-led | Cold-Outreach-led | Paid-led | Hybrid",
+    "rationale": "1-2 sentences on how the brand currently gets attention",
+    "signal": "platform mentions in project_context · existing channel mix"
+  },
+
+  "starving_crowd_strength": {
+    "label": "starving | hungry | fed | sated",
+    "massive_pain": "evidence the audience has a real pain (cite a high-opp Ulwick outcome if available · else cite sector signal)",
+    "purchasing_power": "can they afford the price tier the brand operates at",
+    "easy_to_target": "where the audience gathers · associations / channels / search behavior",
+    "growing": "tailwind | headwind | flat · cite trend evidence",
+    "rationale": "1-2 sentences synthesizing the four indicators per $100M Offers ch 4"
   }
 }
 
@@ -1510,7 +1531,8 @@ Rules:
 - business_model.primary MUST be from controlled vocab.
 - awareness_distribution sums to 1.0 ± 0.02.
 - from_state and to_state must both be valid MoC levels; to_state must be higher than from_state.
-- recommended_archetype must be from the 12 Jung archetypes.`;
+- recommended_archetype must be from the 12 Jung archetypes.
+- money_model_archetype, lead_model_archetype, starving_crowd_strength: be HONEST. A pre-launch brand probably has weak lead_model and weak money_model · don't claim "Hybrid" as a hedge.`;
 
 export async function diagnoseStrategicContext(apiKey, projectContext) {
   const ctxBlock = projectContext
