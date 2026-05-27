@@ -6,6 +6,83 @@ the output template version is independent of the React app version.
 
 ---
 
+## [Unreleased · v2.0 planning] — 2026-05-27 · MAJOR ARCHITECTURAL PIVOT
+
+**The Hormozi trilogy becomes the engine's universal core.** Doc-only · no code changed tonight · full architectural spec captured for v2.0 implementation.
+
+User dropped 3 Hormozi books (`$100M Offers`, `$100M Leads`, `$100M Money Models`) with direction: "every business should fit into these 16 business models within the 100M leads book but also should use the ideas in the other books to formulate better offers and money model for better long term stuff. this should be like the core stuff while everything before is supplimental and should exist to strengthen these models."
+
+### What the 16 are (and which book they're actually in)
+
+User said "16 business models within the 100M leads book" — close. The 16 are **offer types** in **`$100M Money Models`** (trilogy mix-up · understandable):
+
+| Category | Count | Offer Types |
+|---|---:|---|
+| **Attraction Offers** | 6 | Win Your Money Back · Giveaways · Decoy · Buy X Get Y Free · Pay Less Now or Pay More Later · Free Goodwill |
+| **Upsell Offers** | 4 | Classic · Menu · Anchor · Rollover |
+| **Downsell Offers** | 3 | Payment Plan · Trial With Penalty · Feature Downsells |
+| **Continuity Offers** | 3 | Continuity Bonus · Continuity Discount · Waived Fee |
+| **TOTAL** | **16** | |
+
+### v2.0 architecture · 3 new universal core passes
+
+Every project (regardless of archetype) runs:
+
+- **Pass O · `generateGrandSlamOffer`** · Value Equation (Dream × Likelihood) / (Time × Effort) + 5 enhancement layers (Scarcity/Urgency/Bonuses/Guarantees/Naming) → §01 The Offer
+- **Pass M · `generateMoneyModel`** · stacks 2-4 of the 16 offer types into a customer journey + CFA economics → §02 The Money Model
+- **Pass G · `generateLeadModel`** · Core Four (Warm Outreach / Posting Content / Cold Outreach / Paid Ads) + 0-2 Lead Getters + 1-3 of 12 Lead Magnet variants → §03 The Lead Model
+
+These three sections slot at the TOP of every strategy doc (after §00 Strategic Context · before §04 Positioning).
+
+### The architectural simplification
+
+The 11-archetype system **stops driving the pass plan and doc roster**. Both become UNIVERSAL — 24 sections for every archetype. The archetype becomes a "style overlay" that influences renderer variants in ~5 sections (personas · sequences · channels · partner_or_tribe · discoverability_audit) but not the structure.
+
+| What was | What becomes |
+|---|---|
+| 11 archetype-specific pass plans (~50 dedicated passes spec'd across roadmap) | 3 new universal core passes + 5 archetype variants in existing renderers |
+| v1.7.6 local_services Phase 2 (6 dedicated passes spec'd) | 6 RENDERER VARIANTS within universal sections · same content, cleaner wrapper |
+| v1.9+ b2b_saas (9 dedicated passes spec'd) | Universal roster + B2B variants. Drops from "9 weeks of work" to "config flip" |
+| Cialdini Phase 1 (5th Pass D axis) | Cialdini's 6 principles slot INSIDE Pass O's Value Equation (Authority + Social Proof boost Perceived Likelihood) + Pass M (Reciprocation powers Free Goodwill attraction · Commitment powers upsell sequencing) |
+
+### Pass D gains 3 new classification axes
+
+- `money_model_archetype` · Attraction-led / Upsell-led / Downsell-led / Continuity-led / Hybrid
+- `lead_model_archetype` · Warm-Outreach-led / Content-led / Cold-Outreach-led / Paid-led / Hybrid
+- `starving_crowd_strength` · starving / hungry / fed / sated (per $100M Offers ch 4)
+
+Total Pass D axes: 4 → 8.
+
+### 4-phase ship plan · ~6-8 weeks
+
+- **Phase A** · v2.0-alpha · 3 core passes scaffolded · `src/lib/hormozi-core.js` · App.jsx wires them in before Pass 5 · Pass D gains 3 new axes · ~1 week
+- **Phase B** · v2.0-beta · 3 new renderers (`renderOffer`, `renderMoneyModel`, `renderLeadModel`) · §01/§02/§03 ship · ~3-4 days
+- **Phase C** · v2.0-rc · universal roster migration · all 11 archetypes collapse to one 24-section list · per-archetype variant config replaces per-archetype pass plans · ~1-2 weeks
+- **Phase D** · v2.0 GA · Cialdini integrated into Pass O + Pass M · all 11 archetypes (including b2b_saas) ship simultaneously · ~1 week
+
+### What's deferred / cancelled
+
+- v1.8 was scoped for local_services Phase 2 (6 dedicated passes). Now folded into v2.0 Phase C as renderer variants. v1.8 instead becomes the Phase A "Hormozi core scaffolds" release.
+- Phase 3 / Phase 4 / Phase 5 / Phase 6+ archetype-by-archetype roadmap is **superseded** — all 11 ship in v2.0 GA. Major roadmap simplification.
+
+### Why this is right
+
+The user's intuition is correct: there is a universal commercial architecture (Offer + Money Model + Lead Model) that every business needs. The 11 archetypes encode CONTEXT (B2B vs DTC vs local), not STRUCTURE. Building 11 different "shapes" of strategy doc was scope-creep. The Hormozi trilogy gives us the structural spine the engine was missing.
+
+### Vault docs
+
+- **NEW** [[19 - Hormozi Core Architecture (Money Model + Offer + Lead Model)]] · full architectural spec · 3-pass schemas · 24-section universal doc roster · 4-phase ship plan · acceptance criteria · risk register
+- Updated [[13 - Roadmap & Backlog]] · v2.0 section added · Phase 3+ table marked obsolete
+- Updated [[17 - Cialdini Persuasion Principles Integration Plan]] · principles reframe through Pass O + Pass M
+- Updated [[18 - Local Services Phase Spec]] · 6 dedicated passes → renderer variants under v2.0
+- Updated [[16 - Business Model Archetypes]] · role shrinks from "drives pass plan" to "drives renderer variant"
+
+### No code change tonight
+
+This is a planning artifact. Implementation begins in v1.8 Phase A. Source PDFs/EPUB kept locally in `~/Downloads/` · not committed to repo (copyright).
+
+---
+
 ## [1.7.8] — 2026-05-27 · INCREMENTAL PERSISTENCE (prevents $1.40 loss)
 
 **The fix for "I paid $1.50 and got nothing."** User asked: "what about all the info that has already been generated to this point?" — pointing at the v1.7.7 crash where every pass succeeded, every API call charged, but the composer threw on the last 50ms and the user got zero document. This release prevents that pattern forever.
