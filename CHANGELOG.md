@@ -6,6 +6,25 @@ the output template version is independent of the React app version.
 
 ---
 
+## [Unreleased · planning] — 2026-05-27
+
+**Cialdini Persuasion Principles integration plan captured.** Doc-only · no code changed.
+
+User dropped `Cialdini · Influence: The Psychology of Persuasion` (250pp PDF) asking for the 6 principles (Reciprocation, Commitment & Consistency, Social Proof, Liking, Authority, Scarcity) to be added to the roadmap "somewhere." Spec written as cross-cutting horizontal layer (not a dedicated archetype phase) because Cialdini applies equally to every business model.
+
+**3-phase plan** (full detail at `<vault>/17 - Cialdini Persuasion Principles Integration Plan.md`):
+
+- **Phase 0 · this week** · ~2h user content + 1-line code change · 6 playbook .md files into `Demand Curve Map/concepts/` (one per principle) + add "Persuasion Principles" theme to all archetypes' `library_priors.priority_themes` in `business-models.js`. Pass L starts surfacing principle-anchored playbooks in §18 immediately. Zero new code paths.
+- **Phase 1 · v1.9** · ~4h · Pass D gains 5th classification axis `cialdini_activation`. §00 Strategic Context renders 6-row activation tile. `CIALDINI_DEFINITIONS` const lives alongside `PM101_DEFINITIONS` in `anthropic.js`.
+- **Phase 2 · v1.10** · ~6-8h · Selective cross-pass annotation. Pass 8 Swipe File + Pass 8.6 Recreations + Pass 16 Brand Audit each gain a `cialdini_principle` (or `cialdini_lever_missing`) schema field with renderer chip support.
+- **Phase 3 · v2.0** · conditional · ~1 day · Dedicated §16b Persuasion Audit (6×8 matrix · principles × audit surfaces).
+
+Roadmap updated at `<vault>/13 - Roadmap & Backlog.md` with the cross-cutting block above the Phase 3+ archetype commitments table.
+
+**What this is NOT:** not a "scarcity email generator." Cialdini sits as a horizontal ANNOTATION layer (which principle is each output activating?), not a new output type. Pass 10 still writes the email; Cialdini just labels which principle it leans on. Source PDF kept locally in `~/Downloads/`.
+
+---
+
 ## [Unreleased · v1.7.6 scope cut] — 2026-05-21
 
 **Cold-email drafting removed from v1.8 b2b_saas Phase 2 scope.** Doc-only change · no code changed.
