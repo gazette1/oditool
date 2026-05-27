@@ -6,6 +6,67 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.7] — 2026-05-27 · CRITICAL HOTFIX
+
+**Composer-crash hotfix.** User ran the engine against a live junk-removal client at ~07:37 and got `Strategy doc generation failed: (per.lives_online_at || "").split is not a function` AFTER every pass had already run successfully (Pass 1-18 all completed · ~3-4 minutes wall + ~$1.50 in Anthropic spend). Zero document returned. Critical bug.
+
+### Root cause
+
+`renderPersonas` in v1.7.1 was changed to split `per.lives_online_at` by comma to render handle-chips. The code assumed `lives_online_at` is always a **string**. Claude actually returns it as an **array of strings** roughly half the time depending on prompt phrasing. Arrays have no `.split()` method → composer throws → user gets no HTML.
+
+The crash was particularly painful because every preceding pass succeeded, so the user paid for the full run and got nothing.
+
+### Fix 1 · `toChipArray(value)` helper · normalizes both shapes
+
+New helper at the top of `compose-strategy.js`:
+
+```js
+const toChipArray = (value) => {
+  if (Array.isArray(value)) return value.map(v => String(v ?? "").trim()).filter(Boolean);
+  if (typeof value === "string") return value.split(/[,;|\n]/).map(s => s.trim()).filter(Boolean);
+  return [];
+};
+```
+
+Handles array, string, null, undefined. Splits string on comma · semicolon · pipe · newline (broader than the old `.split(",")` because Claude varies the separator).
+
+`renderPersonas` `lives_online_at` line now calls `toChipArray(per.lives_online_at)`. Empty result renders an em-dash placeholder instead of breaking layout.
+
+### Fix 2 · per-section try/catch in the dispatcher · fail-safe for the whole doc
+
+Even if a future renderer throws, **the rest of the doc still ships**. Was: one error aborted `composeStrategyDoc` entirely. Now: failed section emits a visible red callout with the error message + section_id, console gets the full stack, and the user gets a downloadable doc with N-1 sections rendered correctly.
+
+The callout uses brick-red dashed border + monospace text — clearly visible as "this section broke" without looking like normal content.
+
+### Fix 3 · `ENGINE_VERSION` bumped v1.7.4 → v1.7.7
+
+This had been stuck at v1.7.4 since the polish round. v1.7.5 and v1.7.6 were tagged on the repo but the version stamp in the strategy doc cover, methodology, and footer still said v1.7.4. Now corrected. v1.7.8+ should bump this constant whenever the tag bumps.
+
+### Other things observed in the user's failed run (NOT fixed in this hotfix · logged for v1.8)
+
+- **Cover headline still uses full sector field as project_name** — user had `Victory Point Express is a junk removal service targeting Long Island residential and commercial customers in the mid-to-premium price tier` displayed as the entire H1. The fix is a Project Setup UI change: separate `brand_name` field defaulting to project name. Not a renderer bug.
+- **Pass 8.6 + Pass 8.7 silently skipped** — Ad-Intel Stage A found 10 competitors but Stage B (web_search fallback) returned 0 ads. Pass 8.6 correctly detected no ads and skipped, which then cascaded to Pass 8.7 also skipping. This is expected v1.7.5 behavior · the real fix is **Adyntel wire-in** (v1.8 work · Adyntel API key already in `.env.local`, just needs the user's account email).
+- **Pass L skipped: no concept vault loaded** — user didn't pick a vault folder in Project Setup. Pass L correctly skipped. Could be more discoverable in the UI (a banner reminding the user to pick a vault if they want §18 Applied Playbooks).
+
+### Acceptance criteria
+
+1. ✅ `toChipArray()` exported from compose-strategy.js · handles array, string, null, undefined
+2. ✅ `renderPersonas` `lives_online_at` no longer crashes on array input
+3. ✅ Dispatcher loop in `composeStrategyDoc` wraps every section in try/catch
+4. ✅ Failed renderer emits a brick-red error callout · doc still downloads
+5. ✅ `ENGINE_VERSION = "v1.7.7"` in compose-strategy.js (was stuck at v1.7.4)
+6. ✅ Build clean · 495.36 KB / 141.82 KB gzip (+1 KB from helper + error-callout HTML)
+7. ✅ No DTC regression · same renderers, same payload shape · just defensive on field types
+
+### Smoke-test for the user
+
+After pulling this hotfix, the junk-removal run will:
+- Complete without crashing
+- Render the `lives_online_at` field correctly regardless of which shape Claude returns
+- If ANY other renderer still throws (we haven't audited every field shape assumption), the doc will still download with that one section showing a red error callout instead of the whole gen failing
+
+---
+
 ## [1.7.6] — 2026-05-27
 
 **Phase 2 pivoted: `local_services` promoted to Phase 2 · `b2b_saas` demoted to Phase 6+ pool.** User has active junk-removal client tonight; explicit direction: "i do so tonight lets run everything we need to be prepared for that instead of the saas stuff. i trust you to make the decisions and log them will review and correct at a later time."

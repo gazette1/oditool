@@ -643,6 +643,24 @@ const stripWrappingEmphasis = (s) => {
 // already has `font-style: italic` in the CSS.
 const escEm = (s) => esc(stripWrappingEmphasis(s));
 
+// v1.7.7 · Claude returns some fields as array OR string depending on
+// the call (lives_online_at, aliases, tags, sources, key_facts, red_flags,
+// etc.). This helper normalizes to a trimmed-non-empty string[]:
+//   - Array: pass through, coerce to strings, trim, drop empties
+//   - String: split on common separators (comma · semicolon · pipe · newline)
+//   - null/undefined/other: empty array
+// Fixes a v1.7.1 regression where renderPersonas crashed when Claude returned
+// lives_online_at as an array: `(per.lives_online_at || "").split is not a function`
+const toChipArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v ?? "").trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value.split(/[,;|\n]/).map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
 // ── Renderers ──
 function renderCover(p, project_name) {
   const pc = p.project_context || {};
@@ -747,7 +765,7 @@ function renderPersonas(p, n, total) {
           <div class="pf-label">Underserved outcome</div><div class="pf-value">${esc(per.underserved_outcome || "")}</div>
           <div class="pf-label">Currently uses</div><div class="pf-value">${esc(per.currently_uses || "")}</div>
           <div class="pf-label">Trigger</div><div class="pf-value">${esc(per.trigger_moment || "")}</div>
-          <div class="pf-label">Lives online at</div><div class="pf-value">${(per.lives_online_at || "").split(",").map(h => h.trim()).filter(Boolean).map(h => `<span class="handle-chip">${esc(h)}</span>`).join("")}</div>
+          <div class="pf-label">Lives online at</div><div class="pf-value">${toChipArray(per.lives_online_at).map(h => `<span class="handle-chip">${esc(h)}</span>`).join("") || `<span style="color:var(--ink-muted);font-style:italic">—</span>`}</div>
           <div class="pf-label">Switch cost</div><div class="pf-value">${esc(per.switch_cost || "")}</div>
           <div class="pf-label">First message</div><div class="pf-value italic">${escEm(per.first_message || "")}</div>
         </div>
@@ -1503,7 +1521,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.7.4";
+export const ENGINE_VERSION = "v1.7.7";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -1547,11 +1565,33 @@ ${(() => {
   // naturally even without the Strategic Context preface. We bias the
   // default-order case by +1 so positioning gets §01 when running pre-Pass D.
   const offset = payload.diagnostic ? 0 : 1;
+  // v1.7.7 · per-section try/catch · one bad renderer no longer kills the
+  // whole doc. Was: a single thrown error in renderPersonas (or any other
+  // renderer) aborted composeStrategyDoc entirely, leaving the user with
+  // no HTML download after paying for every pass to run. Now: failed
+  // section emits a visible red callout and the rest of the doc still
+  // ships. Console gets the full stack for debugging.
   return order.map((sid, idx) => {
     const n = idx + offset;
     const fn = sectionMap[sid];
     if (!fn) { console.warn(`[compose-strategy] unknown section id: ${sid}`); return ""; }
-    return fn(n);
+    try {
+      return fn(n);
+    } catch (e) {
+      console.error(`[compose-strategy] renderer "${sid}" threw at §${String(n).padStart(2,"0")}:`, e);
+      const nn = String(n).padStart(2, "0");
+      const tt = String(total).padStart(2, "0");
+      return `<section class="section" id="${esc(sid)}-error">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name" style="color:#bc4749">§ ${nn} · ${esc(sid)} · render error</span><span class="section-number">${nn} / ${tt}</span></div>
+    <div style="padding:18px 22px;background:rgba(188,71,73,0.08);border:1px dashed #bc4749;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6;color:#7a2c2e">
+      <strong style="display:block;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px">Section render error · section_id=${esc(sid)}</strong>
+      ${esc(e?.message || String(e))}
+      <div style="margin-top:10px;color:var(--ink-muted);font-style:italic">The rest of the doc still rendered. Check browser console for full stack trace. File a hotfix: this section's input data is in an unexpected shape.</div>
+    </div>
+  </div>
+</section>`;
+    }
   }).join("\n");
 })()}
 <footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine ${ENGINE_VERSION} · Mode 1 Earth</p></div></footer>
