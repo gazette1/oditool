@@ -6,6 +6,78 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.6] — 2026-05-27
+
+**Phase 2 pivoted: `local_services` promoted to Phase 2 · `b2b_saas` demoted to Phase 6+ pool.** User has active junk-removal client tonight; explicit direction: "i do so tonight lets run everything we need to be prepared for that instead of the saas stuff. i trust you to make the decisions and log them will review and correct at a later time."
+
+### Rationale
+
+| Driver | Local Services | B2B SaaS |
+|---|---|---|
+| Market reach per city | 50+ businesses (plumbers, dentists, HVAC, junk removal, restaurants, lawn care, locksmiths, movers) | 1-2 startups |
+| Active client need today | ✅ junk removal | ❌ none |
+| Pass-plan delta from DTC | small (replace 5 + add 1) | large (ICP, buying committee, ABM are net-new structures) |
+| Library priors already tuned | mostly yes (Reviews + SEO + Brand Identity) | partially |
+
+### Code changes · `src/lib/business-models.js`
+
+**`local_services` flipped to supported:**
+
+- `is_supported: false → true`
+- `phase_target: 6 → null`
+- `pass_plan: null → LOCAL_SERVICES_PASS_PLAN` (24 entries · 5 swap from DTC + 1 net-new `P16b_gbp`)
+- `doc_sections: null → LOCAL_SERVICES_DOC_SECTIONS` (24 entries · 18 universal + 6 placeholder for v1.8 renderers)
+- `persona_variant: "P7_local"`
+- `partial_support: true` (NEW flag · documents the v1.7.6 → v1.8 gap)
+- `partial_support_pending_sections: ["sms_sequences", "partner_referrals", "trust_stack_audit", "gbp_audit", "customer_quote_wall"]`
+- `library_priors` expanded from 3 → 12 priority themes (Reviews · SEO · Brand · CRO · Above-the-Fold · Customer Research · Referral · Persuasion · Paid · Email · Landing · Copywriting) and 1 → 4 deprioritize themes (Cold Email · Influencer · AI Search · Ad Creative Testing)
+
+**`b2b_saas` demoted to Phase 6+ pool:**
+
+- `phase_target: 2 → 6`
+- `not_yet_supported_message` rewritten · references the cold-email scope decision and the Phase 6+ pool
+
+### Architectural notes
+
+- `pass_plan` is documentation-only at present · App.jsx hardcodes its pass calls regardless of archetype. Side effect: Pass 10 / 14 / 18 still fire for local_services projects but their output is silently discarded by the renderer (output sections don't exist in `doc_sections`). Wasted ~$0.06/run · acceptable in v1.7.6. v1.8 wires App.jsx to respect `pass_plan` and skip dropped passes.
+- `doc_sections` IS consumed by the dispatcher. Unknown section IDs trigger `console.warn` and emit `""`. So the 5 placeholder sections drop silently in v1.7.6 · ~18 of 24 sections render correctly.
+- DTC projects unaffected · only the 2 changed archetype entries were touched.
+
+### What renders TONIGHT for a junk-removal project
+
+✅ Renders: §00 Strategic Context · §01 Positioning · §02 Evidence · §03 Value-Prop · §04 Personas (DTC shape · v1.8 swaps to local shape) · §05 Swipe File · §05b Ad Recreations · §05c Ad Deep Dive · §06 Scripts · §08 Entry Wedge · §09 Channels (already weights GBP + Yelp + paid Google correctly) · §10 Targeting Matrix · §11 Landing Variants · §12 Rollout · §14 Competitive Teardown · §16 Demand Landscape · §18 Applied Playbooks · §19 Methodology · §20 Colophon.
+
+⏳ Pending v1.8 (drops silently with `console.warn`): §07 SMS Sequences · §13 Partner Referrals · §15 Trust Stack Audit · §15b GBP Audit · §17 Customer Quote Wall.
+
+### v1.8 scope captured
+
+6 new pass functions + 6 new renderers + ~5 Airtable schema extensions. Full schemas, acceptance criteria, and ASCII layout wireframes at `<vault>/18 - Local Services Phase Spec.md`. Estimated effort: ~3-4 weeks.
+
+### Vault docs updated
+
+- **NEW** `<vault>/18 - Local Services Phase Spec.md` (full spec · 24-section doc roster · per-pass schema with example output · acceptance criteria · risk register · adjacent-decisions log)
+- `<vault>/13 - Roadmap & Backlog.md` · v1.8 section completely rewritten · Phase 3+ table swapped (local_services Phase 2 · b2b_saas demoted to Phase 6+)
+- `<vault>/16 - Business Model Archetypes.md` · mermaid diagram updated · registry table reordered (local_services moves up · b2b_saas moves down) · Phase 2 dedicated section rewritten for local_services · priors-difference table updated with local_services' expanded 12-theme priors
+- `<vault>/17 - Cialdini Persuasion Principles Integration Plan.md` · cross-ref updated · local_services already gets "Persuasion Principles" in its v1.7.6 priors (so Phase 0 of Cialdini partially landed for local_services tonight)
+
+### Bundle
+
+`494.09 KB / 141.42 KB gzip` (+1 KB from registry text). DTC behavior unchanged.
+
+### Acceptance criteria
+
+1. ✅ `local_services.is_supported = true`
+2. ✅ `local_services.pass_plan` + `doc_sections` populated
+3. ✅ `b2b_saas.phase_target = 6`
+4. ✅ DEV-only `console.assert` registry-integrity block still passes
+5. ✅ Build clean
+6. ✅ Pass D will classify junk-removal projects as `local_services` and `ArchetypeGateModal` will bypass (instead of blocking with the "Phase 6+" message)
+7. ✅ Strategy doc renders ~18 of 24 sections · 5 pending sections drop silently
+8. ✅ All vault cross-refs updated (4 docs)
+9. ✅ Spec written for v1.8 implementation (24 sections, 6 pass schemas, acceptance criteria)
+
+---
+
 ## [Unreleased · planning] — 2026-05-27
 
 **Cialdini Persuasion Principles integration plan captured.** Doc-only · no code changed.
