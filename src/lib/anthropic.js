@@ -778,11 +778,18 @@ export async function generateChannelPlan(apiKey, projectContext, positioning, p
   const data = await callClaude(apiKey,
     `You are a paid + organic media strategist. Produce a channel plan and a targeting matrix for the launch.
 
+CRITICAL · CHANNEL ARCHETYPE RULES (v1.8.1):
+  - For LOCAL SERVICES (junk removal, plumbing, HVAC, dental, restaurants, cleaning, lawn care, locksmith, movers, electricians): the highest-leverage channels are NOT Meta + TikTok. They are: Google Business Profile (GBP) optimization · Local Service Ads (LSAs) · Google branded + non-branded search · AEO/GEO (Answer Engine Optimization · Generative Engine Optimization · being the answer ChatGPT/Perplexity/Google AI Overviews surface for "best junk removal Long Island" style queries) · partner-referral relationship spend (lunches at attorney/realtor/GC/property-manager offices) · neighborhood-named direct mail · Nextdoor. Meta + TikTok are SECONDARY for local services, not primary.
+  - For B2B (SaaS or services): LinkedIn organic + LinkedIn Ads + warm outbound + AEO/GEO + content/SEO. Klaviyo email is wrong-shape — B2B uses sales sequences, not Klaviyo flows.
+  - For DTC e-commerce: keep the Meta + TikTok + Klaviyo + influencer stack as before.
+
+AEO/GEO IS A MANDATORY CHANNEL ENTRY when audience is LIKELY to search via ChatGPT / Perplexity / Google AI Overviews / Claude / Gemini. That is: every B2B, every local service, every aggregator, and increasingly every DTC brand. AEO/GEO surfaces include: schema markup quality, FAQ pages structured for question-answer extraction, branded knowledge-graph signals, citations on authority sites (Wikipedia, industry directories), and explicit content optimized for "best X in Y" / "how to choose X" / "is X worth it" answer-engine queries.
+
 Return ONLY JSON:
 {
   "channels": [
     { "channel": "Meta Ads (FB+IG)", "role": "Prospecting · feed + reels", "budget_pct": 40, "primary_kpi": "CPA under $X", "first_test": "1-sentence first test to run", "creative_format": "Meta 4:5 + 9:16", "audience_hook": "1-sentence targeting note" },
-    ... (8-10 channels — include Meta, TikTok Ads, TikTok organic, IG organic, Klaviyo email, Google branded search, Pinterest, influencer/UGC, PR/earned, retargeting)
+    ... (8-10 channels · honor the archetype rules above · AEO/GEO is its own row for any B2B or local-services brand · partner-referral relationship spend is its own row for local services with monthly $ budget for in-person touches)
   ],
   "targeting_matrix": [
     { "persona_name": "...", "channel": "Meta Ads", "interest_targets": ["3-5 interest layers"], "lookalike_seeds": ["seed1","seed2"], "exclusions": ["exclude1"], "creative_angle": "1 sentence", "spend_share_pct": 25 },
@@ -831,6 +838,15 @@ export async function generateRollout(apiKey, projectContext, positioning, recom
 
   const data = await callClaude(apiKey,
     `Produce a 90-day rollout plan in 3 phases (Weeks 1-4 / Weeks 5-8 / Weeks 9-12). Each phase has a clear theme, objectives, deliverables, channels live, budget allocation, KPIs, and gating decision to advance.
+
+CRITICAL ROLLOUT SEQUENCING RULES (v1.8.1):
+  - For LOCAL SERVICES and B2B brands: Phase 1 deliverables MUST include AEO/GEO foundation work (Answer Engine Optimization / Generative Engine Optimization) as a TOP 3 deliverable. AEO/GEO = optimizing for being the answer that ChatGPT / Perplexity / Google AI Overviews / Claude / Gemini surface when users ask "best junk removal Long Island" / "should I hire a junk removal company" / "X vs Y" comparison queries. Concrete Phase 1 AEO/GEO deliverables: schema.org markup audit + LocalBusiness/Service schema implementation · FAQ pages structured for question-answer extraction · authoritative citation strategy (Wikipedia, industry directories, Google Knowledge Graph) · "[brand] vs [competitor]" comparison content · 5-10 high-intent answer-engine queries optimized.
+  - For LOCAL SERVICES Phase 1 ALSO must include: GBP (Google Business Profile) optimization · partner-referral relationship calendar kickoff (lunches/coffees with attorneys / realtors / GCs / property managers) · review-velocity playbook ignition.
+  - Phase 1 should NOT lead with paid social for local services. Phase 1 leads with AEO/GEO + GBP + partner relationships + LSAs. Paid social shows up in Phase 2-3 only after the local trust signals are in place.
+  - For DTC brands: keep the existing Meta+TikTok+Klaviyo Phase 1 shape.
+
+If Phase 1 for a local-services or B2B brand omits AEO/GEO, you've failed the rollout. It's that important — answer engines now drive 30%+ of high-intent search and that share is growing monthly.
+
 
 Return ONLY JSON:
 {

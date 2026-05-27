@@ -93,21 +93,29 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .position-alt .citation .score{font-size:16px}
 .position-alt .rationale{margin-top:16px;font-size:13px;line-height:1.6;color:var(--ink-secondary)}
 .ev-table,.vp-table{margin-top:32px;background:var(--bg-base);border-radius:12px;overflow:hidden;border:1px solid rgba(106,153,78,.3)}
-.ev-row{display:grid;grid-template-columns:60px 1fr 80px 80px 90px;gap:16px;padding:18px 24px;border-bottom:1px solid rgba(106,153,78,.25);align-items:start;font-size:12px}
-.ev-row.head{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
-.ev-row .job-id{font-family:"DM Serif Display",serif;font-size:20px;color:var(--moss-mid)}
-.ev-row .num,.ev-row .opp{font-family:"DM Serif Display",serif;font-size:20px}
-.ev-row .opp{font-size:22px;font-weight:500}
+/* v1.8.1 · §05 Evidence font sizes bumped per user feedback ·
+   was 12px row / 13px ulwick · now 14px row / 16px ulwick · easier
+   to read at arm's length when scanning the underserved-outcome list */
+.ev-row{display:grid;grid-template-columns:60px 1fr 80px 80px 90px;gap:18px;padding:22px 26px;border-bottom:1px solid rgba(106,153,78,.25);align-items:start;font-size:14px}
+.ev-row.head{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
+.ev-row .job-id{font-family:"DM Serif Display",serif;font-size:24px;color:var(--moss-mid)}
+.ev-row .num,.ev-row .opp{font-family:"DM Serif Display",serif;font-size:22px}
+.ev-row .opp{font-size:26px;font-weight:500}
 .ev-row.underserved .opp{color:#bc4749}
-.ev-row .anchor-quote{grid-column:2/-1;margin-top:8px;padding:8px 12px;background:var(--bg-card);border-left:2px solid var(--moss-deep);border-radius:0 4px 4px 0;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px}
-.ev-row .outcome .ulwick{display:block;margin-top:6px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary)}
+.ev-row .anchor-quote{grid-column:2/-1;margin-top:8px;padding:10px 14px;background:var(--bg-card);border-left:2px solid var(--moss-deep);border-radius:0 4px 4px 0;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px}
+.ev-row .outcome .ulwick{display:block;margin-top:8px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:16px;color:var(--ink-primary);line-height:1.5}
 @media (max-width:720px){.ev-row,.ev-row.head{grid-template-columns:1fr;gap:6px}.ev-row.head{display:none}}
-.vp-row{display:grid;grid-template-columns:140px 1.8fr 1fr 1fr 1.4fr;gap:16px;padding:20px 24px;border-bottom:1px solid rgba(106,153,78,.25);align-items:start;font-size:12px;line-height:1.55}
-.vp-row.head{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
+/* v1.8.1 · §06 Value-prop fixes · was 140px name column with long
+   URLs overflowing into the quote column · now 180px wide-enough
+   name column + word-break:break-all on .meta + min-width:0 on
+   children so grid actually respects column widths */
+.vp-row{display:grid;grid-template-columns:180px 1.8fr 1fr 1fr 1.4fr;gap:18px;padding:22px 26px;border-bottom:1px solid rgba(106,153,78,.25);align-items:start;font-size:13px;line-height:1.6}
+.vp-row > *{min-width:0;overflow-wrap:anywhere}
+.vp-row.head{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted)}
 .vp-row.brand{background:rgba(56,102,65,.08);border-left:3px solid var(--moss-deep)}
-.vp-row .name{font-family:"DM Serif Display",serif;font-size:17px;line-height:1.2}
-.vp-row .name .meta{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:0.22em;color:var(--ink-muted);margin-top:4px}
-.vp-row .quote{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;line-height:1.5}
+.vp-row .name{font-family:"DM Serif Display",serif;font-size:17px;line-height:1.25}
+.vp-row .name .meta{display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:0.06em;color:var(--ink-muted);margin-top:6px;word-break:break-all;line-height:1.4}
+.vp-row .quote{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;line-height:1.55}
 @media (max-width:720px){.vp-row,.vp-row.head{grid-template-columns:1fr;gap:6px}.vp-row.head{display:none}}
 .persona{display:grid;grid-template-columns:280px 1fr;gap:48px;padding:40px 0;border-top:1px solid rgba(106,153,78,.4)}
 .persona:last-of-type{border-bottom:1px solid rgba(106,153,78,.4)}
@@ -266,19 +274,54 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .comp-card .cp-promise{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;line-height:1.55;color:var(--ink-primary)}
 .comp-card .cp-promise::before{content:"\"";color:var(--moss-mid);margin-right:2px}
 .comp-card .cp-promise::after{content:"\"";color:var(--moss-mid);margin-left:2px}
-.comp-card .cp-creative{font-size:11.5px;line-height:1.55;color:var(--ink-secondary)}
-.comp-card .cp-creative strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted);display:block;margin-bottom:3px}
+/* v1.8.1 · §19 Competitive · "Where we win:" / "Where we lose:" /
+   "Wedge to attack:" / "First punch:" are now INLINE bold + colon
+   per user feedback. The labels were previously block-displayed
+   uppercase mini-caps · user found them harder to skim than a
+   plain "**Bold label:** content" inline pattern. CSS revises all
+   strong elements in the comp-card to be inline-bold ink color
+   matching the section accent (moss for win, brick for lose). */
+.comp-card .cp-creative{font-size:12.5px;line-height:1.6;color:var(--ink-primary)}
+.comp-card .cp-creative strong{font-weight:700;color:var(--ink-primary)}
 .comp-card .cp-winlose{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.comp-card .cp-win,.comp-card .cp-lose{padding:10px 12px;border-radius:6px;font-size:11.5px;line-height:1.55}
+.comp-card .cp-win,.comp-card .cp-lose{padding:12px 14px;border-radius:6px;font-size:12.5px;line-height:1.6}
 .comp-card .cp-win{background:rgba(34,197,94,0.08);border-left:3px solid #386641}
 .comp-card .cp-lose{background:rgba(239,68,68,0.06);border-left:3px solid #bc4749}
-.comp-card .cp-win .lbl,.comp-card .cp-lose .lbl{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;margin-bottom:4px;display:block}
-.comp-card .cp-win .lbl{color:#2a4a30}
-.comp-card .cp-lose .lbl{color:#7a2c2e}
-.comp-card .cp-wedge{padding:12px 14px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-left:3px solid var(--moss-deep);border-radius:0 6px 6px 0;font-size:12.5px;line-height:1.6}
-.comp-card .cp-wedge strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);display:block;margin-bottom:4px}
-.comp-card .cp-punch{padding:10px 12px;border:1px dashed rgba(106,153,78,0.5);border-radius:6px;font-size:11.5px;line-height:1.55;color:var(--ink-primary)}
-.comp-card .cp-punch strong{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);display:block;margin-bottom:3px}
+.comp-card .cp-win strong{font-weight:700;color:#2a4a30}
+.comp-card .cp-lose strong{font-weight:700;color:#7a2c2e}
+.comp-card .cp-wedge{padding:12px 14px;background:linear-gradient(135deg,var(--bg-card),var(--bg-warm));border-left:3px solid var(--moss-deep);border-radius:0 6px 6px 0;font-size:13px;line-height:1.65}
+.comp-card .cp-wedge strong{font-weight:700;color:var(--moss-deep)}
+.comp-card .cp-punch{padding:12px 14px;border:1px dashed rgba(106,153,78,0.5);border-radius:6px;font-size:12.5px;line-height:1.6;color:var(--ink-primary)}
+.comp-card .cp-punch strong{font-weight:700;color:var(--ink-primary)}
+
+/* ─────────────────────────────────────────────────────────────
+   v1.8.1 · Unified table layout for §20-23 (Brand Audit · Demand ·
+   Tribe · Methodology). User feedback: card grids were dense and
+   hard to scan · tables surface the same data in a glanceable row
+   structure that prints cleanly.
+   ───────────────────────────────────────────────────────────── */
+.engine-table{width:100%;background:var(--bg-base);border:1px solid rgba(106,153,78,0.3);border-radius:12px;overflow:hidden;margin-bottom:24px;font-size:13px;line-height:1.55;border-collapse:collapse}
+.engine-table thead th{background:var(--bg-warm);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);text-align:left;padding:14px 16px;border-bottom:1px solid rgba(106,153,78,0.3);vertical-align:bottom}
+.engine-table tbody td{padding:14px 16px;border-bottom:1px solid rgba(106,153,78,0.18);vertical-align:top;overflow-wrap:anywhere;word-break:normal}
+.engine-table tbody tr:last-child td{border-bottom:none}
+.engine-table tbody tr:nth-child(even){background:rgba(106,153,78,0.03)}
+.engine-table .cell-key{font-family:"DM Serif Display",serif;font-size:15px;line-height:1.3;color:var(--ink-primary)}
+.engine-table .cell-mono{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:0.05em;color:var(--ink-secondary)}
+.engine-table .cell-italic{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;color:var(--ink-secondary);line-height:1.5}
+.engine-table .pill-priority{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:3px 9px;border-radius:4px;white-space:nowrap}
+.engine-table .pill-priority.high{background:rgba(188,71,73,0.15);color:#7a2c2e}
+.engine-table .pill-priority.medium{background:rgba(167,201,87,0.2);color:#2a4a30}
+.engine-table .pill-priority.low{background:var(--bg-warm);color:var(--ink-secondary)}
+.engine-table .pill-priority.scrape{background:rgba(106,153,78,0.1);border:1px dashed rgba(106,153,78,0.5);color:var(--moss-deep)}
+.engine-table .tier-chip{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:rgba(56,102,65,0.15);color:#2a4a30;white-space:nowrap}
+.engine-table .tier-chip.t1{background:rgba(56,102,65,0.15);color:#2a4a30}
+.engine-table .tier-chip.t2{background:rgba(167,201,87,0.2);color:#2a4a30}
+.engine-table .tier-chip.t3{background:var(--bg-warm);color:var(--ink-secondary)}
+.engine-table .tier-chip.aspirational{background:rgba(106,153,78,0.15);color:var(--moss-deep)}
+.engine-table .unverified-tag{color:var(--brick);font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase}
+.engine-table tbody td strong{font-weight:700;color:var(--ink-primary)}
+@media (max-width:720px){.engine-table thead{display:none}.engine-table tbody td{display:block;padding:8px 14px;border-bottom:none}.engine-table tbody td::before{content:attr(data-label);display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px}.engine-table tbody tr{border-bottom:1px solid rgba(106,153,78,0.25);padding:14px 0;display:block}}
+.engine-table-caption{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;color:var(--ink-secondary);margin-bottom:12px;line-height:1.55}
 .axis-summary{margin-top:48px;padding:32px;background:linear-gradient(135deg,var(--bg-base),var(--bg-card));border-radius:16px;border:2px solid var(--moss-deep);position:relative}
 .axis-summary .as-tag{position:absolute;top:-14px;left:32px;background:var(--moss-deep);color:var(--ink-primary);padding:5px 14px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
 .axis-summary .as-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;margin-bottom:20px}
@@ -1163,13 +1206,13 @@ function renderCompetitive(p, n, total) {
           </div>
           ${c.primary_promise ? `<p class="cp-promise">${esc(c.primary_promise)}</p>` : ""}
         </div>
-        ${c.creative_pattern ? `<div class="cp-creative"><strong>Creative pattern</strong>${esc(c.creative_pattern)}</div>` : ""}
+        ${c.creative_pattern ? `<div class="cp-creative"><strong>Creative pattern:</strong> ${esc(c.creative_pattern)}</div>` : ""}
         <div class="cp-winlose">
-          ${c.where_we_win ? `<div class="cp-win"><span class="lbl">Where we win</span>${esc(c.where_we_win)}</div>` : ""}
-          ${c.where_we_lose ? `<div class="cp-lose"><span class="lbl">Where we lose</span>${esc(c.where_we_lose)}</div>` : ""}
+          ${c.where_we_win ? `<div class="cp-win"><strong>Where we win:</strong> ${esc(c.where_we_win)}</div>` : ""}
+          ${c.where_we_lose ? `<div class="cp-lose"><strong>Where we lose:</strong> ${esc(c.where_we_lose)}</div>` : ""}
         </div>
-        ${c.wedge_to_attack ? `<div class="cp-wedge"><strong>Wedge to attack</strong>${esc(c.wedge_to_attack)}</div>` : ""}
-        ${c.first_punch ? `<div class="cp-punch"><strong>First punch · ship in 4 weeks</strong>${esc(c.first_punch)}</div>` : ""}
+        ${c.wedge_to_attack ? `<div class="cp-wedge"><strong>Wedge to attack:</strong> ${esc(c.wedge_to_attack)}</div>` : ""}
+        ${c.first_punch ? `<div class="cp-punch"><strong>First punch · ship in 4 weeks:</strong> ${esc(c.first_punch)}</div>` : ""}
       </div>`).join("")}
     </div>` : ""}
     ${axis ? `<div class="axis-summary">
@@ -1187,6 +1230,10 @@ function renderCompetitive(p, n, total) {
 }
 
 function renderBrandAudit(p, n, total) {
+  // v1.8.1 · table layout per user feedback (#20). One row per surface ·
+  // columns: Surface · Priority · Current state · What works · What breaks
+  // · Recommended fix. Voice consistency + discoverability still render
+  // beneath as a small 2-tile strip.
   const a = p.brandAudit;
   if (!a || (!a.areas?.length && !a.audit_summary)) return "";
   const areas = a.areas || [];
@@ -1196,47 +1243,49 @@ function renderBrandAudit(p, n, total) {
   <div class="container">
     ${sectionTag("Brand audit", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${areas.length} surfaces.<br/>State of the brand today.</h2>
-    ${a.audit_summary ? `<p class="audit-summary">${esc(a.audit_summary)}</p>` : ""}
-    ${areas.length ? `<div class="audit-grid">
-      ${areas.map(area => {
-        // v1.7.2 · "no_visibility" rows render with a dashed border + scrape
-        // hint instead of fabricated audit text. Better to show the data gap
-        // than to ship "Likely…" speculation as a recommendation.
-        const noVis = area.data_status === "no_visibility";
-        const priorityCls = noVis ? "scrape" : (area.fix_priority || "");
-        return `<div class="audit-card${noVis ? " no-visibility" : ""}">
-        <div class="au-head">
-          <div class="au-name">${esc(area.area_name || "")}</div>
-          ${noVis
-            ? `<span class="au-priority scrape">scrape first</span>`
-            : (area.fix_priority ? `<span class="au-priority ${esc(area.fix_priority)}">${esc(area.fix_priority)}</span>` : "")}
-        </div>
-        ${noVis
-          ? `<div class="au-no-vis"><strong>No visibility</strong>${esc(area.scrape_hint || "Re-run Pass 0 with a PDF or screenshot of this surface to get an actual audit.")}</div>`
-          : `${area.current_state ? `<div class="au-current"><strong>Current state</strong>${esc(area.current_state)}</div>` : ""}
-        <div class="au-split">
-          ${area.what_works ? `<div class="au-works"><span class="lbl">What works</span>${esc(area.what_works)}</div>` : ""}
-          ${area.what_breaks ? `<div class="au-breaks"><span class="lbl">What breaks</span>${esc(area.what_breaks)}</div>` : ""}
-        </div>
-        ${area.recommended_fix ? `<div class="au-fix"><strong>Recommended fix${area.ulwick_anchor_job_id ? `<span class="anchor">· anchor Job ${area.ulwick_anchor_job_id}</span>` : ""}</strong>${esc(area.recommended_fix)}</div>` : ""}`}
-      </div>`;
-      }).join("")}
-    </div>` : ""}
-    ${(Object.keys(voice).length || Object.keys(disc).length) ? `<div class="audit-bottom">
-      ${Object.keys(voice).length ? `<div class="audit-voice">
-        <h4>Voice consistency</h4>
-        ${typeof voice.score === "number" ? `<div class="voice-score"><span class="num">${voice.score}</span><span class="out">/ 10</span></div>` : ""}
-        ${voice.strongest_surface ? `<div class="voice-row"><span class="lbl">Strongest</span>${esc(voice.strongest_surface)}</div>` : ""}
-        ${voice.weakest_surface ? `<div class="voice-row"><span class="lbl">Weakest</span>${esc(voice.weakest_surface)}</div>` : ""}
-        ${voice.drift_notes ? `<div class="voice-row" style="margin-top:8px;font-style:italic;font-family:'Cormorant Garamond',serif;font-size:13px;color:var(--ink-secondary)">${esc(voice.drift_notes)}</div>` : ""}
+    ${a.audit_summary ? `<p class="engine-table-caption">${esc(a.audit_summary)}</p>` : ""}
+    ${areas.length ? `<table class="engine-table">
+      <thead><tr>
+        <th style="width:14%">Surface</th>
+        <th style="width:8%">Priority</th>
+        <th style="width:24%">Current state</th>
+        <th style="width:18%">What works</th>
+        <th style="width:18%">What breaks</th>
+        <th style="width:18%">Recommended fix</th>
+      </tr></thead>
+      <tbody>
+        ${areas.map(area => {
+          const noVis = area.data_status === "no_visibility";
+          const pri = noVis ? "scrape" : (area.fix_priority || "");
+          const priLbl = noVis ? "scrape first" : (area.fix_priority || "");
+          return `<tr>
+            <td data-label="Surface" class="cell-key">${esc(area.area_name || "")}</td>
+            <td data-label="Priority">${pri ? `<span class="pill-priority ${esc(pri)}">${esc(priLbl)}</span>` : ""}</td>
+            ${noVis
+              ? `<td data-label="Status" colspan="4" class="cell-italic"><strong>No visibility · </strong>${esc(area.scrape_hint || "Re-run Pass 0 with a PDF or screenshot of this surface to get an actual audit.")}</td>`
+              : `<td data-label="Current state">${esc(area.current_state || "—")}</td>
+                 <td data-label="What works">${esc(area.what_works || "—")}</td>
+                 <td data-label="What breaks">${esc(area.what_breaks || "—")}</td>
+                 <td data-label="Recommended fix">${esc(area.recommended_fix || "—")}${area.ulwick_anchor_job_id ? ` <span class="cell-mono">· anchor Job ${esc(String(area.ulwick_anchor_job_id))}</span>` : ""}</td>`}
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>` : ""}
+    ${(Object.keys(voice).length || Object.keys(disc).length) ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px">
+      ${Object.keys(voice).length ? `<div style="padding:16px 20px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.25);border-radius:10px">
+        <h4 style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:10px">Voice consistency</h4>
+        ${typeof voice.score === "number" ? `<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:10px"><span style="font-family:'DM Serif Display',serif;font-size:38px;line-height:1;color:var(--moss-deep)">${voice.score}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-muted)">/ 10</span></div>` : ""}
+        ${voice.strongest_surface ? `<div style="font-size:12.5px;line-height:1.55"><strong>Strongest:</strong> ${esc(voice.strongest_surface)}</div>` : ""}
+        ${voice.weakest_surface ? `<div style="font-size:12.5px;line-height:1.55"><strong>Weakest:</strong> ${esc(voice.weakest_surface)}</div>` : ""}
+        ${voice.drift_notes ? `<div style="margin-top:8px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:var(--ink-secondary)">${esc(voice.drift_notes)}</div>` : ""}
       </div>` : ""}
-      ${Object.keys(disc).length ? `<div class="audit-discover">
-        <h4>Discoverability</h4>
-        <div class="dscore">
-          ${disc.branded_search ? `<div class="pill ${esc(disc.branded_search)}"><span class="lbl">Branded</span><span class="val">${esc(disc.branded_search)}</span></div>` : ""}
-          ${disc.unbranded_search ? `<div class="pill ${esc(disc.unbranded_search)}"><span class="lbl">Unbranded</span><span class="val">${esc(disc.unbranded_search)}</span></div>` : ""}
+      ${Object.keys(disc).length ? `<div style="padding:16px 20px;background:var(--bg-base);border:1px solid rgba(106,153,78,0.25);border-radius:10px">
+        <h4 style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-mid);margin-bottom:10px">Discoverability</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          ${disc.branded_search ? `<div style="padding:8px 12px;background:var(--bg-warm);border-radius:5px"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">Branded</div><div style="font-family:'DM Serif Display',serif;font-size:15px">${esc(disc.branded_search)}</div></div>` : ""}
+          ${disc.unbranded_search ? `<div style="padding:8px 12px;background:var(--bg-warm);border-radius:5px"><div style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px">Unbranded</div><div style="font-family:'DM Serif Display',serif;font-size:15px">${esc(disc.unbranded_search)}</div></div>` : ""}
         </div>
-        ${disc.notes ? `<p class="dnotes">${esc(disc.notes)}</p>` : ""}
+        ${disc.notes ? `<p style="font-size:12.5px;line-height:1.55;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--ink-secondary)">${esc(disc.notes)}</p>` : ""}
       </div>` : ""}
     </div>` : ""}
   </div>
@@ -1260,39 +1309,66 @@ function renderDemandLandscape(p, n, total) {
       ${temp.evidence ? `<div class="temp-evidence">${esc(temp.evidence)}</div>` : ""}
     </div>` : ""}
     ${d.demand_summary ? `<p class="dl-summary">${esc(d.demand_summary)}</p>` : ""}
-    ${stages.length ? `<div class="funnel-grid">
-      ${stages.map(s => `<div class="funnel-card">
-        <div class="fn-stage">${esc(s.stage || "")}</div>
-        ${s.audience_intent ? `<p class="fn-intent">${esc(s.audience_intent)}</p>` : ""}
-        ${(s.top_keywords || []).length ? `<div><div class="fn-block-lbl">Top keywords</div><div class="fn-kw-list">${(s.top_keywords || []).map(k => `<div class="fn-kw"><span class="kw-text">${esc(k.kw || "")}</span><span class="kw-meta"><span>vol <span class="v ${esc((k.volume_estimate || "").toLowerCase())}">${esc(k.volume_estimate || "?")}</span></span><span>comp <span class="c ${esc((k.competition || "").toLowerCase())}">${esc(k.competition || "?")}</span></span></span>${k.wedge ? `<span class="kw-wedge">${esc(k.wedge)}</span>` : ""}</div>`).join("")}</div></div>` : ""}
-        ${(s.question_patterns || []).length ? `<div><div class="fn-block-lbl">Question patterns</div><div class="fn-questions">${(s.question_patterns || []).map(q => `<span class="q">${esc(q)}</span>`).join("")}</div></div>` : ""}
-      </div>`).join("")}
-    </div>` : ""}
-    ${whitespace.length ? `<div class="whitespace-block">
-      <h4>White-space keywords · low competition, high intent</h4>
-      <div class="whitespace-grid">
-        ${whitespace.map(w => `<div class="ws-card">
-          <span class="ws-kw">${esc(w.kw || "")}</span>
-          ${w.why ? `<p class="ws-why">${esc(w.why)}</p>` : ""}
-          ${w.first_test ? `<p class="ws-test"><strong>First test · 2 weeks</strong>${esc(w.first_test)}</p>` : ""}
-        </div>`).join("")}
-      </div>
-    </div>` : ""}
-    ${seasonal.length ? `<div class="seasonal-block">
-      <h4>Seasonal pulse</h4>
-      <div class="seasonal-list">
-        ${seasonal.map(s => `<div class="seasonal-row">
-          <div class="period">${esc(s.period || "")}</div>
-          <div class="lift">${esc(s.lift || "")}</div>
-          <div class="play">${esc(s.play || "")}</div>
-        </div>`).join("")}
-      </div>
-    </div>` : ""}
+    ${stages.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Funnel keywords · TOFU → MOFU → BOFU</h3>
+    <table class="engine-table">
+      <thead><tr>
+        <th style="width:10%">Stage</th>
+        <th style="width:24%">Keyword</th>
+        <th style="width:8%">Volume</th>
+        <th style="width:8%">Comp</th>
+        <th style="width:30%">Wedge angle</th>
+        <th style="width:20%">Audience intent</th>
+      </tr></thead>
+      <tbody>
+        ${stages.flatMap(s => (s.top_keywords || []).map((k, i) => `<tr>
+          ${i === 0 ? `<td data-label="Stage" rowspan="${(s.top_keywords || []).length}" class="cell-key" style="vertical-align:top;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-deep)">${esc(s.stage || "")}</td>` : ""}
+          <td data-label="Keyword" class="cell-mono" style="font-size:13px;font-family:'DM Serif Display',serif;letter-spacing:0">${esc(k.kw || "")}</td>
+          <td data-label="Volume">${esc(k.volume_estimate || "?")}</td>
+          <td data-label="Comp">${esc(k.competition || "?")}</td>
+          <td data-label="Wedge angle" class="cell-italic">${esc(k.wedge || "—")}</td>
+          ${i === 0 ? `<td data-label="Audience intent" rowspan="${(s.top_keywords || []).length}" class="cell-italic" style="vertical-align:top">${esc(s.audience_intent || "")}</td>` : ""}
+        </tr>`)).join("")}
+      </tbody>
+    </table>` : ""}
+    ${whitespace.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">White-space keywords · low competition, high intent</h3>
+    <table class="engine-table">
+      <thead><tr>
+        <th style="width:28%">Keyword</th>
+        <th style="width:38%">Why it's white-space</th>
+        <th style="width:34%">First 2-week test</th>
+      </tr></thead>
+      <tbody>
+        ${whitespace.map(w => `<tr>
+          <td data-label="Keyword" class="cell-key" style="font-size:14px">${esc(w.kw || "")}</td>
+          <td data-label="Why">${esc(w.why || "—")}</td>
+          <td data-label="First test" class="cell-italic">${esc(w.first_test || "—")}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>` : ""}
+    ${seasonal.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Seasonal pulse · when demand spikes</h3>
+    <table class="engine-table">
+      <thead><tr>
+        <th style="width:28%">Period</th>
+        <th style="width:18%">Lift vs baseline</th>
+        <th style="width:54%">Play to run</th>
+      </tr></thead>
+      <tbody>
+        ${seasonal.map(s => `<tr>
+          <td data-label="Period" class="cell-key" style="font-size:14px">${esc(s.period || "")}</td>
+          <td data-label="Lift" class="cell-mono" style="font-size:12px;font-weight:600;color:var(--moss-deep)">${esc(s.lift || "")}</td>
+          <td data-label="Play">${esc(s.play || "")}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>` : ""}
   </div>
 </section>`;
 }
 
 function renderTribe(p, n, total) {
+  // v1.8.1 · table layout per user feedback (#22) · one row per creator
+  // with columns: Handle · Platform · Tier · Followers · For (persona) ·
+  // Audience fit · Evidence. Unverified candidates get a second table
+  // with brick-red header. Sourcing queries become their own table.
   const t = p.tribe;
   if (!t || (!t.creators?.length && !t.search_paths?.length && !t.tribe_summary)) return "";
   const creators = t.creators || [];
@@ -1310,46 +1386,63 @@ function renderTribe(p, n, total) {
     return "";
   };
 
-  const renderCard = (c) => `<div class="tribe-card${c.verified === false ? " unverified" : ""}">
-    <div class="tc-head">
-      <div class="tc-handle">${esc(c.handle || "")}</div>
-      ${c.tier ? `<span class="tc-tier ${tierClass(c.tier)}">${esc(c.tier)}</span>` : ""}
-    </div>
-    <div class="tc-meta">
-      ${c.platform ? `<span class="chip">${esc(c.platform)}</span>` : ""}
-      ${c.follower_band ? `<span class="chip">${esc(c.follower_band)}</span>` : ""}
-      ${c.target_persona ? `<span class="chip">for ${esc(c.target_persona)}</span>` : ""}
-      ${c.outreach_priority ? `<span class="chip priority ${esc((c.outreach_priority || "").toLowerCase())}">${esc(c.outreach_priority)} priority</span>` : ""}
-    </div>
-    ${c.primary_content ? `<div class="tc-content"><strong>Primary content</strong>${esc(c.primary_content)}</div>` : ""}
-    ${c.audience_fit ? `<p class="tc-fit">${esc(c.audience_fit)}</p>` : ""}
-    ${c.evidence ? `<p class="tc-evidence">${esc(c.evidence)}</p>` : ""}
-  </div>`;
+  const creatorRow = (c) => `<tr${c.verified === false ? ' style="background:rgba(188,71,73,0.04)"' : ""}>
+    <td data-label="Handle" class="cell-key" style="font-size:14px;color:${c.verified === false ? "var(--brick)" : "var(--moss-deep)"}">${esc(c.handle || "")}${c.verified === false ? ' <span class="unverified-tag">· unverified</span>' : ""}</td>
+    <td data-label="Platform" class="cell-mono">${esc(c.platform || "")}</td>
+    <td data-label="Tier">${c.tier ? `<span class="tier-chip ${tierClass(c.tier)}">${esc(c.tier)}</span>` : ""}</td>
+    <td data-label="Followers" class="cell-mono">${esc(c.follower_band || "")}</td>
+    <td data-label="For (persona)">${esc(c.target_persona || "—")}</td>
+    <td data-label="Audience fit" class="cell-italic">${esc(c.audience_fit || c.primary_content || "—")}</td>
+    <td data-label="Evidence" class="cell-mono" style="font-size:10px">${esc(c.evidence || "")}</td>
+  </tr>`;
 
   return `<section class="section" id="tribe">
   <div class="container">
     ${sectionTag("Tribe readout", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">${verified.length} verified creators.<br/>${paths.length} sourcing leads.</h2>
-    ${t.tribe_summary ? `<p class="tribe-summary">${esc(t.tribe_summary)}</p>` : ""}
-    ${caveats.length ? `<div class="tribe-caveats"><span class="lbl">Honest caveats</span><ul>${caveats.map(c => `<li>${esc(c)}</li>`).join("")}</ul></div>` : ""}
-    ${verified.length ? `<div class="tribe-grid">
-      ${verified.map(renderCard).join("")}
-    </div>` : ""}
-    ${unverified.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin-bottom:14px">Unverified candidates · check before outreach</h3>
-    <div class="tribe-grid">
-      ${unverified.map(renderCard).join("")}
-    </div>` : ""}
-    ${paths.length ? `<div class="search-paths">
-      <h4>Sourcing queries · for the human matcher</h4>
-      <p class="sp-intro">Engine couldn't verify a handle for these archetypes. Run these queries (or hand them to a sourcer) before adding to the outreach list.</p>
-      <div class="sp-grid">
-        ${paths.map(p => `<div class="sp-row">
-          <div class="platform">${esc(p.platform || "")}</div>
-          <div class="query">${esc(p.query || "")}</div>
-          <div class="why">${esc(p.why || "")}</div>
-        </div>`).join("")}
-      </div>
-    </div>` : ""}
+    ${t.tribe_summary ? `<p class="engine-table-caption">${esc(t.tribe_summary)}</p>` : ""}
+    ${caveats.length ? `<div style="padding:14px 18px;background:rgba(188,71,73,0.06);border-left:3px solid var(--brick);border-radius:0 6px 6px 0;font-size:13px;line-height:1.6;margin-bottom:24px"><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#7a2c2e;display:block;margin-bottom:6px">Honest caveats</strong><ul style="margin:0;padding-left:18px;color:var(--ink-secondary)">${caveats.map(c => `<li style="margin-bottom:3px">${esc(c)}</li>`).join("")}</ul></div>` : ""}
+    ${verified.length ? `<table class="engine-table">
+      <thead><tr>
+        <th style="width:16%">Handle</th>
+        <th style="width:9%">Platform</th>
+        <th style="width:11%">Tier</th>
+        <th style="width:10%">Followers</th>
+        <th style="width:14%">For (persona)</th>
+        <th style="width:22%">Audience fit</th>
+        <th style="width:18%">Evidence</th>
+      </tr></thead>
+      <tbody>${verified.map(creatorRow).join("")}</tbody>
+    </table>` : ""}
+    ${unverified.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--brick)">Unverified candidates · check before outreach</h3>
+    <table class="engine-table">
+      <thead><tr>
+        <th style="width:16%">Handle</th>
+        <th style="width:9%">Platform</th>
+        <th style="width:11%">Tier</th>
+        <th style="width:10%">Followers</th>
+        <th style="width:14%">For (persona)</th>
+        <th style="width:22%">Audience fit</th>
+        <th style="width:18%">Evidence</th>
+      </tr></thead>
+      <tbody>${unverified.map(creatorRow).join("")}</tbody>
+    </table>` : ""}
+    ${paths.length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Sourcing queries · for the human matcher</h3>
+    <p class="engine-table-caption">Engine couldn't verify a handle for these archetypes. Run these queries (or hand them to a sourcer) before adding to the outreach list.</p>
+    <table class="engine-table">
+      <thead><tr>
+        <th style="width:14%">Platform</th>
+        <th style="width:38%">Query</th>
+        <th style="width:48%">Why this query</th>
+      </tr></thead>
+      <tbody>
+        ${paths.map(p2 => `<tr>
+          <td data-label="Platform" class="cell-mono" style="font-weight:600;color:var(--moss-deep)">${esc(p2.platform || "")}</td>
+          <td data-label="Query" class="cell-mono" style="font-size:12px">${esc(p2.query || "")}</td>
+          <td data-label="Why">${esc(p2.why || "")}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>` : ""}
   </div>
 </section>`;
 }
@@ -1362,25 +1455,89 @@ function renderMethodology(p, n, total) {
   const hasD = !!p.diagnostic;
   const hasL = !!(p.appliedPlaybooks?.applied_playbooks?.length);
   const passCount = 18 + (hasD ? 1 : 0) + (hasL ? 1 : 0);
+  // v1.8.1 · table layout per user feedback (#23)
+  // Pass-output counts go into a 2-column table (Component · Count)
+  // Pass 0 sources + red flags get their own row groups beneath.
+  const stats = [
+    { k: "Engine version", v: ENGINE_VERSION },
+    { k: "Anthropic passes", v: passCount },
+    { k: "Core JTBD jobs", v: (p.mergedJobs || []).length },
+    { k: "Personas", v: (p.personas || []).length },
+    { k: "Swipe-file ad concepts", v: (p.swipeFile || []).length },
+    { k: "Ad recreations", v: p.adRecreations?.recreations?.length || 0 },
+    { k: "Ad deep-dives", v: p.adDeepDive?.deep_dive ? 1 : 0 },
+    { k: "TikTok/Reels scripts", v: (p.scripts || []).length },
+    { k: "Email/SMS flows", v: (p.emailFlows?.flows || []).length },
+    { k: "Channels in plan", v: (p.channelPlan?.channels || []).length },
+    { k: "Landing variants", v: (p.landing?.variants || []).length },
+    { k: "Rollout phases", v: (p.rollout?.phases || []).length },
+    { k: "Creator packets", v: (p.creators?.creator_briefs || []).length },
+    { k: "Competitive teardowns", v: (p.competitive?.competitive_matrix || []).length },
+    { k: "Brand-audit surfaces", v: (p.brandAudit?.areas || []).length },
+    { k: "Funnel stages", v: (p.demandLandscape?.funnel_stages || []).length },
+    { k: "Verified creators (Tribe)", v: (p.tribe?.creators || []).filter(c => c.verified !== false).length },
+    { k: "Strategic diagnostic (Pass D)", v: hasD ? "✓" : "—" },
+    { k: "Library playbooks applied (Pass L)", v: p.appliedPlaybooks?.applied_playbooks?.length || 0 },
+    { k: "Hormozi Grand Slam Offer (Pass O)", v: p.hormoziOffer?.offer ? "✓" : "—" },
+    { k: "Hormozi Money Model (Pass M)", v: p.hormoziMoneyModel?.money_model?.stack?.length ? `✓ · ${p.hormoziMoneyModel.money_model.stack.length} offers stacked` : "—" },
+    { k: "Hormozi Lead Model (Pass G)", v: p.hormoziLeadModel?.lead_model ? `✓ · ${p.hormoziLeadModel.lead_model.archetype || ""}` : "—" },
+  ];
   return `<section class="section" id="method">
   <div class="container">
     ${sectionTag("Methodology", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">How this was made.</h2>
-    <p class="body-lg" style="max-width:720px;margin-bottom:24px">Engine ${ENGINE_VERSION} · ${passCount} Anthropic passes · ${(p.mergedJobs || []).length} core jobs · ${(p.personas || []).length} personas · ${(p.swipeFile || []).length} swipe concepts · ${(p.scripts || []).length} scripts · ${(p.emailFlows?.flows || []).length} email flows · ${(p.channelPlan?.channels || []).length} channels · ${(p.landing?.variants || []).length} landing variants · ${(p.rollout?.phases || []).length} rollout phases · ${(p.creators?.creator_briefs || []).length} creator packets · ${(p.competitive?.competitive_matrix || []).length} competitive teardowns · ${(p.brandAudit?.areas || []).length} audit surfaces · ${(p.demandLandscape?.funnel_stages || []).length} funnel stages · ${(p.tribe?.creators || []).filter(c => c.verified !== false).length} verified creators${hasD ? ` · 1 strategic diagnostic` : ""}${hasL ? ` · ${p.appliedPlaybooks.applied_playbooks.length} library playbooks applied` : ""}.</p>
-    <p class="body-lg" style="max-width:720px">Sources fed into Pass 0:</p>
-    <ul style="margin-top:8px;color:var(--ink-secondary)">${(pc.sources || []).map(s => `<li>· ${esc(s)}</li>`).join("")}</ul>
-    ${(pc.red_flags || []).length ? `<p class="body-lg" style="margin-top:24px;color:#bc4749">⚑ Red flags: ${pc.red_flags.map(esc).join(" · ")}</p>` : ""}
+    <p class="engine-table-caption">Engine ${ENGINE_VERSION} · ${passCount} Anthropic passes · methodology fuses ODI/JTBD (Ulwick) + PM101 (Maturity/Sophistication/Awareness) + Hormozi $100M trilogy (Offers/Leads/Money Models) + Cialdini Persuasion Principles (when surfaced via Pass L vault).</p>
+    <table class="engine-table" style="max-width:680px">
+      <thead><tr>
+        <th style="width:60%">Component</th>
+        <th style="width:40%">Count / Status</th>
+      </tr></thead>
+      <tbody>
+        ${stats.map(s => `<tr>
+          <td data-label="Component" class="cell-key" style="font-size:13px">${esc(s.k)}</td>
+          <td data-label="Count" class="cell-mono" style="font-size:13px;font-weight:600;color:var(--moss-deep)">${esc(String(s.v))}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+    ${(pc.sources || []).length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Sources fed into Pass 0</h3>
+    <table class="engine-table" style="max-width:680px">
+      <thead><tr>
+        <th style="width:6%">#</th>
+        <th style="width:94%">Source</th>
+      </tr></thead>
+      <tbody>
+        ${(pc.sources || []).map((s, i) => `<tr>
+          <td data-label="#" class="cell-mono">${i + 1}</td>
+          <td data-label="Source" class="cell-mono" style="font-size:12px">${esc(s)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>` : ""}
+    ${(pc.red_flags || []).length ? `<h3 style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--brick);margin:24px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--brick)">⚑ Red flags</h3>
+    <table class="engine-table" style="max-width:680px">
+      <thead><tr>
+        <th style="width:6%">#</th>
+        <th style="width:94%">Flag</th>
+      </tr></thead>
+      <tbody>
+        ${(pc.red_flags || []).map((f, i) => `<tr>
+          <td data-label="#" class="cell-mono" style="color:var(--brick)">${i + 1}</td>
+          <td data-label="Flag" style="font-size:13px">${esc(f)}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>` : ""}
   </div>
 </section>`;
 }
 
 function renderColophon(p, n, total) {
+  // v1.8.1 · trimmed per user feedback (#24) · was 2 paragraphs of
+  // "methodology recap + hypothesis disclaimer" · user said "the last
+  // paragraph is enough" so we keep only the closing line.
   return `<section class="section" id="colophon">
   <div class="container">
     ${sectionTag("Colophon", n, total)}
     <h2 class="display-lg" style="margin-bottom:16px">The makers.</h2>
-    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary)">Generated by the Alchemical Growth Engine — a Mode 1 Earth ODI tool. The methodology fuses Tony Ulwick's Outcome-Driven Innovation with Eugene Schwartz's five awareness levels, validated against live search behavior and competitive value-prop language.</p>
-    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);margin-top:16px">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
+    <p class="body-lg" style="max-width:720px;color:var(--ink-secondary);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:18px;line-height:1.55">This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers.</p>
   </div>
 </section>`;
 }
@@ -1486,7 +1643,8 @@ function renderHormoziMoneyModel(p, n, total) {
             <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Price</strong><br>${esc(s.economics.price_usd || "?")}</div>
             <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Take rate</strong><br>${esc(s.economics.expected_take_rate || "?")}</div>
             <div><strong style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ink-muted)">Margin</strong><br>${esc(s.economics.margin_pct || "?")}</div>
-          </div>` : ""}
+          </div>
+          ${s.economics.expected_take_rate_basis || s.economics.margin_basis ? `<div style="margin-top:6px;padding:8px 12px;background:rgba(200,164,92,0.08);border-left:2px solid #c8a45c;border-radius:0 4px 4px 0;font-size:11px;line-height:1.5;color:var(--ink-secondary);font-family:'Cormorant Garamond',serif;font-style:italic">${s.economics.expected_take_rate_basis ? `<div><strong style="font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#7a5e1e">Take-rate basis:</strong> ${esc(s.economics.expected_take_rate_basis)}</div>` : ""}${s.economics.margin_basis ? `<div style="${s.economics.expected_take_rate_basis ? "margin-top:4px" : ""}"><strong style="font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#7a5e1e">Margin basis:</strong> ${esc(s.economics.margin_basis)}</div>` : ""}</div>` : ""}` : ""}
           ${s.first_test ? `<div style="margin-top:8px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12.5px;color:var(--ink-secondary)">First test: ${esc(s.first_test)}</div>` : ""}
           ${s.target_persona ? `<div style="margin-top:6px;font-size:11px;color:var(--ink-muted);font-family:'IBM Plex Mono',monospace">Anchor: ${esc(s.target_persona)} · ${esc(s.target_outcome || "")}</div>` : ""}
         </div>
@@ -1538,10 +1696,12 @@ function renderHormoziLeadModel(p, n, total) {
       <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--moss-deep);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--moss-deep)">Lead Getters · scale-stage amplifiers</div>
       ${lm.lead_getters.map(g => `<div style="padding:14px 18px;background:var(--bg-warm);border-radius:7px;margin-bottom:10px;font-size:12.5px;line-height:1.55">
         <div style="font-family:'DM Serif Display',serif;font-size:15px;margin-bottom:4px">${esc(g.type || "")}</div>
-        <div><strong>Activate</strong>: ${esc(g.when_to_activate || "?")}</div>
-        <div><strong>Comp</strong>: ${esc(g.comp_structure || "?")}</div>
-        <div><strong>KPI</strong>: ${esc(g.first_kpi || "?")}</div>
+        <div><strong>Activate:</strong> ${esc(g.when_to_activate || "?")}</div>
+        <div><strong>Comp:</strong> ${esc(g.comp_structure || "?")}</div>
+        <div><strong>KPI:</strong> ${esc(g.first_kpi || "?")}</div>
         ${g.specifics ? `<div style="margin-top:6px;font-family:'Cormorant Garamond',serif;font-style:italic">${esc(g.specifics)}</div>` : ""}
+        ${g.relationship_spend_monthly_usd ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(56,102,65,0.08);border-left:3px solid var(--moss-deep);border-radius:0 4px 4px 0"><strong style="color:var(--moss-deep)">Relationship spend / month:</strong> ${esc(g.relationship_spend_monthly_usd)}</div>` : ""}
+        ${g.first_quarter_relationship_calendar ? `<div style="margin-top:6px;padding:8px 12px;background:var(--bg-base);border-radius:4px;font-size:12px;font-family:'Cormorant Garamond',serif;font-style:italic;line-height:1.55"><strong style="font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--moss-mid);display:block;margin-bottom:4px">First quarter relationship calendar</strong>${esc(g.first_quarter_relationship_calendar)}</div>` : ""}
       </div>`).join("")}
     </div>` : ""}
 
@@ -1709,7 +1869,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.8.0";
+export const ENGINE_VERSION = "v1.8.1";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";

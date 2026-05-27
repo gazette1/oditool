@@ -6,6 +6,128 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.8.1] — 2026-05-27 · POST-RUN FEEDBACK FIXES (8 items)
+
+User ran v1.8.0 against Victory Point Express (junk removal · Long Island) and surfaced 8 specific issues. All fixed in this release. Doc-only / prompt-only changes — no architectural shift.
+
+### Fixed · #2 · §02 Money Model · take-rate basis explicit
+
+User asked: "we are seeing take rate % based on what?"
+
+Pass M schema gained TWO new mandatory fields per stack entry's `economics`:
+- `expected_take_rate_basis` (e.g., "industry benchmark for estate-attorney referrals" / "analogous offer at 1-800-GOT-JUNK" / "judgement estimate · validate in first 2 weeks" / "stated by founder in Pass 0 context")
+- `margin_basis` (brief rationale for the margin · COGS estimate / labor + materials / SaaS-default / etc.)
+
+Renderer (`renderHormoziMoneyModel`) surfaces both in a goldenrod italic basis-strip below the economics tile. User can now see whether a 35% take rate is grounded in benchmark or just a judgement estimate to validate.
+
+### Fixed · #5 · §05 Evidence · larger font
+
+User: "to be a larger font or easier to read"
+
+`.ev-row` font 12px → **14px**. Job-id number 20px → 24px. Importance/satisfaction nums 20px → 22px. Opportunity score 22px → **26px**. Ulwick outcome italic 13px → **16px** + line-height 1.5 + ink-primary color (was ink-secondary). Row padding 18px → 22px. Anchor quote 13px → 15px.
+
+### Fixed · #6 · §06 Value-prop · URL overflow into stated value column
+
+User: "the websites in the brand run over the stated value props too hard to read"
+
+Three CSS fixes:
+- Name column 140px → **180px** wide
+- `.vp-row > *` now has `min-width: 0 + overflow-wrap: anywhere` so grid columns respect their width
+- `.vp-row .name .meta` (the URL line) gets `word-break: break-all` so long URLs wrap inside the name column instead of overflowing into the quote
+- Body font 12px → 13px, quote 13px → 14px for readability
+
+### Fixed · #7 · §03 Lead Model + §14 Channels · partner-relationship spend allocation
+
+User: "for a business like this i would expect money to go to be allocated to buying lunch and stuff at attorny offices and other channel partners"
+
+Two prompt strengthenings:
+
+**Pass G (Lead Model) `lead_getters[]` schema** gained TWO MANDATORY fields for local_services + B2B + service archetypes:
+- `relationship_spend_monthly_usd` · concrete monthly $ budget for in-person partner touches (e.g., "$400/mo lunches at 4 realtor offices + 8 attorney drop-bys")
+- `first_quarter_relationship_calendar` · 3-5 specific touches (Week 1 lunch · Week 4 office drop-by with referral one-pager · Week 8 branded notebook · Week 12 holiday basket)
+
+The prompt explicitly says: "Do NOT skip this for local services — the user explicitly asked for this allocation. Set to '$0 · digital-only' only if the archetype is pure DTC e-commerce or pure SaaS self-serve."
+
+**Renderer** surfaces both fields prominently in the Lead Getter card with moss-green accent border.
+
+**Pass 11 Channel Plan prompt** updated with channel archetype rules: local-services-led brands get GBP + LSAs + AEO/GEO + partner-referral relationship spend as the PRIMARY channel mix · Meta/TikTok demoted to secondary.
+
+### Fixed · #17 · §17 Rollout + §14 Channels · AEO/GEO leading priority
+
+User: "nothing on AEO or GEO would expect that to be first"
+
+**Pass 11 prompt** now mandates AEO/GEO as its own channel row for any B2B or local-services brand. Defines AEO/GEO as: optimizing for being the answer that ChatGPT/Perplexity/Google AI Overviews/Claude/Gemini surface for "best junk removal Long Island" style queries · schema markup + FAQ structuring + authority citations + "X vs Y" content.
+
+**Pass 13 Rollout prompt** now mandates AEO/GEO foundation work as a TOP-3 Phase 1 deliverable for local services and B2B. Concrete Phase 1 deliverables: LocalBusiness/Service schema markup audit · FAQ pages structured for question-answer extraction · authoritative citation strategy · "[brand] vs [competitor]" comparison content · 5-10 high-intent answer-engine queries optimized.
+
+For LOCAL SERVICES, Phase 1 also gets GBP optimization + partner-referral relationship calendar + review-velocity. Paid social shows up in Phase 2-3 only after local trust signals are in place.
+
+Prompt closes with: "If Phase 1 for a local-services or B2B brand omits AEO/GEO, you've failed the rollout. It's that important — answer engines now drive 30%+ of high-intent search and that share is growing monthly."
+
+### Fixed · #19 · §19 Competitive · inline bold + colon formatting
+
+User: "the where we win and where we lose where to attack etc, needs to all be bolded then followed by : like '**where we win:**'"
+
+Renderer changed from block-displayed uppercase mini-cap labels to **inline `<strong>` bold + colon** pattern. Now reads:
+
+  **Where we win:** Environmental compliance documentation and premium speed positioning…
+  **Where we lose:** National brand recognition, marketing budget scale…
+  **Wedge to attack:** Their generic disposal process lacks the environmental compliance verification…
+  **First punch · ship in 4 weeks:** Target property management companies with compliance documentation case studies…
+
+CSS revised to make all `<strong>` elements in the comp-card inline-bold with section-accent color (moss-green for win, brick-red for lose, moss-deep for wedge).
+
+### Fixed · #20-23 · Brand Audit, Demand, Tribe, Methodology · TABLE LAYOUTS
+
+User: "needs to be put in a table" (×4 sections)
+
+New unified `.engine-table` CSS class — semantic `<table>` with:
+- Bordered cells with moss-tone separators
+- Mono-uppercase header row with bg-warm background
+- Striped rows (every-other rgba(106,153,78, 0.03))
+- `overflow-wrap: anywhere` on all cells (no more URL/text overflow)
+- Mobile responsive: <720px collapses to vertical key-value pairs via `data-label` attributes
+- Pill styles for priority chips (high/medium/low/scrape · brick/lime/warm/moss colors)
+- Tier chips (t1/t2/t3/aspirational) for creator tables
+- Print-friendly (works with v1.7.4 `@media print` stylesheet)
+
+**§20 Brand Audit** · 6-column table: Surface · Priority · Current state · What works · What breaks · Recommended fix. no-visibility rows collapse to single colspan cell with scrape hint. Voice consistency + Discoverability live in a 2-tile strip below the table.
+
+**§21 Demand Landscape** · split into 3 tables:
+- Funnel keywords (Stage · Keyword · Volume · Comp · Wedge angle · Audience intent · with rowspan on Stage for grouping)
+- White-space keywords (Keyword · Why it's white-space · First 2-week test)
+- Seasonal pulse (Period · Lift · Play to run)
+
+**§22 Tribe Readout** · 7-column table: Handle · Platform · Tier · Followers · For (persona) · Audience fit · Evidence. Unverified candidates get their own brick-red-bordered table. Sourcing queries become a 3-column table (Platform · Query · Why this query).
+
+**§23 Methodology** · stats become a 2-column key-value table (Component · Count/Status) showing all 22 pass outputs. Pass 0 sources + red flags get their own row-numbered tables.
+
+### Fixed · #24 · §24 Colophon · trimmed
+
+User: "too much info the last paragraph is enough"
+
+Was: 2 paragraphs (methodology recap + hypothesis disclaimer).
+Now: just the closing line, italicized in Cormorant Garamond serif, sized up to 18px for elegance: *"This document is a starting position, not a finish line. Each section is a hypothesis to test against real attention, real spend, and real customers."*
+
+### ENGINE_VERSION bumped v1.8.0 → v1.8.1
+
+Bundle 561.54 KB / 159.37 KB gzip (+17 KB from new CSS .engine-table block + 4 rewritten renderers + new schema fields).
+
+### Acceptance criteria
+
+1. ✅ Pass M outputs `expected_take_rate_basis` + `margin_basis` per stack entry · renderer surfaces both
+2. ✅ §05 Evidence font sizes bumped across all sub-elements
+3. ✅ §06 URL overflow fixed via `word-break: break-all` + wider name column + `min-width: 0` on grid children
+4. ✅ Pass G outputs `relationship_spend_monthly_usd` + `first_quarter_relationship_calendar` for local services + B2B service archetypes
+5. ✅ Pass 11 Channel Plan + Pass 13 Rollout prompts both mandate AEO/GEO as primary for local services + B2B
+6. ✅ §19 Competitive renders `**Where we win:**` inline bold + colon pattern
+7. ✅ §20 / §21 / §22 / §23 all converted to table layouts with the unified `.engine-table` CSS
+8. ✅ §24 Colophon trimmed to single italic closing line
+9. ✅ Build clean
+10. ✅ All print-stylesheet compatibility preserved
+
+---
+
 ## [1.8.0] — 2026-05-27 · v2.0-alpha · HORMOZI CORE PHASE A SHIPPED
 
 **Three new universal core passes** that produce three new top-of-doc sections (§01 The Offer · §02 The Money Model · §03 The Lead Model) on every strategy doc, regardless of business archetype. This is Phase A of the v2.0 pivot from architectural spec [[19 - Hormozi Core Architecture]].

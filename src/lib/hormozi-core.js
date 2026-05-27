@@ -361,9 +361,11 @@ Return ONLY raw JSON in this exact shape:
         "target_outcome": "<Ulwick outcome from the list>",
         "economics": {
           "price_usd": "<$X>",
-          "expected_take_rate": "<Z% · realistic>",
+          "expected_take_rate": "<Z% · realistic · MUST include the basis below>",
+          "expected_take_rate_basis": "<MANDATORY · explain WHAT the take_rate is grounded in. Use one of: 'industry benchmark for <specific category>' / 'analogous offer at <comparable brand>' / 'judgement estimate · validate in first 2 weeks' / 'stated by founder in Pass 0 context'. NEVER leave blank. If it's a pure estimate say so honestly.>",
           "margin_pct": "<Y%>",
-          "rationale": "<why these economics work for the category and persona>"
+          "margin_basis": "<MANDATORY · brief rationale for the margin · COGS estimate / labor + materials / SaaS-style 80%+ default / etc.>",
+          "rationale": "<why these economics work for the category and persona · 1-2 sentences>"
         },
         "first_test": "<concrete 2-week first-test of this offer · ships fast>"
       }
@@ -482,7 +484,9 @@ Return ONLY raw JSON in this exact shape:
         "when_to_activate": "<stage gate · e.g., 'Once at $50K MRR' OR 'After first 100 customers'>",
         "comp_structure": "<concrete · 'Flat $50/referral' OR '15% rev share' OR '$X retainer + Y% performance'>",
         "first_kpi": "<measurable · e.g., '25%+ of jobs sourced from realtor partners within 6 months'>",
-        "specifics": "<for local services: which realtor/GC/attorney archetypes · for B2B: which integrators/consultants · for DTC: which referral mechanic>"
+        "specifics": "<for local services: which realtor/GC/attorney archetypes · for B2B: which integrators/consultants · for DTC: which referral mechanic>",
+        "relationship_spend_monthly_usd": "<MANDATORY for local_services and B2B archetypes when type is 'Affiliates & Partners' · concrete monthly budget for the relationship · e.g., '$400/mo lunches at 4 realtor offices + 8 attorney drop-bys' or '$250/mo coffee meetings + holiday-gift basket Q4 budget $1500'. Do NOT skip this for local services — the user explicitly asked for this allocation. Set to '$0 · digital-only' only if the archetype is pure DTC e-commerce or pure SaaS self-serve.>",
+        "first_quarter_relationship_calendar": "<MANDATORY for partner channels · 3-5 concrete touches · e.g., 'Week 1: lunch with top-3 estate attorneys. Week 4: bring-by-the-office coffee + donuts with referral one-pager. Week 8: branded notebook drop. Week 12: holiday gift basket.'>"
       }
     ],
 
