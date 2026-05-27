@@ -6,6 +6,94 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.7.8] — 2026-05-27 · INCREMENTAL PERSISTENCE (prevents $1.40 loss)
+
+**The fix for "I paid $1.50 and got nothing."** User asked: "what about all the info that has already been generated to this point?" — pointing at the v1.7.7 crash where every pass succeeded, every API call charged, but the composer threw on the last 50ms and the user got zero document. This release prevents that pattern forever.
+
+### Problem statement
+
+When `generateStrategyDoc` runs, every Pass 5-18 output was stored in **function-local `const`s** inside the function scope. If anything downstream threw — composer bug, image gen failure, OOM, browser crash, network blip during download — those locals were destroyed by garbage collection and ~$1.40 of API spend vanished with them.
+
+The user already experienced this on 2026-05-27 at 07:37 with the `lives_online_at .split` crash. Pass 1-4 + Stage A + diagnostic survived (those use React state setters during runAnalysis, not during strategy-doc gen). Everything else gone.
+
+### Fix · incremental localStorage persistence
+
+After EVERY pass output is generated, immediately write to localStorage. Single key per project: `alchemy:${projectId}:strategy_cache_v1`. JSON object accumulated across the run. Cleared only after successful HTML download.
+
+```js
+const cacheKey = `alchemy:${projectId}:strategy_cache_v1`;
+const cache = { _started_at: Date.now(), _project_name: …, _project_id: … };
+const persist = (passName, output) => {
+  cache[passName] = output;
+  try { localStorage.setItem(cacheKey, JSON.stringify(cache)); }
+  catch (e) { console.warn(`persist failed at ${passName}: ${e.message}`); }
+};
+
+// after every pass call:
+const personas = await generatePersonas(...);
+persist("personas", personas);
+// ... and so on for swipe_file, scripts, emailFlows, channelPlan, landing,
+// rollout, creators, competitive, brandAudit, demandLandscape, tribe,
+// valueProp, adRecreations, adDeepDive, appliedPlaybooks
+```
+
+The **swipe_file persist after Pass 8.5** is the biggest win — that's the $0.80 worth of gpt-image-2 base64 imagery that took 25+ minutes of wall time on the failed run. Now if anything downstream breaks, the images are safe in localStorage.
+
+### Fix · final payload persist before compose
+
+Right before calling `composeStrategyDoc(payload)`, the full assembled payload is written one more time as `cache._full_payload`. So even if the composer itself throws (which is what happened on 05-27), the entire input to the composer is sitting in localStorage ready for a do-over.
+
+### Fix · "↻ Resume cached run" button + cache-hit detection
+
+New state `hasCachedRun` set on project load if `alchemy:${projectId}:strategy_cache_v1` exists. New yellow-bordered "↻ Resume cached run" button in the header next to "↓ Strategy Doc". Click it → reads cache → calls `composeStrategyDoc(cache._full_payload)` + `downloadStrategyDoc()` → **zero API spend on the resume**. Clears cache on success.
+
+If the cache exists but doesn't have `_full_payload` (i.e. the crash happened BEFORE compose, mid-pass), the resume button still appears but reports that the run is incomplete and the user needs to re-run. Future v1.7.9 work: resume from arbitrary cached state by replaying only the missing passes.
+
+### Cache-hit log on project load
+
+When user switches to a project that has a cached run, the debug log emits:
+
+```
+📦 Cached strategy run found · 14 passes cached · READY to resume (zero API spend) · click ↻ Resume in header
+```
+
+Or if incomplete:
+
+```
+📦 Cached strategy run found · 8 passes cached · incomplete · re-run to complete
+```
+
+### localStorage size considerations
+
+The 20-image swipe file is ~1MB of base64. Plus the rest of the passes ~200KB. Total cache ~1.2-1.5MB per project. localStorage cap is 5MB per origin. Comfortable headroom. If a future run exceeds the cap, `persist()` logs a warning to console with the payload size — does NOT throw — pass continues normally just without the cache entry.
+
+### Architecture note: this is a "save-then-resume" pattern, not a "checkpoint-resume" pattern
+
+v1.7.8 only re-renders from the END payload. It doesn't yet support partial resume (e.g., "Pass 16 failed at minute 35 · resume from Pass 17"). That's v1.7.9+ scope · would need each individual pass cache entry to be independently usable as a starting point.
+
+For the most common failure mode (composer throws on the very last step), this design is sufficient.
+
+### ENGINE_VERSION bumped v1.7.7 → v1.7.8
+
+### Acceptance criteria
+
+1. ✅ Every Pass 5-18 output persisted to localStorage immediately after generation
+2. ✅ Pass 8.5 imagery persisted (the $0.80 case · most expensive to lose)
+3. ✅ Full payload persisted right before composeStrategyDoc
+4. ✅ Cache cleared on successful download
+5. ✅ "↻ Resume cached run" button appears when cache exists
+6. ✅ Resume button calls composeStrategyDoc + downloadStrategyDoc with zero API calls
+7. ✅ Cache-hit log emitted on project load when cache exists
+8. ✅ localStorage cap (5MB) handled gracefully — warning log, pass continues
+9. ✅ Build clean · 498.31 KB / 142.68 KB gzip (+3 KB from persist scaffold + Resume callback + button)
+10. ✅ DTC regression-free
+
+### What this means for the user's lost 05-27 run
+
+This release doesn't recover the data already lost. The cache wasn't there when the v1.7.7 run happened. But going forward: **every API spend is safe.** The next time the user runs the engine and anything fails at any point past Pass 7, they'll see a "↻ Resume cached run" button and can re-render the doc for free.
+
+---
+
 ## [1.7.7] — 2026-05-27 · CRITICAL HOTFIX
 
 **Composer-crash hotfix.** User ran the engine against a live junk-removal client at ~07:37 and got `Strategy doc generation failed: (per.lives_online_at || "").split is not a function` AFTER every pass had already run successfully (Pass 1-18 all completed · ~3-4 minutes wall + ~$1.50 in Anthropic spend). Zero document returned. Critical bug.

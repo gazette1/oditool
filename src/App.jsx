@@ -271,6 +271,12 @@ export default function App() {
   const [showGateModal, setShowGateModal] = useState(false);
   const [appliedPlaybooks, setAppliedPlaybooks] = useState(null); // Pass L output
 
+  // v1.7.8 · cache-hit detection. True when a strategy_cache_v1 entry
+  // exists in localStorage for the active project. Shows the "🔄 Resume"
+  // button. Set/cleared by generateStrategyDoc, resumeStrategyDoc, and the
+  // project-switch effect.
+  const [hasCachedRun, setHasCachedRun] = useState(false);
+
   // Engine v1.4: Project Setup flow + active project context
   const [viewMode, setViewMode] = useState("analyze"); // "analyze" | "setup"
   const [projects, setProjects] = useState([]);
@@ -383,9 +389,57 @@ export default function App() {
         if (cached?.concepts?.length) setVaultIndex(cached);
       }
     } catch {}
+    // v1.7.8 · detect cached incomplete/complete strategy run for this project
+    try {
+      const cacheKey = `alchemy:${project?.airtableId || (project?.name || "anon").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}:strategy_cache_v1`;
+      const has = !!localStorage.getItem(cacheKey);
+      setHasCachedRun(has);
+      if (has) {
+        const cache = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+        const passCount = Object.keys(cache).filter(k => !k.startsWith("_")).length;
+        const hasFullPayload = !!cache._full_payload;
+        log(`📦 Cached strategy run found · ${passCount} passes cached · ${hasFullPayload ? "READY to resume (zero API spend)" : "incomplete · re-run to complete"} · click ↻ Resume in header`, hasFullPayload ? "ok" : "warn");
+      }
+    } catch {}
   }, [resetProjectScopedState, airtable, log]);
 
   // ── Engine v1.5 · Generate full Strategy Doc ──
+  // v1.7.8 · resume from cached strategy run.
+  // If generateStrategyDoc completed all passes but composeStrategyDoc or
+  // downloadStrategyDoc threw, the full payload is sitting in localStorage.
+  // This callback re-runs ONLY the compose + download steps. Zero API spend.
+  // Cleared cache on successful download.
+  const resumeStrategyDoc = useCallback(async () => {
+    if (!activeProject) { setError("Pick a project first"); return; }
+    const cacheKey = `alchemy:${activeProject?.airtableId || (activeProject?.name || "anon").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}:strategy_cache_v1`;
+    let cache;
+    try { cache = JSON.parse(localStorage.getItem(cacheKey) || "null"); }
+    catch (e) { setError(`Resume failed: cache parse error · ${e.message}`); return; }
+    if (!cache) { setError("No cached run found for this project"); setHasCachedRun(false); return; }
+    if (!cache._full_payload) {
+      setError(`Cached run is incomplete · last pass cached: ${Object.keys(cache).filter(k => !k.startsWith("_")).pop() || "(none)"} · re-run to complete`);
+      return;
+    }
+    setStratDocBusy(true);
+    setError(null);
+    setStratDocPhase("Resuming from cache · composing HTML doc…");
+    try {
+      log(`🔄 Resume cached run · started ${new Date(cache._started_at).toLocaleString()} · ${Object.keys(cache).filter(k => !k.startsWith("_")).length} passes cached · zero API spend on this resume`, "ok");
+      const html = composeStrategyDoc(cache._full_payload);
+      const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+      const filename = `strategy-${slug}-${Date.now()}-resumed.html`;
+      downloadStrategyDoc(html, filename);
+      setStratDocPhase(`✓ Resumed · downloaded ${filename}`);
+      log(`Strategy doc downloaded from cache: ${filename}`, "ok");
+      try { localStorage.removeItem(cacheKey); setHasCachedRun(false); } catch {}
+    } catch (e) {
+      setError(`Resume failed at compose: ${e.message}`);
+      log(`Resume compose threw: ${e.message}`, "error");
+    } finally {
+      setStratDocBusy(false);
+    }
+  }, [activeProject, log]);
+
   const generateStrategyDoc = useCallback(async () => {
     if (!data || !data.length) { setError("Run analysis first"); return; }
     if (!config.anthropicKey) { setError("Anthropic key required"); return; }
@@ -400,10 +454,30 @@ export default function App() {
 
     setStratDocBusy(true);
     setError(null);
+
+    // v1.7.8 · incremental persistence · every pass output saved to
+    // localStorage immediately so a downstream crash (composer, image gen,
+    // anything) never destroys API spend. On crash the user clicks "🔄
+    // Resume cached run" in the header to re-render without re-running
+    // any passes. Cache cleared on successful download.
+    const cacheKey = `alchemy:${activeProject?.airtableId || (activeProject?.name || sector || "anon").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}:strategy_cache_v1`;
+    const cache = {
+      _started_at: Date.now(),
+      _project_name: activeProject?.name || sector || "",
+      _project_id: activeProject?.airtableId || null,
+    };
+    const persist = (passName, output) => {
+      cache[passName] = output;
+      try { localStorage.setItem(cacheKey, JSON.stringify(cache)); }
+      catch (e) { console.warn(`[strategy-cache] persist failed at ${passName}: ${e.message} · payload size ${JSON.stringify(cache).length} bytes`); }
+    };
+    persist("_init", true);
+
     try {
       setStratDocPhase("Pass 7: generating personas…");
       log("Pass 7/18: personas");
       const { personas = [] } = await generatePersonas(config.anthropicKey, projectContext, data);
+      persist("personas", personas);
 
       setStratDocPhase("Pass 5: value-prop comparison (auto-discovering competitors)…");
       log("Pass 5/18: competitor value-prop comparison");
@@ -446,10 +520,12 @@ export default function App() {
           log(`Pass 5 · ${(valueProp?.comparisons || []).length} comparisons returned${competitors.length === 0 ? " (via web_search discovery)" : ""}`, "ok");
         } catch (e) { log(`Pass 5 skipped (non-critical): ${e.message}`, "error"); }
       }
+      persist("valueProp", valueProp);
 
       setStratDocPhase("Pass 8: swipe file (20 ads)…");
       log("Pass 8/18: 20 swipe-file ad concepts");
       let { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
+      persist("swipe_file", swipe_file);
 
       // v1.6.8 · optional Pass 8.5 · gpt-image-1 per swipe card
       if (generateImagery && swipe_file.length && config.openaiKey) {
@@ -463,6 +539,7 @@ export default function App() {
             onProgress: (msg) => { setStratDocPhase(`Pass 8.5: ${msg}`); log(`  ${msg}`); },
           });
           swipe_file = imgResult.swipeFile;
+          persist("swipe_file", swipe_file);  // ← CRITICAL · contains $0.80 of base64 imagery
           log(`Pass 8.5 complete · ${imgResult.summary.ok}/${imgResult.summary.total} images generated · ${imgResult.summary.failed} failed`, "ok");
         } catch (e) {
           log(`Pass 8.5 skipped: ${e.message} · falling back to gradient mocks`, "warn");
@@ -510,6 +587,7 @@ export default function App() {
       } else {
         log("Pass 8.6 skipped · no ad data available · run 🎯 Ad-Intel first (or wait for Adyntel-canonical Stage B in v1.8)", "warn");
       }
+      persist("adRecreations", adRecreations);
 
       // v1.7.4 · Pass 8.7 · Ad Deep Dive (Phase A MVP · auto-runs on top Pass 8.6 recreation)
       // Explodes the top recreation into a single production-ready storyboard
@@ -539,14 +617,17 @@ export default function App() {
       } else {
         log("Pass 8.7 skipped · no Pass 8.6 recreations available to seed the deep dive", "warn");
       }
+      persist("adDeepDive", adDeepDive);
 
       setStratDocPhase("Pass 9: TikTok scripts…");
       log("Pass 9/18: 8 shot-by-shot TikTok scripts");
       const { scripts = [] } = await generateScripts(config.anthropicKey, projectContext, positioningSpine, personas);
+      persist("scripts", scripts);
 
       setStratDocPhase("Pass 10: email flows…");
       log("Pass 10/18: 4 Klaviyo-ready email flows");
       const emailFlows = await generateEmailFlows(config.anthropicKey, projectContext, positioningSpine);
+      persist("emailFlows", emailFlows);
 
       setStratDocPhase("Pass 11: channel plan + targeting matrix…");
       log("Pass 11/18: channel plan + targeting matrix");
@@ -559,24 +640,28 @@ export default function App() {
           log(`Pass 11 budget rebalanced · original sum ${channelPlan._validation.original_sum}% → 100%`, "warn");
         }
       } catch (e) { log(`Pass 11 skipped: ${e.message}`, "error"); }
+      persist("channelPlan", channelPlan);
 
       setStratDocPhase("Pass 12: landing-page variants…");
       log("Pass 12/18: landing-page variants");
       let landing = { variants: [] };
       try { landing = await generateLandingVariants(config.anthropicKey, projectContext, positioningSpine, personas); }
       catch (e) { log(`Pass 12 skipped: ${e.message}`, "error"); }
+      persist("landing", landing);
 
       setStratDocPhase("Pass 13: 90-day rollout plan…");
       log("Pass 13/18: 90-day rollout");
       let rollout = { phases: [], weekly_cadence: [], kill_criteria: [] };
       try { rollout = await generateRollout(config.anthropicKey, projectContext, positioningSpine, entryRecs); }
       catch (e) { log(`Pass 13 skipped: ${e.message}`, "error"); }
+      persist("rollout", rollout);
 
       setStratDocPhase("Pass 14: creator outreach packets…");
       log("Pass 14/18: 5 paid-creator briefs");
       let creators = { creator_briefs: [] };
       try { creators = await generateCreatorBriefs(config.anthropicKey, projectContext, positioningSpine, personas, entryRecs); }
       catch (e) { log(`Pass 14 skipped: ${e.message}`, "error"); }
+      persist("creators", creators);
 
       setStratDocPhase("Pass 15: competitive teardown…");
       log("Pass 15/18: 6-row competitive matrix + axis summary");
@@ -585,6 +670,7 @@ export default function App() {
         const adIntelCompetitors = adIntelData?.competitors || null;
         competitive = await generateCompetitiveTeardown(config.anthropicKey, projectContext, positioningSpine, valueProp, adIntelCompetitors);
       } catch (e) { log(`Pass 15 skipped: ${e.message}`, "error"); }
+      persist("competitive", competitive);
 
       setStratDocPhase("Pass 16: brand audit…");
       log("Pass 16/18: 8-10 surface brand audit");
@@ -594,6 +680,7 @@ export default function App() {
         // For now we pass empty string · Pass 16 reasons from projectContext.
         brandAudit = await generateBrandAudit(config.anthropicKey, projectContext, data, "");
       } catch (e) { log(`Pass 16 skipped: ${e.message}`, "error"); }
+      persist("brandAudit", brandAudit);
 
       setStratDocPhase("Pass 17: demand landscape…");
       log("Pass 17/18: 3-stage funnel + white-space + seasonal");
@@ -601,6 +688,7 @@ export default function App() {
       try {
         demandLandscape = await generateDemandLandscape(config.anthropicKey, projectContext, positioningSpine, data, searchVolumeData);
       } catch (e) { log(`Pass 17 skipped: ${e.message}`, "error"); }
+      persist("demandLandscape", demandLandscape);
 
       setStratDocPhase("Pass 18: tribe readout (web_search verification, slow)…");
       log("Pass 18/18: tribe readout · web_search-verified handles only");
@@ -608,6 +696,7 @@ export default function App() {
       try {
         tribe = await generateTribeReadout(config.anthropicKey, projectContext, personas, creators);
       } catch (e) { log(`Pass 18 skipped: ${e.message}`, "error"); }
+      persist("tribe", tribe);
 
       // v1.7.0 · Pass L · apply playbooks from the user's vault library
       let pl = { applied_playbooks: [] };
@@ -636,12 +725,15 @@ export default function App() {
       } else if (!vaultIndex?.concepts?.length) {
         log("Pass L skipped: no concept vault loaded · pick one in Project Setup → Concept Library Vault", "warn");
       }
+      persist("appliedPlaybooks", pl);
 
       setStratDocPhase("Composing HTML doc…");
-      const html = composeStrategyDoc({
-        // v1.7.2 · Use the project name the user typed at Setup as the brand
-        // name. Never fall back to the sector field (which is a verbose
-        // descriptor, not a brand). If both are missing → "Untitled Brand".
+      // v1.7.8 · assemble the final payload AND persist it as the
+      // last cache write. If composeStrategyDoc throws (as it did on
+      // 2026-05-27 with the lives_online_at .split bug), the user can
+      // hit "🔄 Resume cached run" in the header to re-render without
+      // re-paying for any pass.
+      const payload = {
         project_name: (activeProject?.name && activeProject.name.trim()) || "Untitled Brand",
         project_context: projectContext,
         positioning: positioningSpine,
@@ -660,17 +752,24 @@ export default function App() {
         brandAudit,
         demandLandscape,
         tribe,
-        diagnostic,            // v1.7.0 · drives §00 + section order
-        appliedPlaybooks: pl,    // v1.7.0 · §-near-end playbooks
-        adRecreations,           // v1.7.3 · §05b proven-ad recreations
-        adDeepDive,              // v1.7.4 · §05c production-ready storyboard
-      });
+        diagnostic,
+        appliedPlaybooks: pl,
+        adRecreations,
+        adDeepDive,
+      };
+      persist("_full_payload", payload);
+      setHasCachedRun(true);   // surfaces Resume button immediately
+
+      const html = composeStrategyDoc(payload);
 
       const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
       const filename = `strategy-${slug}-${Date.now()}.html`;
       downloadStrategyDoc(html, filename);
       setStratDocPhase(`✓ Downloaded ${filename}`);
       log(`Strategy doc downloaded: ${filename}`);
+      // v1.7.8 · cache cleared only after successful download
+      try { localStorage.removeItem(cacheKey); setHasCachedRun(false); }
+      catch {}
 
       // Engine v1.6.8 · optional Vercel deploy. Silently skipped when
       // VITE_VERCEL_TOKEN isn't set in .env.local.
@@ -1042,6 +1141,14 @@ export default function App() {
                 className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
                 {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}
               </button>
+              {/* v1.7.8 · Resume from cached strategy run · only visible when a cache exists for the active project · zero API spend on re-compose */}
+              {hasCachedRun && (
+                <button onClick={resumeStrategyDoc} disabled={stratDocBusy || loading}
+                  title="Re-render the strategy doc from the last run's cached output · zero API spend"
+                  className="text-xs border border-[#c8a45c] text-[#c8a45c] px-3 py-2 rounded-lg hover:bg-[#c8a45c] hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  ↻ Resume cached run
+                </button>
+              )}
               <button onClick={() => setShowConfig(true)}
                 className="text-xs text-dim border border-[#1e2a3a] px-3 py-2 rounded-lg hover:border-accent hover:text-accent transition">
                 ⚙ Config
