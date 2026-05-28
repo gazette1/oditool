@@ -687,29 +687,74 @@ Return ONLY valid JSON: {"personas": [{...}, {...}, {...}, {...}]}`,
 }
 
 // ── PASS 8: Swipe File concepts (Engine v1.5) ──
+// ── PASS 8: Swipe File (Engine v1.9.0 · grounded in real running ads) ──
+//
+// CHANGES FROM v1.8.x:
+//   - 20 conceptual cards → 10 cards GROUNDED in real running ads
+//   - Each card requires a real source_ad_reference (URL · brand · ~10-15
+//     word pattern summary) found via web_search · then the brand's
+//     ORIGINAL adapted version that uses the same mechanic
+//   - Imagery generation cost cuts in half (10 not 20 base64 PNGs)
+//   - Bias toward sourcing across competitor + adjacent-category ads
+//
+// IMPORTANT · IP discipline (carried from Pass 8.6 and Pass 8.7):
+//   - source_pattern_summary describes the MECHANIC (e.g., "price-
+//     transparency hook + before/after image + same-day CTA") in ~10-15
+//     words · NOT the verbatim source headline or body text
+//   - adapted_headline / adapted_body / adapted_cta are the user's
+//     ORIGINAL creative inspired by the pattern · NOT paraphrases of the
+//     source ad's copy
+//   - The engine never reproduces competitor ad copy · only references
+//     where the inspiration came from (source URL + brand)
+//
 export async function generateSwipeFile(apiKey, projectContext, positioning, personas) {
   const ctx = projectContext ? `PROJECT CONTEXT:\n- Sector: ${projectContext.sector}\n- Audience: ${projectContext.audience}\n- Brand voice: ${projectContext.brand_voice}\n- Key facts: ${(projectContext.key_facts || []).slice(0,6).join("; ")}` : "";
   const pos = positioning?.primary ? `Primary positioning: "${positioning.primary.sentence}" (Job ${positioning.primary.citation_job_id}, score ${positioning.primary.citation_score})` : "";
   const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype}): ${p.one_liner}`).join("\n");
 
   const data = await callClaude(apiKey,
-    `You are a senior creative director. Produce a 20-card swipe file — exactly 5 ad concepts per persona — that operationalizes the positioning.
+    `You are a senior creative director building a 10-card swipe file. Each card MUST be GROUNDED in a real ad currently running in the wild · found via web_search.
 
-Each card needs:
+WORKFLOW · do this for each of the 10 cards:
+1. Use web_search to find a real ad currently running — search the brand's competitors, adjacent-category brands, and the patterns that work for this audience. Look for: Meta Ad Library entries, TikTok creative center, YouTube ads archive, ads referenced on r/marketing / r/advertising, ads embedded in case studies on Foreplay / Adsparo / SwipeWell / Particl, ads in industry-publication newsletters.
+2. Capture the SOURCE PATTERN as a 10-15 word mechanic description (e.g., "founder POV close-up + tactile claim before reveal + texture-test CTA"). NEVER reproduce the source ad's verbatim headline or body — you are extracting the MECHANIC, not the copy.
+3. Note the source reference: brand name + URL where the ad lives (Meta Ad Library archive URL, TikTok ad URL, etc.).
+4. Then produce the brand's ORIGINAL adapted version — copy written from scratch in our brand voice that uses the same mechanic. Not a paraphrase. Not a "find and replace" rewrite. ORIGINAL.
+
+Distribute the 10 cards: 2-3 per persona · cover 4-5 awareness stages · mix the 4 formats.
+
+Each card returns:
 - id (e.g., SWP-NAME-01 using persona's first initial)
-- persona_name (which persona this targets)
-- format (one of: Meta 4:5, Meta carousel, TikTok 9:16, TikTok UGC)
-- stage (Unaware / Problem aware / Solution aware / Product aware / Most aware)
-- title (concept name, 2-5 words)
-- headline (the actual scroll-stopping copy, 1-2 lines, no exclamation points, no em-dashes)
-- body (1-2 sentences of body copy in the brand voice)
-- cta (3-5 word phrase)
-- framework (PAS / BAB / AIDA / Compare / Founder POV / UGC testimonial / Trend pivot / Day-in-life / Sensory / etc.)
-- visual_brief (1-2 sentences describing the visual — used later for image generation; specify model casting if a person is shown, otherwise still-life)
+- persona_name (which of our personas this targets)
+- format (Meta 4:5 | Meta carousel | TikTok 9:16 | TikTok UGC)
+- stage (Unaware | Problem aware | Solution aware | Product aware | Most aware)
+- source_ad_reference: {
+    "source_brand": "<brand name from web_search>",
+    "source_url": "<URL where the ad can be viewed>",
+    "source_format": "<format of the source ad · same vocab as above>",
+    "source_pattern_summary": "<10-15 word mechanic description · NOT verbatim copy>",
+    "why_it_works": "<1 sentence on the psychology / structure that makes the pattern effective for this audience>"
+  }
+- title (2-5 word concept name for OUR version)
+- adapted_headline (our ORIGINAL scroll-stopping copy · 1-2 lines · brand voice · no exclamation points · no em-dashes · MUST NOT be a paraphrase of source_ad's copy)
+- adapted_body (1-2 sentences of OUR body copy in our voice)
+- adapted_cta (3-5 word phrase from OUR brand)
+- framework (PAS | BAB | AIDA | Compare | Founder POV | UGC testimonial | Trend pivot | Day-in-life | Sensory | Price transparency | Authority | Social proof stack | etc.)
+- visual_brief (1-2 sentences for OUR visual · used by Pass 8.5 for image generation · specify casting if a person is shown · brand-safe · no competitor brand names in the prompt)
 
-Return ONLY JSON: {"swipe_file": [{...}, ...]}  (exactly 20 cards)`,
+Return ONLY JSON: {"swipe_file": [{...}, {...}, ... ten total]}
+
+ABSOLUTE RULES:
+1. Exactly 10 cards. Not 8. Not 12. Ten.
+2. source_pattern_summary describes the MECHANIC (~10-15 words). Never the verbatim source ad copy.
+3. adapted_headline / adapted_body / adapted_cta are ORIGINAL · not paraphrases or "swap the brand name" rewrites.
+4. visual_brief contains NO competitor brand names · brand-safe for downstream image generation.
+5. Each card MUST have a real source_url. If web_search can't find a real ad for a particular pattern, skip that pattern and find one you CAN ground.`,
     `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
-    { maxTokens: 8000 }
+    {
+      tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 12 }],
+      maxTokens: 9000,
+    }
   );
   return extractJSON(data);
 }

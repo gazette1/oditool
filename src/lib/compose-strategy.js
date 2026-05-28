@@ -142,6 +142,15 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .swipe-card .ad-id{font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:4px}
 .swipe-card .ad-title{font-family:"DM Serif Display",serif;font-size:18px;line-height:1.25;margin-bottom:12px}
 .swipe-card .ad-copy{font-size:12.5px;line-height:1.65;margin-bottom:14px}
+/* v1.9.0 · ad-source · "Based on real running ad" reference block ·
+   surfaces source_brand + source_url + source_pattern_summary so the
+   reader can click through to see the original ad in the wild before
+   adapting. The adapted_headline/body/cta in the card are ORIGINAL
+   brand-voice creative · not paraphrases of source ad copy. */
+.swipe-card .ad-source{margin-top:14px;padding:10px 12px;background:var(--bg-warm);border-left:3px solid var(--moss-mid);border-radius:0 6px 6px 0;font-family:"IBM Plex Mono",monospace;font-size:10px;line-height:1.55;color:var(--ink-secondary);word-break:break-word;overflow-wrap:anywhere}
+.swipe-card .ad-source strong{color:var(--moss-deep);font-weight:600}
+.swipe-card .ad-source-pattern{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11.5px;color:var(--ink-primary);display:inline-block;margin-top:3px}
+.swipe-card .ad-source-url{display:inline-block;margin-top:3px;color:var(--moss-deep);text-decoration:underline;font-size:9.5px;word-break:break-all}
 .swipe-card .ad-footer{margin-top:auto;padding-top:14px;border-top:1px solid rgba(106,153,78,.3);display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px}
 .swipe-card .ad-footer .label{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px}
 .script{background:var(--bg-base);border-radius:12px;padding:32px;margin-bottom:24px;border:1px solid rgba(106,153,78,.3)}
@@ -610,57 +619,196 @@ footer{padding:80px 0 56px;background:var(--bg-base);border-top:1px solid rgba(1
    destination Save as PDF, layout portrait, A4 or Letter, enable
    "Background graphics" so moss-and-brick tokens print correctly.
    ───────────────────────────────────────────────────────────── */
+/* v1.9.0 · PE-DECK PRINT STYLESHEET · landscape A4 · one section per
+   slide · dense typography · table-first information density.
+   Triggered by ↓ PDF button (window.print()) OR manual Cmd-P → Save
+   as PDF. The on-screen layout stays portrait + flowing for browser
+   reading · print rules transform to PE-deck slide style. */
 @media print {
-  @page { size: A4 portrait; margin: 14mm 12mm; }
+  @page {
+    size: A4 landscape;
+    margin: 10mm 12mm 14mm 12mm;
+    /* Slide footer via running header · jsPDF/Puppeteer would respect
+       this · most browsers show their own page-N-of-M when "Headers and
+       footers" is enabled in the print dialog · we provide our own
+       too via .pe-footer on each section. */
+  }
   *,*::before,*::after { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-  html,body { background: #fff !important; font-size: 10.5pt; line-height: 1.55; overflow: visible !important; }
-  nav.top { display: none !important; }
-  nav.top + * { padding-top: 0 !important; }
-  .cover { padding: 24pt 0 18pt !important; background: #fff !important; page-break-after: always; }
-  .cover .display-xl { font-size: 32pt !important; line-height: 1.05; color: var(--ink-primary) !important; }
-  .cover-meta { margin-top: 24pt !important; padding-top: 14pt !important; }
-  .cover-meta-item { cursor: default !important; transition: none !important; }
-  .cover-meta-item:hover { transform: none !important; opacity: 1 !important; }
-  .container { padding: 0 4mm !important; max-width: 100% !important; }
-  .section { padding: 18pt 0 16pt !important; page-break-inside: auto; }
-  .section-tag-row { margin-bottom: 14pt !important; }
-  .section-name { color: #4a5b3e !important; }
-  .display-lg { font-size: 22pt !important; line-height: 1.15; page-break-after: avoid; }
-  .display { font-size: 18pt !important; page-break-after: avoid; }
-  h2, h3, h4 { page-break-after: avoid; }
-  /* Card-style sections: keep each card on one page when possible */
-  .swipe-card, .script, .email-flow, .channel-card, .landing-variant, .phase-card,
-  .creator-card, .comp-card, .audit-card, .funnel-card, .tribe-card, .playbook-card,
-  .ar-card, .dd-shot, .ws-card { page-break-inside: avoid; }
-  /* Long sections: allow row-level breaks */
-  .ev-table, .vp-table, .matrix-table, .dd-storyboard { page-break-inside: auto; }
-  .ev-row, .vp-row, .matrix-row { page-break-inside: avoid; }
-  /* Hide horizontal-scroll affordances · no scrolling on paper */
-  nav.top .nav-links, .swipe-grid { overflow: visible !important; }
-  /* Flatten gradients that ink-blast on paper · keep accent on critical pills */
-  .position-primary { background: #fff !important; border: 2pt solid var(--moss-deep) !important; }
-  .dd-hook { background: #fdf8e8 !important; }
-  .dd-thesis { background: #f5f0d8 !important; border-left: 4pt solid var(--moss-deep) !important; }
-  .ar-prompt-block, .dd-shot .shot-prompt { background: #f5efde !important; }
-  /* Pill chips: solid backgrounds */
-  .ad-chip, .chip, .au-priority, .pb-theme, .ar-format, .dd-meta .dd-runtime { background: #f0e8d2 !important; color: #2a3328 !important; }
-  /* Wordmark gradient → solid ink (gradient text doesn't print) */
-  .wordmark { background: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; color: var(--ink-primary) !important; }
-  footer { padding: 36pt 0 24pt !important; }
-  footer .wordmark { font-size: 28pt !important; }
-  /* Print-only attribution line */
-  .footer-meta::after { content: " · printed " attr(data-print-date); }
-  /* Hairline rules */
-  .hairline { display: none; }
-  /* Storyboard shot grid → vertical stack at print width */
-  .dd-shot { grid-template-columns: 56pt 1fr !important; gap: 12pt !important; }
-  .dd-shot .shot-num { font-size: 28pt !important; }
-  /* Suppress accent moss-light bg that washes out body text */
-  .audit-card.no-visibility { background: #faf3df !important; }
-  /* Anchor-link text underlines clean up */
+  html,body { background: #fff !important; font-size: 9.5pt; line-height: 1.5; overflow: visible !important; color: var(--ink-primary) !important; }
+  nav.top, nav.top .nav-links { display: none !important; }
+  .container { padding: 0 6mm !important; max-width: 100% !important; }
   a { color: inherit !important; text-decoration: none !important; }
-  /* Hide the dashed border on prompt blocks once printed (still ink-cheap) */
-  .ar-prompt-block, .dd-shot .shot-prompt { border-style: solid !important; border-color: var(--moss-deep) !important; }
+  /* No transitions or hover effects in print */
+  *,*:hover { transition: none !important; transform: none !important; }
+
+  /* ─── COVER SLIDE · compact · one printed page ─── */
+  .cover { padding: 14pt 0 12pt !important; background: #fff !important; page-break-after: always; min-height: 80vh; }
+  .cover .display-xl { font-size: 36pt !important; line-height: 1.0; color: var(--ink-primary) !important; margin-bottom: 16pt !important; }
+  .cover .body-lg { font-size: 11pt !important; max-width: 480pt !important; }
+  .cover-meta { margin-top: 28pt !important; padding-top: 14pt !important; grid-template-columns: repeat(4, 1fr) !important; gap: 14pt !important; }
+  .cover-meta-item { cursor: default !important; }
+  .cover-meta-item .value { font-size: 24pt !important; }
+  .cover-tag .doc-num { font-size: 8pt !important; padding: 4pt 10pt !important; }
+
+  /* ─── EVERY SECTION IS A SLIDE · page-break-after always ─── */
+  .section {
+    padding: 12pt 0 8pt !important;
+    page-break-after: always !important;
+    page-break-inside: auto;
+    min-height: 75vh;
+  }
+  .section:last-of-type { page-break-after: auto !important; }
+
+  /* Section-tag-row becomes the PE-deck slide title bar */
+  .section-tag-row {
+    margin-bottom: 10pt !important;
+    padding: 6pt 0 6pt !important;
+    border-bottom: 1.5pt solid var(--moss-deep) !important;
+    align-items: center !important;
+  }
+  .section-name { color: var(--moss-deep) !important; font-size: 10pt !important; font-weight: 700 !important; }
+  .section-number { font-size: 8pt !important; color: var(--ink-muted) !important; }
+
+  /* Big section headlines kept as the slide takeaway line */
+  .display-lg { font-size: 22pt !important; line-height: 1.12 !important; page-break-after: avoid !important; margin-bottom: 10pt !important; color: var(--ink-primary) !important; }
+  .display { font-size: 16pt !important; page-break-after: avoid !important; }
+  .h2, h2.display-lg { page-break-after: avoid !important; }
+  h2, h3, h4 { page-break-after: avoid !important; }
+
+  /* Tables · PE-deck primary information structure · pack denser in landscape */
+  .engine-table { font-size: 9pt !important; margin-bottom: 12pt !important; }
+  .engine-table thead th { padding: 8pt 10pt !important; font-size: 8pt !important; }
+  .engine-table tbody td { padding: 8pt 10pt !important; }
+  .engine-table .cell-key { font-size: 11pt !important; }
+  .engine-table .cell-italic { font-size: 9.5pt !important; }
+  .engine-table .cell-mono { font-size: 8.5pt !important; }
+  .engine-table .pill-priority, .engine-table .tier-chip { font-size: 7pt !important; padding: 2pt 6pt !important; }
+  .engine-table-caption { font-size: 10pt !important; margin-bottom: 8pt !important; }
+
+  /* Existing legacy tables (evidence + value-prop + matrix) also tighten */
+  .ev-row { padding: 12pt 16pt !important; gap: 12pt !important; font-size: 9.5pt !important; }
+  .ev-row .job-id { font-size: 16pt !important; }
+  .ev-row .num, .ev-row .opp { font-size: 16pt !important; }
+  .ev-row .outcome .ulwick { font-size: 11pt !important; }
+  .vp-row { padding: 12pt 16pt !important; gap: 12pt !important; font-size: 9.5pt !important; }
+  .vp-row .name { font-size: 12pt !important; }
+  .vp-row .quote { font-size: 10pt !important; }
+
+  /* Card-style components: avoid breaking inside a single card */
+  .swipe-card, .script, .email-flow, .channel-card, .landing-variant, .phase-card,
+  .creator-card, .comp-card, .funnel-card, .playbook-card,
+  .ar-card, .dd-shot, .ws-card { page-break-inside: avoid !important; }
+
+  /* Swipe-grid · 2-col in landscape so 10 cards = ~5 printed slides
+     (cards break across slides as the grid flows · each card stays intact) */
+  .swipe-grid { grid-template-columns: 1fr 1fr !important; gap: 10pt !important; }
+  /* Swipe-card · drop the giant 4:5 ad-mock image area down to a small
+     header strip · saves enormous ink + lets each card fit dense info.
+     User clicks the source URL to see the actual ad anyway. */
+  .swipe-card .ad-mock { aspect-ratio: auto !important; min-height: 60pt !important; max-height: 80pt !important; padding: 8pt !important; }
+  .swipe-card .ad-mock::before { display: none !important; }
+  .swipe-card .ad-headline { font-size: 11pt !important; line-height: 1.2 !important; }
+  .swipe-card .ad-body { padding: 10pt 12pt 12pt !important; }
+  .swipe-card .ad-copy { font-size: 9.5pt !important; }
+  .swipe-card .ad-title { font-size: 12pt !important; }
+  .swipe-card .ad-source { font-size: 8pt !important; padding: 6pt 8pt !important; }
+  .swipe-card .ad-source-pattern { font-size: 9.5pt !important; }
+  .swipe-card .ad-source-url { font-size: 7.5pt !important; }
+
+  /* Hide imagery in print swipe cards by default · the source URL is the
+     anchor · saves ink + paper time. To print with imagery, user can
+     override this rule manually in browser print preview. */
+  .swipe-card .ad-mock { background-image: none !important; background-color: #f5efde !important; }
+
+  /* Audit / Demand / Tribe / Methodology · already use .engine-table so
+     just inherit the table-tightening above */
+
+  /* Hormozi core sections · Pass O / M / G · keep slide-distinct */
+  #offer, #money-model, #lead-model { page-break-after: always !important; }
+  #offer .body-lg { font-size: 11pt !important; }
+  /* Value Equation 4-tile grid · keep on the same slide */
+  #offer .container > div[style*="grid-template-columns:1fr 1fr"]:first-of-type { page-break-inside: avoid !important; }
+
+  /* Strategic Context (§00) · keep its compact tile layout on one slide */
+  #strategic { page-break-after: always !important; }
+  .strat-ctx-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 10pt !important; }
+  .strat-ctx-tile { padding: 8pt 12pt !important; }
+
+  /* Long content sections (storyboard · funnel keywords) allow row-level breaks */
+  .ev-table, .vp-table, .matrix-table, .dd-storyboard, .engine-table { page-break-inside: auto !important; }
+  .ev-row, .vp-row, .matrix-row, .engine-table tbody tr { page-break-inside: avoid !important; }
+
+  /* Flatten gradient backgrounds that ink-blast on paper */
+  .position-primary { background: #fff !important; border: 1.5pt solid var(--moss-deep) !important; }
+  .dd-hook { background: #fdf8e8 !important; }
+  .dd-thesis { background: #f5f0d8 !important; border-left: 3pt solid var(--moss-deep) !important; }
+  .ar-prompt-block, .dd-shot .shot-prompt { background: #f5efde !important; border-style: solid !important; }
+  .axis-summary { background: #f5f0d8 !important; }
+
+  /* Pills · solid bg */
+  .ad-chip, .chip, .au-priority, .pb-theme, .ar-format, .dd-meta .dd-runtime,
+  .engine-table .pill-priority, .engine-table .tier-chip { background: #f0e8d2 !important; color: #2a3328 !important; }
+
+  /* Wordmark gradient → solid */
+  .wordmark { background: none !important; -webkit-background-clip: initial !important; background-clip: initial !important; color: var(--ink-primary) !important; }
+
+  /* Hairline · drop */
+  .hairline { display: none !important; }
+
+  /* Footer · compact · single line at bottom of last slide */
+  footer { padding: 18pt 0 14pt !important; page-break-before: avoid !important; }
+  footer .wordmark { font-size: 18pt !important; }
+  footer .footer-meta { font-size: 8pt !important; }
+
+  /* Persona grid · landscape lets us fit 2-up · keep each persona on one slide */
+  .persona { grid-template-columns: 180pt 1fr !important; gap: 18pt !important; padding: 14pt 0 !important; page-break-inside: avoid !important; }
+  .persona-avatar { aspect-ratio: 1 !important; }
+  .persona-body .name { font-size: 20pt !important; }
+  .persona-body .one-liner { font-size: 11pt !important; }
+  .persona-fields { grid-template-columns: 100pt 1fr !important; gap: 6pt 14pt !important; }
+  .persona-fields .pf-value { font-size: 9.5pt !important; padding-bottom: 8pt !important; }
+
+  /* Scripts · scripts table · email cards · constrain to landscape */
+  .script, .email-flow { page-break-inside: avoid !important; }
+  .shot-row { padding: 6pt 0 !important; }
+  .shot-detail { font-size: 9.5pt !important; }
+
+  /* Channels grid · 2-up in landscape */
+  .channel-grid { grid-template-columns: 1fr 1fr !important; gap: 10pt !important; }
+  .matrix-row { padding: 8pt 14pt !important; font-size: 9pt !important; }
+
+  /* Landing variants · 1 per slide · they're info-dense */
+  .landing-variant { page-break-inside: avoid !important; page-break-after: always !important; }
+
+  /* Phase cards (rollout) · 1 per slide */
+  .phase-card { page-break-inside: avoid !important; padding: 18pt 22pt !important; }
+
+  /* Creator briefs · 1 per slide */
+  .creator-card { page-break-inside: avoid !important; page-break-after: always !important; }
+
+  /* Competitive cards · 2-up landscape */
+  .comp-grid { grid-template-columns: 1fr 1fr !important; gap: 10pt !important; }
+  .comp-card { padding: 14pt 16pt !important; font-size: 9.5pt !important; }
+  .comp-card .cp-name { font-size: 14pt !important; }
+  .comp-card .cp-promise { font-size: 10pt !important; }
+  .comp-card .cp-winlose { grid-template-columns: 1fr 1fr !important; gap: 8pt !important; }
+  .comp-card .cp-win, .comp-card .cp-lose, .comp-card .cp-wedge, .comp-card .cp-punch { font-size: 9.5pt !important; padding: 8pt 10pt !important; }
+
+  /* Playbook grid · 2-up landscape */
+  .playbook-grid { grid-template-columns: 1fr 1fr !important; gap: 10pt !important; }
+  .playbook-card { padding: 12pt 14pt !important; }
+  .playbook-card .pb-name { font-size: 14pt !important; }
+
+  /* Ad recreation grid · 2-up */
+  .ar-grid { grid-template-columns: 1fr 1fr !important; gap: 10pt !important; }
+
+  /* Hormozi sections inline-tighten · §01/§02/§03 */
+  #offer > .container > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr 1fr !important; gap: 10pt !important;
+  }
+
+  /* No-visibility audit chips · soften bg */
+  .audit-card.no-visibility { background: #faf3df !important; }
 }
 `;
 
@@ -820,19 +968,28 @@ function renderPersonas(p, n, total) {
 
 function renderSwipe(p, n, total) {
   if (!(p.swipeFile || []).length) return "";
+  // v1.9.0 · swipe cards now grounded in real running ads found via
+  // web_search. Each card has source_ad_reference + an adapted brand
+  // version. Reader gets a "Based on real ad from [brand]" footer
+  // with the source URL so they can click through to see the original
+  // pattern in the wild. Adapted_headline/body/cta replace the v1.8.x
+  // headline/body/cta fields (we keep backward compat by falling back).
   return `<section class="section" id="swipe">
   <div class="container">
     ${sectionTag("Swipe file", n, total)}
-    <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ad concepts.</h2>
+    <h2 class="display-lg" style="margin-bottom:16px">${p.swipeFile.length} ads.<br/>Each grounded in a real ad running today.</h2>
+    <p class="engine-table-caption">Every card cites a real running ad found via web_search and produces an original brand-voice version of the same mechanic. The source URL points to where the original ad lives (Meta Ad Library · TikTok Creative Center · etc.) — click through to study the pattern before adapting.</p>
     <div class="swipe-grid">
       ${p.swipeFile.map(s => {
-        // Engine v1.6.8 · if image_b64 was generated by Pass 8.5
-        // (gpt-image-1), inline as bg-image. Otherwise fall back to
-        // the gradient mock.
         const mockStyle = s.image_b64
           ? `style="background-image:url(data:image/png;base64,${s.image_b64});background-size:cover;background-position:center"`
           : "";
-        return `<div class="swipe-card"><div class="ad-mock" ${mockStyle}><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(s.headline || "")}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(s.body || "")}</p><div class="ad-footer"><div><div class="label">CTA</div><div>${esc(s.cta || "")}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`;
+        // v1.9.0 schema · prefer adapted_* fields · fall back to legacy ones for backward compat with old cached runs
+        const headline = s.adapted_headline || s.headline || "";
+        const body = s.adapted_body || s.body || "";
+        const cta = s.adapted_cta || s.cta || "";
+        const ref = s.source_ad_reference || {};
+        return `<div class="swipe-card"><div class="ad-mock" ${mockStyle}><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(headline)}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(body)}</p>${ref.source_brand || ref.source_url ? `<div class="ad-source"><strong>Based on:</strong> ${esc(ref.source_brand || "real running ad")} · ${esc(ref.source_format || "")}${ref.source_pattern_summary ? `<br/><span class="ad-source-pattern">Mechanic: ${esc(ref.source_pattern_summary)}</span>` : ""}${ref.source_url ? `<br/><a href="${esc(ref.source_url)}" class="ad-source-url" target="_blank" rel="noopener">${esc(ref.source_url)}</a>` : ""}</div>` : ""}<div class="ad-footer"><div><div class="label">CTA</div><div>${esc(cta)}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`;
       }).join("")}
     </div>
   </div>
@@ -1869,7 +2026,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.8.1";
+export const ENGINE_VERSION = "v1.9.0";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";

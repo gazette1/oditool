@@ -6,6 +6,113 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.9.0] — 2026-05-27 · PE-DECK PDF + SWIPE FILE GROUNDED IN REAL ADS
+
+User direction: "html output sucks needs to be pdf from now on. and structred like a PE Deck cut the images to 10 swipe ads. that copy actual ads"
+
+Three substantive changes:
+1. PDF as a first-class output path with PE-deck-style landscape layout
+2. Swipe file cut from 20 → 10 ads · each grounded in a real running ad found via web_search
+3. New ↓ PDF button alongside the existing ↓ Strategy Doc
+
+### Changed · Pass 8 generateSwipeFile rewritten · grounded in real running ads
+
+The swipe file moves from "20 conceptual cards generated from positioning" to "**10 cards each grounded in a real ad currently running in the wild**" · web_search-sourced.
+
+**New workflow per card** (Pass 8 prompt now drives Claude through this loop for each of 10 cards):
+
+1. Use `web_search` to find a real ad currently running — competitors, adjacent-category brands, ads referenced in Meta Ad Library / TikTok Creative Center / YouTube ads archive / r/marketing references / Foreplay / Adsparo / SwipeWell case studies
+2. Capture the SOURCE PATTERN as a 10-15 word mechanic description (e.g., "founder POV close-up + tactile claim before reveal + texture-test CTA"). Never reproduce the source ad's headline or body — extract the MECHANIC, not copy.
+3. Note source reference: brand name + URL where the ad lives
+4. Produce ORIGINAL adapted version — copy written from scratch in our brand voice using the same mechanic. Not a paraphrase. Not a "find-and-replace" rewrite. Original creative.
+
+**New schema fields** per swipe card:
+
+```js
+{
+  id, persona_name, format, stage, title, framework, visual_brief,  // unchanged
+  source_ad_reference: {                                              // NEW
+    source_brand: "<brand from web_search>",
+    source_url: "<URL where the ad lives>",
+    source_format: "<format of the source ad>",
+    source_pattern_summary: "<10-15 word mechanic description>",
+    why_it_works: "<1 sentence on the psychology/structure>"
+  },
+  adapted_headline: "<our ORIGINAL scroll-stopping copy>",  // renamed from `headline` · enforces originality
+  adapted_body:     "<our ORIGINAL body copy>",              // renamed from `body`
+  adapted_cta:      "<our ORIGINAL CTA phrase>",             // renamed from `cta`
+}
+```
+
+**Renderer fallback** for backward compat: old cached runs with `headline`/`body`/`cta` still render correctly (the renderer prefers `adapted_*` and falls back).
+
+**`callClaude` tool config**: Pass 8 now passes `web_search_20250305` with `max_uses: 12`. Same tool config that Pass 18 Tribe Readout uses · same `web_search-verified` pattern.
+
+**Cost + time:**
+- Pass 8 LLM call: ~$0.10 → ~$0.20 (web_search adds wall time + token use)
+- Pass 8.5 imagery: ~$0.80 → ~$0.40 (10 cards instead of 20)
+- Net: roughly unchanged total, with much higher per-card value
+
+### Changed · Swipe card renderer surfaces source reference
+
+`renderSwipe` now reads `adapted_headline` / `adapted_body` / `adapted_cta` (falls back to legacy `headline` / `body` / `cta` for old cached runs) and adds a new **`Based on:` footer block** on each card showing source_brand, source_format, source_pattern_summary (italic), and a clickable source_url. Reader clicks through to see the real ad in the wild before adapting.
+
+New CSS `.swipe-card .ad-source` (moss-mid left-bordered tile with mono typography for URLs · `word-break: break-all` so long URLs don't overflow).
+
+### Added · PE-Deck Print Stylesheet · landscape A4 · page-per-section
+
+Heavy rewrite of `@media print` block. Previously: portrait A4 with section-level pagination. Now: full PE-deck slide aesthetic.
+
+**Key rules:**
+- `@page { size: A4 landscape; margin: 10mm 12mm 14mm 12mm; }`
+- Every `.section` gets `page-break-after: always !important` · one section = one slide where possible
+- `.section-tag-row` becomes a slide title bar with moss-deep underline
+- Display-lg headlines drop 22pt → 22pt (kept) but page-break-after avoid so they stay with their body
+- Body font tightens to 9.5pt for landscape density
+- Tables (`engine-table`) shrink to 9pt cells with 8pt header for PE-deck information density
+- **Swipe-cards drop the giant 4:5 ad-mock background** to a thin 60-80pt header strip — the source URL is the anchor for the actual ad's visual, no need to render base64 imagery on paper. Saves enormous ink + makes each card fit dense info
+- Persona grid recomposes to 180pt avatar + 1fr body (was equal cols) · one persona per slide
+- Comp-grid + playbook-grid + ar-grid + channel-grid all collapse to 2-up (was 2-up portrait → still 2-up but tighter landscape)
+- Hormozi §01/§02/§03 each keep their 4-tile Value Equation grid intact
+- Landing variants + creator briefs + phase cards each get `page-break-after: always` (1 per slide · they're information-dense)
+- Footer · 18pt wordmark · single attribution line
+- Gradients flattened · pills solid · wordmark gradient → solid ink
+
+### Added · ↓ PDF button in header
+
+New green-bordered "↓ PDF" button next to "↓ Strategy Doc". When clicked:
+1. Calls `generateStrategyDoc()` to compose the HTML and trigger the download
+2. After 1.5s delay (lets the browser handle the download), calls `window.print()` programmatically
+3. Browser opens its native print dialog with the PE-deck `@media print` stylesheet pre-loaded
+4. User picks "Save as PDF" destination · saves the file
+
+This delivers native PDF quality (better than html2pdf canvas-rasterization) with zero new bundle hit. The Cmd-P / Ctrl-P manual flow still works for users who want to skip the auto-trigger.
+
+### ENGINE_VERSION bumped v1.8.1 → v1.9.0
+
+Bundle 573.70 KB / 162.68 KB gzip (+12 KB from PE-deck CSS expansion + Pass 8 prompt expansion + new swipe card source-reference block).
+
+### Acceptance criteria
+
+1. ✅ Pass 8 outputs exactly 10 cards (was 20)
+2. ✅ Each card includes a real `source_ad_reference` with URL, brand, and mechanic summary
+3. ✅ `adapted_headline` / `adapted_body` / `adapted_cta` are explicitly defined as ORIGINAL brand-voice creative · prompt forbids verbatim reproduction and paraphrase rewrites
+4. ✅ Renderer surfaces "Based on:" reference block with clickable source URL
+5. ✅ Backward compat: old cached runs with `headline`/`body`/`cta` still render
+6. ✅ Pass 8 uses `web_search_20250305` tool with `max_uses: 12`
+7. ✅ Pass 8.5 imagery cost halves (10 cards · ~$0.40 instead of $0.80)
+8. ✅ `@media print` block rewritten for landscape A4 + page-per-section
+9. ✅ ↓ PDF button visible in header · triggers download + auto-opens print dialog
+10. ✅ Build clean
+
+### What's NOT in this release
+
+- html2pdf.js client-side PDF library (would add ~200 KB bundle · evaluated and deferred · native browser print is higher quality + zero bundle cost)
+- Server-side Puppeteer PDF endpoint (would require Vercel function · out of scope for the no-backend constraint)
+- Per-section "key takeaway" pull-quote at top of each slide (deferred to v1.9.1 polish)
+
+---
+
 ## [1.8.1] — 2026-05-27 · POST-RUN FEEDBACK FIXES (8 items)
 
 User ran v1.8.0 against Victory Point Express (junk removal · Long Island) and surfaced 8 specific issues. All fixed in this release. Doc-only / prompt-only changes — no architectural shift.

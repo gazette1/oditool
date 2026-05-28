@@ -1214,6 +1214,23 @@ export default function App() {
                 className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
                 {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}
               </button>
+              {/* v1.9.0 · ↓ PDF button · generates the strategy doc then auto-opens
+                  the browser's native print dialog with the PE-deck @media print
+                  stylesheet pre-loaded (landscape A4, page-per-section, dense tables).
+                  User picks "Save as PDF" destination · zero new bundle hit · native
+                  PDF rendering quality (better than html2pdf canvas-rasterization). */}
+              <button onClick={async () => {
+                await generateStrategyDoc();
+                // Give the browser a tick to download + open the HTML, then trigger print
+                setTimeout(() => {
+                  try { window.print(); }
+                  catch (e) { log(`Print dialog open failed: ${e.message} · open the .html and Cmd-P manually`, "warn"); }
+                }, 1500);
+              }} disabled={!data || stratDocBusy || loading}
+                title="Generate the strategy doc and immediately open the PE-deck print dialog · pick 'Save as PDF' as destination"
+                className="text-xs border border-[#386641] text-[#386641] px-3 py-2 rounded-lg hover:bg-[#386641] hover:text-[#fbf7f4] transition disabled:opacity-40 disabled:cursor-not-allowed">
+                {stratDocBusy ? "↻ …" : "↓ PDF"}
+              </button>
               {/* v1.7.8 · Resume from cached strategy run · only visible when a cache exists for the active project · zero API spend on re-compose */}
               {hasCachedRun && (
                 <button onClick={resumeStrategyDoc} disabled={stratDocBusy || loading}
