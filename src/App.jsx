@@ -5,7 +5,7 @@ import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryReco
 import { generateGrandSlamOffer, generateMoneyModel, generateLeadModel } from "./lib/hormozi-core";
 import { resolveBusinessModel } from "./lib/business-models";
 import { loadCachedIndex } from "./lib/library-reader";
-import { composeStrategyDoc, downloadStrategyDoc } from "./lib/compose-strategy";
+import { composeStrategyDoc, printStrategyDoc } from "./lib/compose-strategy";
 import { deployStrategyDoc, isVercelDeployConfigured } from "./lib/vercel-deploy";
 import { generateSwipeImagery } from "./lib/image-gen";
 import { runAdIntel } from "./lib/ad-intel";
@@ -424,15 +424,16 @@ export default function App() {
     }
     setStratDocBusy(true);
     setError(null);
-    setStratDocPhase("Resuming from cache · composing HTML doc…");
+    setStratDocPhase("Resuming from cache · composing PDF deck…");
     try {
       log(`🔄 Resume cached run · started ${new Date(cache._started_at).toLocaleString()} · ${Object.keys(cache).filter(k => !k.startsWith("_")).length} passes cached · zero API spend on this resume`, "ok");
       const html = composeStrategyDoc(cache._full_payload);
-      const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-      const filename = `strategy-${slug}-${Date.now()}-resumed.html`;
-      downloadStrategyDoc(html, filename);
-      setStratDocPhase(`✓ Resumed · downloaded ${filename}`);
-      log(`Strategy doc downloaded from cache: ${filename}`, "ok");
+      // v1.9.1 · print straight to PDF · no HTML file
+      printStrategyDoc(html, { onReady: (ok, reason) => {
+        if (ok) log("PDF deck print dialog opened from cache · pick 'Save as PDF'", "ok");
+        else log(`Print dialog failed: ${reason || "unknown"} · re-run if needed`, "warn");
+      }});
+      setStratDocPhase("✓ Resumed · PDF print dialog opened");
       try { localStorage.removeItem(cacheKey); setHasCachedRun(false); } catch {}
     } catch (e) {
       setError(`Resume failed at compose: ${e.message}`);
@@ -834,15 +835,21 @@ export default function App() {
       setHasCachedRun(true);   // surfaces Resume button immediately
 
       const html = composeStrategyDoc(payload);
-
       const slug = (activeProject?.name || "doc").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-      const filename = `strategy-${slug}-${Date.now()}.html`;
-      downloadStrategyDoc(html, filename);
-      setStratDocPhase(`✓ Downloaded ${filename}`);
-      log(`Strategy doc downloaded: ${filename}`);
-      // v1.7.8 · cache cleared only after successful download
-      try { localStorage.removeItem(cacheKey); setHasCachedRun(false); }
-      catch {}
+
+      // v1.9.1 · PDF-deck-only output · print straight to the browser's
+      // PDF engine via hidden iframe (the doc's own PE-deck @media print
+      // CSS governs layout). No .html file touches disk anymore.
+      setStratDocPhase("Opening PDF deck print dialog…");
+      printStrategyDoc(html, { onReady: (ok, reason) => {
+        if (ok) log("✓ PDF deck print dialog opened · pick 'Save as PDF' as the destination · A4 landscape · Background graphics ON", "ok");
+        else log(`Print dialog failed: ${reason || "unknown"} · click ↻ Resume to retry`, "warn");
+      }});
+      setStratDocPhase("✓ PDF deck ready · print dialog opened");
+      log("Strategy PDF deck composed · " + (payload.swipeFile || []).length + " swipe ads · print dialog opening");
+      // v1.9.1 · keep the cache (do NOT clear) so the user can re-open the
+      // print dialog via ↻ Resume if they dismiss it or want to re-save.
+      // Cache clears on next fresh run or project switch.
 
       // Engine v1.6.8 · optional Vercel deploy. Silently skipped when
       // VITE_VERCEL_TOKEN isn't set in .env.local.
@@ -852,7 +859,7 @@ export default function App() {
           const projectName = `oditool-${slug.slice(0, 40)}`;
           const result = await deployStrategyDoc(html, { projectName, slug });
           if (result.url) {
-            setStratDocPhase(`✓ ${filename} · share: ${result.url}`);
+            setStratDocPhase(`✓ PDF deck ready · share URL: ${result.url}`);
             log(`Vercel share URL: ${result.url}`, "ok");
             // eslint-disable-next-line no-console
             console.log("📎 Strategy doc share URL:", result.url);
@@ -1210,33 +1217,22 @@ export default function App() {
                 />
                 🖼 imagery
               </label>
+              {/* v1.9.1 · PDF-deck-only · single button. generateStrategyDoc
+                  composes the doc and prints it straight to PDF via hidden
+                  iframe (the doc's own PE-deck @media print CSS · A4 landscape
+                  · page-per-section · agenda slide). No HTML file. User picks
+                  "Save as PDF" as the print destination. */}
               <button onClick={generateStrategyDoc} disabled={!data || stratDocBusy || loading}
+                title="Compose the strategy deck and open the print dialog · pick 'Save as PDF' · A4 landscape · enable Background graphics"
                 className="text-xs border border-accent text-accent px-3 py-2 rounded-lg hover:bg-accent hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-accent">
-                {stratDocBusy ? "↻ Composing…" : "↓ Strategy Doc"}
-              </button>
-              {/* v1.9.0 · ↓ PDF button · generates the strategy doc then auto-opens
-                  the browser's native print dialog with the PE-deck @media print
-                  stylesheet pre-loaded (landscape A4, page-per-section, dense tables).
-                  User picks "Save as PDF" destination · zero new bundle hit · native
-                  PDF rendering quality (better than html2pdf canvas-rasterization). */}
-              <button onClick={async () => {
-                await generateStrategyDoc();
-                // Give the browser a tick to download + open the HTML, then trigger print
-                setTimeout(() => {
-                  try { window.print(); }
-                  catch (e) { log(`Print dialog open failed: ${e.message} · open the .html and Cmd-P manually`, "warn"); }
-                }, 1500);
-              }} disabled={!data || stratDocBusy || loading}
-                title="Generate the strategy doc and immediately open the PE-deck print dialog · pick 'Save as PDF' as destination"
-                className="text-xs border border-[#386641] text-[#386641] px-3 py-2 rounded-lg hover:bg-[#386641] hover:text-[#fbf7f4] transition disabled:opacity-40 disabled:cursor-not-allowed">
-                {stratDocBusy ? "↻ …" : "↓ PDF"}
+                {stratDocBusy ? "↻ Composing deck…" : "↓ PDF Deck"}
               </button>
               {/* v1.7.8 · Resume from cached strategy run · only visible when a cache exists for the active project · zero API spend on re-compose */}
               {hasCachedRun && (
                 <button onClick={resumeStrategyDoc} disabled={stratDocBusy || loading}
-                  title="Re-render the strategy doc from the last run's cached output · zero API spend"
+                  title="Re-open the PDF print dialog from the last run's cached output · zero API spend"
                   className="text-xs border border-[#c8a45c] text-[#c8a45c] px-3 py-2 rounded-lg hover:bg-[#c8a45c] hover:text-[#06080c] transition disabled:opacity-40 disabled:cursor-not-allowed">
-                  ↻ Resume cached run
+                  ↻ Re-open PDF
                 </button>
               )}
               <button onClick={() => setShowConfig(true)}

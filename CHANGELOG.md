@@ -6,6 +6,66 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.9.1] — 2026-05-27 · PDF-DECK-ONLY · KILLED HTML OUTPUT + AGENDA SLIDE
+
+User direction: "lets kill the html file creation only have the super pdf deck the deck may be 60 pages when done and thats okay its formatted like a solutions and analysis from a PE firm"
+
+### Changed · HTML download removed · PDF deck is the only output
+
+The `.html` file download is gone. The engine now prints straight to the browser's PDF engine.
+
+**New `printStrategyDoc(html, { onReady })` in compose-strategy.js** — renders the composed doc into a hidden iframe, then calls `iframe.contentWindow.print()`. Printing the iframe's contentWindow applies the IFRAME document's `@page` + `@media print` rules (the PE-deck landscape stylesheet), NOT the parent React app's. No popup-blocker issues (unlike `window.open`). Auto-cleanup after 60s. `onReady(ok, reason)` callback for logging.
+
+Why iframe over the v1.9.0 `window.print()` approach: v1.9.0's button called `window.print()` on the React app page — which would have printed the dashboard, not the strategy doc. That was a latent bug. The iframe approach prints the actual composed doc with its own print CSS.
+
+`downloadStrategyDoc` is kept exported (legacy / Vercel-deploy edge case) but is no longer called by the main flow.
+
+### Changed · single "↓ PDF Deck" button
+
+The header's two buttons (↓ Strategy Doc HTML + ↓ PDF) collapse to one **↓ PDF Deck** button. Click → `generateStrategyDoc()` composes the doc and opens the print dialog. The Resume button relabels to **↻ Re-open PDF** (re-opens the print dialog from cache · zero API spend).
+
+The cache is no longer cleared after a successful run — so the user can re-open the print dialog via ↻ Re-open PDF if they dismiss it or want to re-save. Cache clears on the next fresh run or project switch.
+
+### Added · PE-firm agenda / contents slide
+
+New `renderTableOfContents` + `SECTION_LABELS` map. Right after the cover, a **Contents** slide lists every section that actually rendered, with gapless sequential numbers, in a 2-column PE-firm agenda layout (DM Serif Display numbers + labels).
+
+### Added · gapless section numbering (two-pass compose)
+
+`composeStrategyDoc` now does a TWO-PASS render:
+- **Pass 1** probes which sections actually render (non-empty). Sections that drop silently (partial_support pending sections · empty data) no longer leave numbering gaps.
+- **Pass 2** renders survivors with sequential gapless numbers + a total that reflects only what ships.
+
+This fixes the long-standing "sections jump from §02 to §04" issue (when ad_recreations + ad_deep_dive dropped because Ad-Intel hadn't run). The agenda slide numbers now exactly match the section tag numbers.
+
+### Changed · imagery default already OFF
+
+`generateImagery` already defaulted to `false` (since v1.8.x). With PDF-deck-only output and the print stylesheet hiding swipe-card background images (the source URL is the anchor), generated swipe imagery is no longer rendered anywhere — so leaving it off saves ~$0.40 + ~6 min per run with zero visible loss. The toggle remains for users who want it for other purposes.
+
+### ENGINE_VERSION bumped v1.9.0 → v1.9.1
+
+Bundle 576.08 KB / 163.48 KB gzip (+3 KB · printStrategyDoc + TOC renderer + SECTION_LABELS + two-pass compose).
+
+### Acceptance criteria
+
+1. ✅ No `.html` file download in the main flow
+2. ✅ `printStrategyDoc` renders to hidden iframe + prints with the doc's own PE-deck CSS
+3. ✅ Single ↓ PDF Deck button · Resume relabeled ↻ Re-open PDF
+4. ✅ Agenda/contents slide after cover, gapless numbers matching section tags
+5. ✅ Two-pass compose eliminates numbering gaps from dropped sections
+6. ✅ Cache retained post-run so ↻ Re-open PDF works
+7. ✅ Build clean · no dangling downloadStrategyDoc / filename references
+
+### User flow now
+
+1. Click **↓ PDF Deck**
+2. Engine composes the deck · opens the browser print dialog automatically (iframe-based · ~1-2s after compose)
+3. In the dialog: Destination = **Save as PDF** · Layout = **Landscape** · Paper = **A4** · enable **Background graphics**
+4. Save · you get the PE-deck PDF (cover → agenda → §sections → footer · may run 40-60 pages · that's expected)
+5. To re-save: click **↻ Re-open PDF** (no re-run, no API cost)
+
+---
+
 ## [1.9.0] — 2026-05-27 · PE-DECK PDF + SWIPE FILE GROUNDED IN REAL ADS
 
 User direction: "html output sucks needs to be pdf from now on. and structred like a PE Deck cut the images to 10 swipe ads. that copy actual ads"

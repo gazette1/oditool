@@ -331,6 +331,13 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .engine-table tbody td strong{font-weight:700;color:var(--ink-primary)}
 @media (max-width:720px){.engine-table thead{display:none}.engine-table tbody td{display:block;padding:8px 14px;border-bottom:none}.engine-table tbody td::before{content:attr(data-label);display:block;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:3px}.engine-table tbody tr{border-bottom:1px solid rgba(106,153,78,0.25);padding:14px 0;display:block}}
 .engine-table-caption{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;color:var(--ink-secondary);margin-bottom:12px;line-height:1.55}
+
+/* v1.9.1 · PE-firm agenda / contents slide */
+.toc-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 48px}
+@media (max-width:720px){.toc-grid{grid-template-columns:1fr}}
+.toc-row{display:flex;align-items:baseline;gap:16px;padding:11px 0;border-bottom:1px solid rgba(106,153,78,0.2)}
+.toc-row .toc-num{font-family:"DM Serif Display",serif;font-size:20px;color:var(--moss-mid);min-width:34px;line-height:1}
+.toc-row .toc-label{font-family:"DM Serif Display",serif;font-size:17px;color:var(--ink-primary);line-height:1.2}
 .axis-summary{margin-top:48px;padding:32px;background:linear-gradient(135deg,var(--bg-base),var(--bg-card));border-radius:16px;border:2px solid var(--moss-deep);position:relative}
 .axis-summary .as-tag{position:absolute;top:-14px;left:32px;background:var(--moss-deep);color:var(--ink-primary);padding:5px 14px;font-family:"IBM Plex Mono",monospace;font-size:9px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;border-radius:4px}
 .axis-summary .as-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;margin-bottom:20px}
@@ -1984,6 +1991,63 @@ function renderAppliedPlaybooks(p, totalSections, sectionNum) {
 </section>`;
 }
 
+// v1.9.1 · section_id → display label · used by the PE-deck agenda
+// (contents) slide. Keep in sync with the sectionTag() names each
+// renderer emits.
+const SECTION_LABELS = {
+  strategic_context: "Strategic Context",
+  offer: "The Offer · Grand Slam",
+  money_model: "The Money Model",
+  lead_model: "The Lead Model",
+  positioning: "Positioning",
+  evidence: "Evidence",
+  value_prop: "Value-prop comparison",
+  personas: "Personas",
+  swipe_file: "Swipe file",
+  ad_recreations: "Ad recreations",
+  ad_deep_dive: "Ad deep dive",
+  scripts: "TikTok scripts",
+  email_flows: "Email flows",
+  sms_sequences: "SMS sequences",
+  partner_referrals: "Partner referrals",
+  trust_stack_audit: "Trust-stack audit",
+  gbp_audit: "GBP audit",
+  customer_quote_wall: "Customer quote wall",
+  entry_wedge: "Entry wedge",
+  channels: "Channel plan",
+  matrix: "Targeting matrix",
+  landing: "Landing variants",
+  rollout: "90-day rollout",
+  creators: "Creator outreach",
+  competitive: "Competitive teardown",
+  brand_audit: "Brand audit",
+  demand: "Demand landscape",
+  tribe: "Tribe readout",
+  applied_playbooks: "Applied playbooks",
+  methodology: "Methodology",
+  colophon: "Colophon",
+};
+
+// v1.9.1 · PE-firm agenda / contents slide. Renders right after the
+// cover. Lists every section that actually rendered (survivors) with
+// its gapless sequential number. Two-column layout for long decks.
+function renderTableOfContents(survivors, offset, projectName) {
+  if (!survivors.length) return "";
+  const items = survivors.map((sid, i) => ({
+    num: String(i + offset).padStart(2, "0"),
+    label: SECTION_LABELS[sid] || sid.replace(/_/g, " "),
+  }));
+  return `<section class="section toc-slide" id="contents">
+  <div class="container">
+    <div class="section-tag-row"><span class="section-name">Agenda</span><span class="section-number">${esc(projectName)} · Phase 1 Strategy</span></div>
+    <h2 class="display-lg" style="margin-bottom:28px">Contents.</h2>
+    <div class="toc-grid">
+      ${items.map(it => `<div class="toc-row"><span class="toc-num">${it.num}</span><span class="toc-label">${esc(it.label)}</span></div>`).join("")}
+    </div>
+  </div>
+</section>`;
+}
+
 // ── Section ID → renderer dispatch (v1.7.0 · refined v1.7.1) ──
 // Section order is driven by `diagnostic.business_model.doc_sections`
 // from the registry. Every renderer receives (payload, n, total) and
@@ -2026,7 +2090,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.9.0";
+export const ENGINE_VERSION = "v1.9.1";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";
@@ -2050,67 +2114,133 @@ export function composeStrategyDoc(payload) {
     </div>
   </div>
 </nav>
-${renderCover(payload, project_name)}
-<div class="container"><div class="hairline"></div></div>
 ${(() => {
   // v1.7.0 · section order driven by diagnostic.business_model.doc_sections.
-  // Falls back to a default order if no diagnostic is present (preserves
-  // v1.6.x behavior for any caller not yet wired to Pass D).
+  // Falls back to a default order if no diagnostic is present.
   const defaultOrder = [
-    // v1.8.0 · Hormozi Core (will be added to registry doc_sections in v2.0-rc · for now
-    // we put them in defaultOrder so any project without an explicit doc_sections gets them)
     "offer","money_model","lead_model",
     "positioning","evidence","value_prop","personas","swipe_file","ad_recreations","ad_deep_dive","scripts","email_flows",
     "entry_wedge","channels","matrix","landing","rollout","creators","competitive",
     "brand_audit","demand","tribe","methodology","colophon",
   ];
   const order = payload.diagnostic?.business_model?.doc_sections || defaultOrder;
-  const total = order.length;
-  const sectionMap = buildSectionMap(payload, total);
-  // 0-based numbering · §00 Strategic Context through §20 Colophon (DTC).
-  // When no diagnostic is passed, defaultOrder begins at positioning so the
-  // first section receives n=0 = "§ 00 · Positioning" which still reads
-  // naturally even without the Strategic Context preface. We bias the
-  // default-order case by +1 so positioning gets §01 when running pre-Pass D.
   const offset = payload.diagnostic ? 0 : 1;
-  // v1.7.7 · per-section try/catch · one bad renderer no longer kills the
-  // whole doc. Was: a single thrown error in renderPersonas (or any other
-  // renderer) aborted composeStrategyDoc entirely, leaving the user with
-  // no HTML download after paying for every pass to run. Now: failed
-  // section emits a visible red callout and the rest of the doc still
-  // ships. Console gets the full stack for debugging.
-  return order.map((sid, idx) => {
-    const n = idx + offset;
-    const fn = sectionMap[sid];
-    if (!fn) { console.warn(`[compose-strategy] unknown section id: ${sid}`); return ""; }
-    try {
-      return fn(n);
-    } catch (e) {
-      console.error(`[compose-strategy] renderer "${sid}" threw at §${String(n).padStart(2,"0")}:`, e);
-      const nn = String(n).padStart(2, "0");
-      const tt = String(total).padStart(2, "0");
-      return `<section class="section" id="${esc(sid)}-error">
+
+  // v1.9.1 · TWO-PASS render for gapless numbering + accurate agenda.
+  // PASS 1 · probe which sections actually render (non-empty). Sections
+  // that drop silently (partial_support pending sections · empty data)
+  // no longer leave numbering gaps. PASS 2 · render survivors with
+  // sequential gapless numbers + a total that reflects only what ships.
+  const errorCallout = (sid, n, total, e) => {
+    const nn = String(n).padStart(2, "0");
+    const tt = String(total).padStart(2, "0");
+    console.error(`[compose-strategy] renderer "${sid}" threw at §${nn}:`, e);
+    return `<section class="section" id="${esc(sid)}-error">
   <div class="container">
     <div class="section-tag-row"><span class="section-name" style="color:#bc4749">§ ${nn} · ${esc(sid)} · render error</span><span class="section-number">${nn} / ${tt}</span></div>
     <div style="padding:18px 22px;background:rgba(188,71,73,0.08);border:1px dashed #bc4749;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6;color:#7a2c2e">
       <strong style="display:block;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px">Section render error · section_id=${esc(sid)}</strong>
       ${esc(e?.message || String(e))}
-      <div style="margin-top:10px;color:var(--ink-muted);font-style:italic">The rest of the doc still rendered. Check browser console for full stack trace. File a hotfix: this section's input data is in an unexpected shape.</div>
+      <div style="margin-top:10px;color:var(--ink-muted);font-style:italic">The rest of the deck still rendered. Check browser console for full stack trace.</div>
     </div>
   </div>
 </section>`;
-    }
+  };
+
+  // PASS 1 · probe emptiness (number + total irrelevant here)
+  const probeMap = buildSectionMap(payload, order.length);
+  const survivors = order.filter((sid) => {
+    const fn = probeMap[sid];
+    if (!fn) { console.warn(`[compose-strategy] unknown section id: ${sid}`); return false; }
+    try { const h = fn(0); return !!(h && h.trim().length); }
+    catch { return true; /* keep · pass 2 shows the error callout */ }
+  });
+
+  // PASS 2 · render survivors with gapless sequential numbers
+  const total = survivors.length;
+  const sectionMap = buildSectionMap(payload, total);
+  const toc = renderTableOfContents(survivors, offset, project_name);
+  let n = offset;
+  const body = survivors.map((sid) => {
+    const cur = n; n++;
+    const fn = sectionMap[sid];
+    try { return fn(cur); }
+    catch (e) { return errorCallout(sid, cur, total, e); }
   }).join("\n");
+
+  return renderCover(payload, project_name)
+    + `\n<div class="container"><div class="hairline"></div></div>\n`
+    + toc
+    + body;
 })()}
 <footer><div class="container"><div class="wordmark" style="font-size:48px">${esc(project_name.split(/\s/)[0] || "BRAND")}</div><p class="footer-meta" style="margin-top:12px">Generated by Alchemical Growth Engine ${ENGINE_VERSION} · Mode 1 Earth</p></div></footer>
 </body>
 </html>`;
 }
 
+// v1.9.1 · LEGACY · kept for the resume edge-case + any caller that
+// still wants the raw .html. NOT used by the main flow anymore — the
+// engine is PDF-deck-only as of v1.9.1.
 export function downloadStrategyDoc(html, filename = "strategy.html") {
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename; document.body.appendChild(a); a.click();
   document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// v1.9.1 · PRIMARY OUTPUT · print the composed strategy doc straight to
+// the browser's PDF engine via a hidden iframe. No .html file ever
+// touches disk. The doc's own inlined <style> (including the PE-deck
+// @media print block · A4 landscape · page-per-section) governs the
+// printed layout — printing the iframe's contentWindow applies the
+// iframe document's @page + @media print rules, NOT the parent React
+// app's. Auto-cleanup after the print dialog resolves.
+//
+// onReady(ok, reason) callback lets the caller log success/failure.
+export function printStrategyDoc(html, { onReady } = {}) {
+  try {
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    let printed = false;
+    const fire = () => {
+      if (printed) return;
+      printed = true;
+      try {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        onReady?.(true);
+      } catch (e) {
+        onReady?.(false, e.message);
+      }
+      // Remove the iframe after the print dialog has had time to open.
+      // (The dialog is modal · removal won't interrupt an in-progress
+      // save. 60s covers slow "Save as PDF" navigation.)
+      setTimeout(() => { try { document.body.removeChild(iframe); } catch {} }, 60000);
+    };
+
+    // Print once the iframe doc + its webfonts/images have loaded.
+    // onload alone sometimes fires before fonts settle · add a short
+    // settle delay. Fallback timer in case onload never fires.
+    iframe.onload = () => setTimeout(fire, 700);
+    setTimeout(fire, 2500); // hard fallback
+    return true;
+  } catch (e) {
+    onReady?.(false, e.message);
+    return false;
+  }
 }
