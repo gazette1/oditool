@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { AirtableClient } from "./lib/airtable";
-import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations, generateAdDeepDive } from "./lib/anthropic";
+import { discoverJobs, mapJobsAndOutcomes, validateWithSearch, generateEntryRecommendations, generatePersonas, generateSwipeFile, generateScripts, generateEmailFlows, comparePositioning, generateChannelPlan, generateLandingVariants, generateRollout, generateCreatorBriefs, generateCompetitiveTeardown, generateBrandAudit, generateDemandLandscape, generateTribeReadout, validateAndNormalizeChannelPlan, generateRunRetrospective, applyPlaybookLibrary, generateAdRecreations, generateAdDeepDive, analyzeAdVisuals } from "./lib/anthropic";
+// v1.10.0 · Foreplay-first ad sourcing + Pass 8.4 vision analysis · spec at <vault>/08c
+import { createForeplayClient, sourceWinningAdsForCompetitors, foreplayConfigDefaults } from "./lib/foreplay";
 // v1.8.0 · Hormozi core passes (Pass O / M / G) · spec at <vault>/19 - Hormozi Core Architecture
 import { generateGrandSlamOffer, generateMoneyModel, generateLeadModel } from "./lib/hormozi-core";
 import { resolveBusinessModel } from "./lib/business-models";
@@ -592,10 +594,99 @@ export default function App() {
       }
       persist("valueProp", valueProp);
 
-      setStratDocPhase("Pass 8: swipe file (20 ads)…");
-      log("Pass 8/18: 20 swipe-file ad concepts");
-      let { swipe_file = [] } = await generateSwipeFile(config.anthropicKey, projectContext, positioningSpine, personas);
+      // v1.10.0 · FOREPLAY-FIRST AD SOURCING (precedes Pass 8)
+      //
+      // When VITE_FOREPLAY_API_KEY is configured AND we have Stage A
+      // competitor data, source proven-winner ads from Foreplay across
+      // Meta + TikTok + LinkedIn before Pass 8 generates the swipe cards.
+      // The filtered library (top-30 by composite score · running 30+d ·
+      // live) is passed to Pass 8 as grounding material. Pass 8 falls back
+      // to web_search when Foreplay returns 0 ads (or no key configured).
+      let foreplaySourced = null;
+      const foreplayClient = createForeplayClient(config);
+      if (foreplayClient && adIntelData?.competitors?.length) {
+        const fpDefaults = foreplayConfigDefaults(config);
+        setStratDocPhase("Foreplay · resolving Stage A competitors → proven-winner ads across Meta/TikTok/LinkedIn…");
+        log(`Foreplay · sourcing ads for ${adIntelData.competitors.length} Stage A competitors · min_running_days ${fpDefaults.minRunningDays}`);
+        try {
+          foreplaySourced = await sourceWinningAdsForCompetitors(foreplayClient, {
+            competitors: adIntelData.competitors,
+            minRunningDays: fpDefaults.minRunningDays,
+            platforms: ["facebook", "tiktok", "linkedin"],
+            onProgress: (msg) => { setStratDocPhase(`Foreplay · ${msg}`); log(`  ${msg}`); },
+          });
+          const stats = foreplaySourced?.stats || {};
+          log(`Foreplay · resolved ${stats.brands_resolved || 0} brands · fetched ${stats.ads_fetched || 0} ads · ${stats.ads_unique || 0} unique · returning top ${stats.ads_returned || 0} by composite score`, "ok");
+          if ((stats.no_match_competitors || []).length) {
+            log(`Foreplay · ${stats.no_match_competitors.length} competitors had no Foreplay brand match (will degrade to web_search if used downstream)`, "warn");
+          }
+        } catch (e) {
+          log(`Foreplay sourcing failed: ${e.message} · Pass 8 will degrade to web_search`, "warn");
+          foreplaySourced = null;
+        }
+      } else if (!foreplayClient) {
+        log("Foreplay skipped · no VITE_FOREPLAY_API_KEY configured · Pass 8 will use web_search fallback", "warn");
+      } else if (!adIntelData?.competitors?.length) {
+        log("Foreplay skipped · no Stage A competitor data (run 🎯 Ad-Intel first to unlock Foreplay-grounded swipe file) · Pass 8 will use web_search fallback", "warn");
+      }
+      persist("foreplaySourced", foreplaySourced);
+
+      const usingForeplay = !!(foreplaySourced?.ads?.length);
+      setStratDocPhase(usingForeplay
+        ? `Pass 8: swipe file · 10 ads grounded in ${foreplaySourced.ads.length} Foreplay-validated winners…`
+        : "Pass 8: swipe file · 10 ads via web_search fallback…");
+      log(`Pass 8/18: 10 swipe-file ad concepts · source: ${usingForeplay ? "Foreplay-first" : "web_search degraded"}`);
+      let { swipe_file = [] } = await generateSwipeFile(
+        config.anthropicKey,
+        projectContext,
+        positioningSpine,
+        personas,
+        usingForeplay ? foreplaySourced.ads : null,
+      );
       persist("swipe_file", swipe_file);
+
+      // v1.10.0 · PASS 8.4 · VISION ANALYSIS
+      //
+      // For each Foreplay-grounded swipe card, fetch the source ad's image
+      // and have multimodal Claude extract the structural visual mechanic
+      // (composition, framing, lighting, color, layout, hook pattern) plus
+      // a brand-safe vision_grounded_prompt that Pass 8.5 will use for
+      // gpt-image-2 generation. Only runs when we have Foreplay-grounded
+      // cards (a source_ad_reference with source_url is required).
+      if (usingForeplay && swipe_file.length) {
+        const eligible = swipe_file.filter((c) => c.source_ad_reference?.source_url);
+        setStratDocPhase(`Pass 8.4: vision analysis on ${eligible.length} source ads (multimodal Claude · ~$0.003/img)…`);
+        log(`Pass 8.4/18: vision analysis · ${eligible.length} ads · ~$${(eligible.length * 0.003).toFixed(2)} · ~${Math.round(eligible.length * 3)}s wall`);
+        for (let i = 0; i < swipe_file.length; i++) {
+          const card = swipe_file[i];
+          if (!card.source_ad_reference?.source_url) continue;
+          // Find the original Foreplay ad record (by source_ad_id when present)
+          // so we can pass creative_url / thumbnail_url to the vision call.
+          const lookupId = card.source_ad_reference.source_ad_id;
+          const fpAd = lookupId && foreplaySourced.ads.find((a) => (a.id || a._id) === lookupId);
+          const refForVision = {
+            ...card.source_ad_reference,
+            creative_url: fpAd?.creative_url || fpAd?.image_url || fpAd?.thumbnail_url || card.source_ad_reference.source_url,
+            thumbnail_url: fpAd?.thumbnail_url,
+          };
+          try {
+            const vRes = await analyzeAdVisuals(config.anthropicKey, refForVision, { brandVoice: projectContext?.brand_voice });
+            if (vRes?.visual_analysis) {
+              swipe_file[i] = { ...card, visual_analysis: vRes.visual_analysis };
+              const ha = vRes.visual_analysis.hook_pattern || {};
+              const co = vRes.visual_analysis.composition || {};
+              setStratDocPhase(`Pass 8.4 · ${i+1}/${swipe_file.length} · ${ha.type || "?"} · ${co.framing || "?"}`);
+            }
+          } catch (e) {
+            log(`Pass 8.4 · card ${card.id || i+1} skipped: ${e.message}`, "warn");
+          }
+        }
+        persist("swipe_file", swipe_file);  // re-persist with visual_analysis attached
+        const analyzed = swipe_file.filter((c) => c.visual_analysis).length;
+        log(`Pass 8.4 complete · ${analyzed}/${swipe_file.length} cards have vision analysis · Pass 8.5 will use vision_grounded_prompt`, "ok");
+      } else if (swipe_file.length) {
+        log("Pass 8.4 skipped · web_search-grounded swipe cards don't carry creative URLs · Pass 8.5 will use text-only visual_brief", "warn");
+      }
 
       // v1.6.8 · optional Pass 8.5 · gpt-image-1 per swipe card
       if (generateImagery && swipe_file.length && config.openaiKey) {

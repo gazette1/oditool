@@ -151,6 +151,19 @@ nav.top .nav-links a:hover{color:var(--moss-deep)}
 .swipe-card .ad-source strong{color:var(--moss-deep);font-weight:600}
 .swipe-card .ad-source-pattern{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11.5px;color:var(--ink-primary);display:inline-block;margin-top:3px}
 .swipe-card .ad-source-url{display:inline-block;margin-top:3px;color:var(--moss-deep);text-decoration:underline;font-size:9.5px;word-break:break-all}
+/* v1.10.0 · validator + vision chips on swipe cards · only render when the
+   underlying data is present (Foreplay-sourced + Pass 8.4 vision analyzed) */
+.swipe-card .ad-validator{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:9px;line-height:1.3}
+.swipe-card .v-chip{display:inline-block;padding:3px 8px;border-radius:3px;letter-spacing:0.06em;text-transform:uppercase;font-weight:600;color:#2a3328}
+.swipe-card .v-chip.platform{background:rgba(56,102,65,0.12);color:var(--moss-deep)}
+.swipe-card .v-chip.verdict-canonical{background:rgba(56,102,65,0.22);color:#1f3a26}
+.swipe-card .v-chip.verdict-strong{background:rgba(167,201,87,0.28);color:#2a4a30}
+.swipe-card .v-chip.verdict-moderate{background:rgba(200,164,92,0.22);color:#7a5e1e}
+.swipe-card .v-chip.verdict-weak{background:rgba(188,71,73,0.15);color:#7a2c2e}
+.swipe-card .v-chip.duration{background:var(--bg-warm);color:var(--ink-secondary)}
+.swipe-card .ad-vision{margin-top:8px;padding:8px 10px;background:rgba(167,201,87,0.08);border-left:3px solid var(--moss-light);border-radius:0 4px 4px 0;font-family:"IBM Plex Mono",monospace;font-size:9.5px;line-height:1.45;color:var(--ink-secondary)}
+.swipe-card .ad-vision strong{color:var(--moss-deep);font-weight:600}
+.swipe-card .ad-vision .v-prompt{display:block;margin-top:4px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11px;color:var(--ink-primary);word-break:break-word}
 .swipe-card .ad-footer{margin-top:auto;padding-top:14px;border-top:1px solid rgba(106,153,78,.3);display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px}
 .swipe-card .ad-footer .label{font-family:"IBM Plex Mono",monospace;font-size:8px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:2px}
 .script{background:var(--bg-base);border-radius:12px;padding:32px;margin-bottom:24px;border:1px solid rgba(106,153,78,.3)}
@@ -996,7 +1009,28 @@ function renderSwipe(p, n, total) {
         const body = s.adapted_body || s.body || "";
         const cta = s.adapted_cta || s.cta || "";
         const ref = s.source_ad_reference || {};
-        return `<div class="swipe-card"><div class="ad-mock" ${mockStyle}><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(headline)}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(body)}</p>${ref.source_brand || ref.source_url ? `<div class="ad-source"><strong>Based on:</strong> ${esc(ref.source_brand || "real running ad")} · ${esc(ref.source_format || "")}${ref.source_pattern_summary ? `<br/><span class="ad-source-pattern">Mechanic: ${esc(ref.source_pattern_summary)}</span>` : ""}${ref.source_url ? `<br/><a href="${esc(ref.source_url)}" class="ad-source-url" target="_blank" rel="noopener">${esc(ref.source_url)}</a>` : ""}</div>` : ""}<div class="ad-footer"><div><div class="label">CTA</div><div>${esc(cta)}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`;
+        // v1.10.0 · Foreplay validator chips + Pass 8.4 vision block
+        // Render validator row only when the Foreplay path enriched this card
+        // with composite_score / running_duration_days / source_platform.
+        const score = typeof ref.composite_score === "number" ? ref.composite_score : null;
+        const verdictClass = score === null ? "" : score >= 8 ? "verdict-canonical" : score >= 6 ? "verdict-strong" : score >= 4 ? "verdict-moderate" : "verdict-weak";
+        const verdictLabel = score === null ? "" : score >= 8 ? "canonical winner" : score >= 6 ? "strong signal" : score >= 4 ? "moderate signal" : "weak signal";
+        const platform = ref.source_platform || "";
+        const durationDays = ref.running_duration_days;
+        const validatorChips = [];
+        if (platform) validatorChips.push(`<span class="v-chip platform">${esc(platform)}</span>`);
+        if (verdictClass) validatorChips.push(`<span class="v-chip ${verdictClass}">${esc(verdictLabel)} · ${score.toFixed(1)}</span>`);
+        if (typeof durationDays === "number" && durationDays > 0) validatorChips.push(`<span class="v-chip duration">${durationDays}d running</span>`);
+        const validatorHtml = validatorChips.length ? `<div class="ad-validator">${validatorChips.join("")}</div>` : "";
+
+        // v1.10.0 · Pass 8.4 vision analysis block
+        const va = s.visual_analysis || null;
+        const hookPattern = va?.hook_pattern || "";
+        const framing = va?.composition?.framing || "";
+        const visionPrompt = va?.vision_grounded_prompt || "";
+        const visionHtml = va && (hookPattern || framing || visionPrompt) ? `<div class="ad-vision">${hookPattern ? `<strong>Hook pattern:</strong> ${esc(hookPattern)}` : ""}${hookPattern && framing ? " · " : ""}${framing ? `<strong>Framing:</strong> ${esc(framing)}` : ""}${visionPrompt ? `<span class="v-prompt">${esc(visionPrompt)}</span>` : ""}</div>` : "";
+
+        return `<div class="swipe-card"><div class="ad-mock" ${mockStyle}><div class="ad-format-tag">${esc(s.format || "")}</div><div class="ad-headline">${esc(headline)}</div></div><div class="ad-body"><div class="ad-meta"><span class="ad-chip persona">${esc(s.persona_name || "")}</span><span class="ad-chip">${esc(s.stage || "")}</span></div><div class="ad-id">${esc(s.id || "")}</div><div class="ad-title">${esc(s.title || "")}</div><p class="ad-copy">${esc(body)}</p>${ref.source_brand || ref.source_url ? `<div class="ad-source"><strong>Based on:</strong> ${esc(ref.source_brand || "real running ad")} · ${esc(ref.source_format || "")}${ref.source_pattern_summary ? `<br/><span class="ad-source-pattern">Mechanic: ${esc(ref.source_pattern_summary)}</span>` : ""}${ref.source_url ? `<br/><a href="${esc(ref.source_url)}" class="ad-source-url" target="_blank" rel="noopener">${esc(ref.source_url)}</a>` : ""}${validatorHtml}</div>` : ""}${visionHtml}<div class="ad-footer"><div><div class="label">CTA</div><div>${esc(cta)}</div></div><div><div class="label">Framework</div><div>${esc(s.framework || "")}</div></div></div></div></div>`;
       }).join("")}
     </div>
   </div>
@@ -2090,7 +2124,7 @@ function buildSectionMap(payload, totalSections) {
 export const TOTAL_SECTIONS = 21; // DTC archetype default. Other archetypes override via diagnostic.business_model.doc_sections.length
 // v1.7.1 · single source of truth for the version stamp · used by cover,
 // methodology, and footer. Bump this in one place per release.
-export const ENGINE_VERSION = "v1.9.2";
+export const ENGINE_VERSION = "v1.10.0";
 
 export function composeStrategyDoc(payload) {
   const project_name = payload.project_name || payload.project_context?.sector || "Strategy Doc";

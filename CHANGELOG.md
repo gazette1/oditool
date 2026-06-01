@@ -6,6 +6,92 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.10.0] — 2026-06-01 · FOREPLAY CANONICAL + PASS 8.4 VISION GROUNDING
+
+User direction: *"we should use foreplay as the first search when searching for competitors for a brand or company and seeing what they already have that is successful across meta tiktok and linkedin. then need to use some sorta vision to see what the key details to the swipe ads are to then replicate them for our chat gpt 2 image bot. adyntel isnt really needed."*
+
+The v1.9.2 scaffold gets wired in — Foreplay becomes the **canonical** Stage B competitor ad source (Meta + TikTok + LinkedIn coverage). Adyntel is demoted to optional/legacy. NEW Pass 8.4 sends each top-ranked source ad's image to Claude's vision API to extract structural visual mechanics (framing, lighting, color palette, layout) and produce a brand-safe `vision_grounded_prompt` that replaces the text-only `visual_brief` as the gpt-image-2 prompt seed.
+
+### The pipeline reshape
+
+**Before (v1.9.x):** Pass 8 web_search → text-only `visual_brief` → gpt-image-2 (purely linguistic ground truth, no real visual mechanics)
+
+**After (v1.10.0):**
+1. **Stage B sourcing** · Foreplay client resolves each Stage A competitor by domain → fetches brand IDs → pulls live ads filtered by `provenWinnerFilters` (live=true, running 30d+, ordered by running_duration_desc) across facebook/tiktok/linkedin
+2. **Composite scoring** · `scoreAdSignal` produces 0-10 per ad (running duration 4pt + live 1pt + duplicate count 3pt + board saves 2pt) · top 30 promoted to Pass 8 library
+3. **Pass 8** · receives `LIB-NN` library with composite scores instead of web_search results · each swipe card cites a real, ranked source ad
+4. **Pass 8.4 NEW** · multimodal Claude call per top-ranked source ad image · returns structured `visual_analysis` with composition / lighting / color / layout / hook_pattern / transferable_elements / brand-specific-elements-to-avoid / `vision_grounded_prompt` (≤220 chars · brand-safe by construction)
+5. **gpt-image-2** · `buildPrompt` prefers `visual_analysis.vision_grounded_prompt` over `visual_brief` · appends `Avoid:` list from `brand_specific_elements_to_avoid` for additional safety
+
+### Added · Pass 8.4 vision analyzer in `src/lib/anthropic.js`
+
+- `analyzeAdVisuals(apiKey, sourceAdRef, { brandVoice })` · multimodal Claude Sonnet 4 call with `[{type:"image",source:{type:"url",url:imageUrl}},{type:"text",text:"..."}]` content block array
+- Returns: `{composition, lighting, color_palette, text_overlay_layout, product_placement, talent, setting, hook_pattern, transferable_visual_elements, brand_specific_elements_to_avoid, vision_grounded_prompt}`
+- Cost ~$0.003/image · ~25-30s for 10 ads
+- IP discipline: prompt forbids reproducing brand-specific trade dress · `vision_grounded_prompt` is structural mechanic only
+
+### Added · `sourceWinningAdsForCompetitors` in `src/lib/foreplay.js`
+
+- Iterates Stage A competitors · `findBrandsByDomain(domain)` → `fetchAdsByBrandIds([ids], provenWinnerFilters)` per platform
+- Aggregates · dedupes by id · scores by `scoreAdSignal` · returns top 30
+- Returns `{ads, stats: {brands_resolved, ads_fetched, ads_unique, ads_returned, no_match_competitors}}`
+- Does NOT require Foreplay UI setup (boards/Spyder) — works against an empty account via the public brand-discovery path
+
+### Updated · `generateSwipeFile` (Pass 8) in `src/lib/anthropic.js`
+
+- New 5th arg: `foreplaySourcedAds` (top-30 library with composite_score / running_duration_days / source_platform)
+- When present: passes `LIB-NN` identifiers to Claude · no web_search needed (faster + cheaper + no hallucination risk)
+- When absent: degrades to v1.9.0 web_search behavior
+
+### Updated · `src/lib/image-gen.js`
+
+- `buildPrompt` fallback chain: `vision_grounded_prompt` (best · Pass 8.4) → `visual_brief` (Pass 8 text-only) → format-derived placeholder
+- Appends `Avoid: ${brand_specific_elements_to_avoid.slice(0,3)}` for additional safety
+- Added LinkedIn format hint (square 1:1 professional framing)
+
+### Updated · `src/App.jsx` (orchestrator wire-in)
+
+- Imports `analyzeAdVisuals` · `createForeplayClient` · `sourceWinningAdsForCompetitors` · `foreplayConfigDefaults`
+- Before Pass 8 · creates Foreplay client · if available AND `adIntelData.competitors` present → calls `sourceWinningAdsForCompetitors`
+- Pass 8 receives `foreplaySourced.ads` as 5th arg when usingForeplay
+- NEW Pass 8.4 loop · iterates `swipe_file` · finds matching Foreplay ad by `source_ad_id` · calls `analyzeAdVisuals` · merges `visual_analysis` into card
+- All outputs persisted via `persist()` for v1.7.8 Resume-from-cache compatibility
+
+### Updated · `src/lib/compose-strategy.js` renderer
+
+- NEW CSS: `.swipe-card .ad-validator` (chip row), `.v-chip.platform` (Meta/TikTok/LinkedIn), `.v-chip.verdict-canonical/strong/moderate/weak` (composite score verdict), `.v-chip.duration` (running days), `.ad-vision` (hook pattern + framing + vision_grounded_prompt italic)
+- `renderSwipe` HTML wire-in: emits validator chips when `composite_score`/`running_duration_days`/`source_platform` present · emits vision block when `visual_analysis` present
+- Verdict mapping: score ≥8 = canonical winner · ≥6 = strong signal · ≥4 = moderate signal · <4 = weak signal
+
+### Demoted · Adyntel
+
+Adyntel client + scaffold remain in place (`src/lib/adyntel.js` untouched · zero deletion). Pipeline priority order is now Foreplay → web_search · Adyntel becomes optional fallback when explicitly configured.
+
+User rationale: Foreplay's curated + scored + cross-platform (Meta/TikTok/LinkedIn) coverage is sufficient for the validator+evaluator role. Adyntel's exhaustive coverage is no longer pulling its weight at the per-call cost.
+
+### Vault docs
+
+- `<vault>/08c - Foreplay Ad Source Spec.md` · status updated to **canonical · Adyntel demoted**
+- `<vault>/08 - Ad-Intel Module.md` · Stage B description rewritten · Foreplay primary · Adyntel listed as optional
+- **NEW** `<vault>/08d - Pass 8.4 Vision Analyzer Spec.md` · full Pass 8.4 spec · multimodal API surface · prompt contract · IP discipline · cost / latency
+- `<vault>/13 - Roadmap & Backlog.md` · v1.10.0 Foreplay-canonical + Pass 8.4 vision shipped block
+
+### Bundle
+
+~580 KB / ~165 KB gzip · marginal bump from new Foreplay wire-in + Pass 8.4 prompt scaffolding.
+
+### Acceptance criteria
+
+1. ✅ Foreplay `sourceWinningAdsForCompetitors` returns top-30 ranked library
+2. ✅ Pass 8 accepts and uses `foreplaySourcedAds` when available
+3. ✅ Pass 8.4 `analyzeAdVisuals` returns structured visual analysis with brand-safe `vision_grounded_prompt`
+4. ✅ `image-gen.js` prefers `vision_grounded_prompt` over `visual_brief`
+5. ✅ Renderer emits validator chips + vision block conditionally
+6. ✅ ENGINE_VERSION bumped to v1.10.0
+7. ✅ Adyntel scaffold preserved (zero deletion · backward compat)
+
+---
+
 ## [1.9.2] — 2026-05-31 · FOREPLAY AD VALIDATOR + EVALUATOR (SCAFFOLD)
 
 User direction: "We need to add foreplay.co to this for our ad validator and evaluator."

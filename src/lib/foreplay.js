@@ -423,6 +423,122 @@ export function createForeplayClient(cfg = {}) {
   return new ForeplayClient({ apiKey });
 }
 
+// ─────────────────────────────────────────────────────────────
+// v1.10.0 · sourceWinningAdsForCompetitors · the Pass 8 workhorse
+//
+// Given Stage A competitor records (with `page_url` / `meta_page_url`
+// / `domain`), resolve each to a Foreplay brand_id via
+// findBrandsByDomain, then pull proven-winner ads across Meta + TikTok
+// + LinkedIn via fetchAdsByBrandIds with provenWinnerFilters. Aggregate
+// across competitors · dedupe by ad id · score by composite signal.
+// Returns the top-N ads sorted by composite score (canonical winners
+// first). N defaults to 30 (3× the swipe-card target so Pass 8 has
+// room to filter by persona/stage diversity).
+//
+// Falls back to an empty array when:
+//   - Foreplay client is null (key not configured)
+//   - findBrandsByDomain returns 0 brands for ALL competitors
+//   - fetchAdsByBrandIds returns 0 ads for ALL resolved brands
+// In that case Pass 8 degrades to web_search (the v1.9.0 behavior).
+// ─────────────────────────────────────────────────────────────
+
+/** Pluck a domain from various competitor field shapes. */
+function _competitorDomain(c) {
+  const raw = c.domain || c.page_url || c.website || c.meta_page_url || c.url || "";
+  if (!raw) return "";
+  try { return new URL(raw.startsWith("http") ? raw : "https://" + raw).hostname.replace(/^www\./, ""); }
+  catch { return String(raw).replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0]; }
+}
+
+/** Dedupe ads by id, keeping the first (highest-score) occurrence. */
+function _dedupeAds(ads) {
+  const seen = new Set();
+  const out = [];
+  for (const a of ads) {
+    const id = a?.id || a?._id || a?.ad_id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(a);
+  }
+  return out;
+}
+
+export async function sourceWinningAdsForCompetitors(client, {
+  competitors,
+  minRunningDays = 30,
+  platforms = ["facebook", "tiktok", "linkedin"],
+  perCompetitorLimit = 25,
+  topN = 30,
+  onProgress,
+} = {}) {
+  if (!client || !competitors?.length) return { ads: [], stats: { brands_resolved: 0, ads_fetched: 0, no_match_competitors: [] } };
+
+  const noMatch = [];
+  let brandsResolved = 0;
+  let adsFetched = 0;
+  const allAds = [];
+
+  for (const [i, c] of competitors.entries()) {
+    const brandName = c.brand_name || c.name || "competitor";
+    const domain = _competitorDomain(c);
+    onProgress?.(`Foreplay · ${i+1}/${competitors.length} · resolving ${brandName} via ${domain || "(no domain)"}`);
+
+    if (!domain) { noMatch.push({ brand: brandName, reason: "no domain on Stage A record" }); continue; }
+
+    let brandHits;
+    try { brandHits = await client.findBrandsByDomain(domain, { limit: 3 }); }
+    catch (e) { noMatch.push({ brand: brandName, reason: `findBrandsByDomain: ${e.message}` }); continue; }
+
+    const ids = (brandHits?.data || []).map((b) => b.id || b._id || b.brand_id).filter(Boolean);
+    if (!ids.length) { noMatch.push({ brand: brandName, reason: "no Foreplay brand match for domain" }); continue; }
+    brandsResolved += ids.length;
+
+    // Pull per platform · rotate across the 3 platforms so we get
+    // cross-channel coverage instead of all Meta ads.
+    for (const platform of platforms) {
+      const filters = provenWinnerFilters({
+        platform,
+        min_running_days: minRunningDays,
+        limit: Math.max(5, Math.floor(perCompetitorLimit / platforms.length)),
+      });
+      try {
+        const res = await client.fetchAdsByBrandIds(ids, filters);
+        const adsForPlatform = (res?.data || []).map((a) => ({
+          ...a,
+          _stage_a_brand: brandName,
+          _source: "foreplay",
+          _platform_pulled: platform,
+        }));
+        allAds.push(...adsForPlatform);
+        adsFetched += adsForPlatform.length;
+        onProgress?.(`Foreplay · ${brandName} · ${platform} · ${adsForPlatform.length} ads`);
+      } catch (e) {
+        // Per-platform failure is non-fatal · skip and continue
+        onProgress?.(`Foreplay · ${brandName} · ${platform} · skipped: ${e.message}`);
+      }
+    }
+  }
+
+  const deduped = _dedupeAds(allAds);
+  // Score every ad and sort by composite (canonical winners first)
+  const scored = deduped.map((a) => {
+    const score = scoreAdSignal(a, { duplicateCount: 0, boardSaveCount: 0 });
+    return { ...a, _composite: score.total, _verdict: score.verdict, _score_breakdown: score.breakdown };
+  });
+  scored.sort((a, b) => (b._composite || 0) - (a._composite || 0));
+
+  return {
+    ads: scored.slice(0, topN),
+    stats: {
+      brands_resolved: brandsResolved,
+      ads_fetched: adsFetched,
+      ads_unique: deduped.length,
+      ads_returned: Math.min(scored.length, topN),
+      no_match_competitors: noMatch,
+    },
+  };
+}
+
 export function foreplayConfigDefaults(cfg = {}) {
   const env = (typeof import.meta !== "undefined" && import.meta.env) ? import.meta.env : {};
   const maxCallsPerRun = Number(cfg.foreplayMaxCallsPerRun ?? env.VITE_FOREPLAY_MAX_CALLS_PER_RUN ?? 200);

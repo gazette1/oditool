@@ -101,17 +101,42 @@ async function _extractBase64(data) {
 /**
  * Build the prompt from a swipe card + project context.
  * Voice-neutral + commercial-quality so output works for any brand.
+ *
+ * v1.10.0 · Pass 8.4 vision analysis (when present) becomes the primary
+ * grounding · its `vision_grounded_prompt` is composed from the structural
+ * mechanic of a real winning ad (composition + framing + lighting + color
+ * + setting) and is brand-safe by construction (no source brand identifiers,
+ * no source-specific copy). When Pass 8.4 ran, output fidelity rises
+ * substantially vs the text-only `visual_brief` heuristic.
+ *
+ * Fallback chain:
+ *   1. card.visual_analysis.vision_grounded_prompt  (Pass 8.4 · best)
+ *   2. card.visual_brief                            (Pass 8 text-only · v1.9 default)
+ *   3. Format-derived placeholder                   (last resort)
  */
 function buildPrompt(card, projectContext) {
   const parts = [];
 
-  // Visual direction from Pass 8 (the most specific signal)
-  if (card.visual_brief) parts.push(card.visual_brief);
+  // v1.10.0 · prefer the vision-grounded prompt from Pass 8.4
+  const visionPrompt = card.visual_analysis?.vision_grounded_prompt;
+  if (visionPrompt) {
+    parts.push(visionPrompt);
+    // Also surface the explicit brand-specific elements to AVOID from
+    // the vision analysis · this hardens gpt-image-2 against accidentally
+    // generating source-brand-specific trade dress.
+    const avoid = card.visual_analysis?.brand_specific_elements_to_avoid;
+    if (avoid && avoid.length) {
+      parts.push(`Avoid: ${avoid.slice(0, 3).join(", ")}.`);
+    }
+  } else if (card.visual_brief) {
+    parts.push(card.visual_brief);
+  }
 
   // Format hint → aspect / framing
   const format = (card.format || "").toLowerCase();
   if (format.includes("4:5") || format.includes("meta")) parts.push("Vertical 4:5 composition, mobile-first framing.");
   else if (format.includes("9:16") || format.includes("tiktok")) parts.push("Vertical 9:16 composition, tight portrait crop.");
+  else if (format.includes("linkedin")) parts.push("Square 1:1 composition, professional framing.");
   else if (format.includes("carousel")) parts.push("Square 1:1 composition, single-slide framing.");
 
   // Brand context (audience, sector)

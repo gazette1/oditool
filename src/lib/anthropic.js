@@ -707,49 +707,109 @@ Return ONLY valid JSON: {"personas": [{...}, {...}, {...}, {...}]}`,
 //   - The engine never reproduces competitor ad copy · only references
 //     where the inspiration came from (source URL + brand)
 //
-export async function generateSwipeFile(apiKey, projectContext, positioning, personas) {
+// ── PASS 8: Swipe File (Engine v1.10.0 · Foreplay-first · web_search fallback) ──
+//
+// CHANGES FROM v1.9.x:
+//   - When foreplaySourcedAds is provided (Foreplay-resolved competitor ads
+//     across Meta + TikTok + LinkedIn with composite scores), the prompt
+//     uses those as the grounding library instead of web_search.
+//   - foreplaySourcedAds shape: array of Foreplay ad records each with
+//     id, brand (or _stage_a_brand), publisher_platform, display_format,
+//     running_duration_days, live, creative_url, _composite, _verdict.
+//   - Web search becomes the DEGRADED fallback (only when foreplaySourcedAds
+//     is null or empty · same v1.9.0 behavior preserved).
+//   - Adyntel removed from the chain (scaffold-only · not canonical · 2026-06-01)
+//
+// IP DISCIPLINE (carried through):
+//   - source_pattern_summary describes the MECHANIC (factual structural
+//     observation, ~10-15 words), NOT the source ad's verbatim copy
+//   - adapted_headline / adapted_body / adapted_cta are ORIGINAL brand-voice
+//     creative, NOT paraphrase rewrites or find-and-replace derivatives
+//   - visual_brief is brand-safe, no source brand identifiers
+//
+export async function generateSwipeFile(apiKey, projectContext, positioning, personas, foreplaySourcedAds = null) {
   const ctx = projectContext ? `PROJECT CONTEXT:\n- Sector: ${projectContext.sector}\n- Audience: ${projectContext.audience}\n- Brand voice: ${projectContext.brand_voice}\n- Key facts: ${(projectContext.key_facts || []).slice(0,6).join("; ")}` : "";
   const pos = positioning?.primary ? `Primary positioning: "${positioning.primary.sentence}" (Job ${positioning.primary.citation_job_id}, score ${positioning.primary.citation_score})` : "";
   const personaList = (personas || []).map(p => `- ${p.name} (${p.archetype}): ${p.one_liner}`).join("\n");
 
+  // ── FOREPLAY-FIRST PATH ──
+  // When we have a Foreplay-sourced library of validated competitor ads,
+  // we pass them to Claude directly (no web_search needed) and ask it to
+  // pick 10 strategically diverse winners and produce adapted versions.
+  if (foreplaySourcedAds && foreplaySourcedAds.length) {
+    const library = foreplaySourcedAds.slice(0, 30).map((a, i) => {
+      const brand = a._stage_a_brand || a.brand_name || a.brand || "competitor";
+      const platform = a.publisher_platform || a._platform_pulled || "?";
+      const format = a.display_format || "?";
+      const days = a.running_duration_days || a.days_active || 0;
+      const score = a._composite != null ? `composite ${a._composite}/10 (${a._verdict || "?"})` : "score n/a";
+      const url = a.snapshot_url || a.ad_archive_url || a.permalink || a.creative_url || a.id || "";
+      return `  [LIB-${String(i+1).padStart(2,"0")}] ${brand} · ${platform} · ${format} · running ${days}d · ${score} · ad_id=${a.id || "?"} · ref=${url}`;
+    }).join("\n");
+
+    const sysPrompt = `You are a senior creative director building a 10-card swipe file. You have a FOREPLAY LIBRARY of pre-validated winner ads (each sourced from the competitor brands the user is tracking · filtered to ads that have been running 30+ days · scored by composite signal). Your job: pick 10 strategically diverse cards from this library and produce ORIGINAL brand-voice adapted versions.
+
+WORKFLOW · for each of 10 cards:
+1. PICK a source ad from the LIBRARY below (reference by LIB-NN identifier). Spread your picks: 2-3 cards per persona · cover 4-5 awareness stages · rotate across Meta + TikTok + LinkedIn · prefer higher-composite ads when persona/stage diversity is equal.
+2. CAPTURE the MECHANIC of the source ad in a 10-15 word description (e.g., "founder POV close-up + tactile claim before reveal + texture-test CTA"). NEVER reproduce the source ad's verbatim headline, body, or text overlays · you are extracting the structural mechanic.
+3. PRODUCE the brand's ORIGINAL adapted version — copy written from scratch in OUR brand voice. Not a paraphrase. Not "swap the brand name". Original creative that uses the same MECHANIC.
+
+Each card returns:
+- id (e.g., SWP-NAME-01 using persona's first initial)
+- persona_name (which of our personas)
+- format (Meta 4:5 | Meta carousel | TikTok 9:16 | TikTok UGC | LinkedIn single image | LinkedIn carousel)
+- stage (Unaware | Problem aware | Solution aware | Product aware | Most aware)
+- source_ad_reference: {
+    "lib_index": "<LIB-NN identifier from the library above>",
+    "source_brand": "<brand from the library entry>",
+    "source_platform": "<facebook | tiktok | linkedin>",
+    "source_url": "<ref URL from the library entry>",
+    "source_ad_id": "<ad_id from the library entry · used downstream for vision analysis>",
+    "source_format": "<format from the library entry>",
+    "source_pattern_summary": "<10-15 word mechanic description · NOT verbatim copy>",
+    "running_duration_days": <number from the library entry>,
+    "composite_score": <number from the library entry>,
+    "why_it_works": "<1 sentence on the psychology/structure that makes the pattern effective for THIS audience>"
+  }
+- title (2-5 word concept name for OUR version)
+- adapted_headline (our ORIGINAL scroll-stopping copy · 1-2 lines · brand voice · no exclamation points · no em-dashes · MUST NOT be a paraphrase of source_ad copy)
+- adapted_body (1-2 sentences of OUR body copy in our voice · ORIGINAL)
+- adapted_cta (3-5 word phrase from OUR brand · ORIGINAL)
+- framework (PAS | BAB | AIDA | Compare | Founder POV | UGC testimonial | Trend pivot | Day-in-life | Sensory | Price transparency | Authority | Social proof stack | etc.)
+- visual_brief (1-2 sentences for OUR visual · used by Pass 8.5 image generation · brand-safe · NO source brand identifiers)
+
+Return ONLY JSON: {"swipe_file": [{...ten cards...}]}
+
+ABSOLUTE RULES:
+1. Exactly 10 cards.
+2. source_pattern_summary is the MECHANIC, never verbatim source copy.
+3. adapted_headline/body/cta are ORIGINAL creative, not paraphrases.
+4. visual_brief is brand-safe, no source brand identifiers.
+5. Every card MUST reference a real LIB-NN entry from the library below · lib_index field is mandatory.
+6. Spread picks across platforms (Meta/TikTok/LinkedIn), personas, and awareness stages.`;
+
+    const userPrompt = `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}\n\nFOREPLAY-VALIDATED LIBRARY (top 30 by composite · proven winners running 30+ days):\n${library}`;
+    const data = await callClaude(apiKey, sysPrompt, userPrompt, { maxTokens: 9000 });
+    return extractJSON(data);
+  }
+
+  // ── DEGRADED FALLBACK · web_search (no Foreplay data available) ──
   const data = await callClaude(apiKey,
     `You are a senior creative director building a 10-card swipe file. Each card MUST be GROUNDED in a real ad currently running in the wild · found via web_search.
 
 WORKFLOW · do this for each of the 10 cards:
-1. Use web_search to find a real ad currently running — search the brand's competitors, adjacent-category brands, and the patterns that work for this audience. Look for: Meta Ad Library entries, TikTok creative center, YouTube ads archive, ads referenced on r/marketing / r/advertising, ads embedded in case studies on Foreplay / Adsparo / SwipeWell / Particl, ads in industry-publication newsletters.
-2. Capture the SOURCE PATTERN as a 10-15 word mechanic description (e.g., "founder POV close-up + tactile claim before reveal + texture-test CTA"). NEVER reproduce the source ad's verbatim headline or body — you are extracting the MECHANIC, not the copy.
+1. Use web_search to find a real ad currently running — search the brand's competitors, adjacent-category brands, and the patterns that work for this audience.
+2. Capture the SOURCE PATTERN as a 10-15 word mechanic description. NEVER reproduce the source ad's verbatim headline or body — you are extracting the MECHANIC, not the copy.
 3. Note the source reference: brand name + URL where the ad lives (Meta Ad Library archive URL, TikTok ad URL, etc.).
 4. Then produce the brand's ORIGINAL adapted version — copy written from scratch in our brand voice that uses the same mechanic. Not a paraphrase. Not a "find and replace" rewrite. ORIGINAL.
 
 Distribute the 10 cards: 2-3 per persona · cover 4-5 awareness stages · mix the 4 formats.
 
-Each card returns:
-- id (e.g., SWP-NAME-01 using persona's first initial)
-- persona_name (which of our personas this targets)
-- format (Meta 4:5 | Meta carousel | TikTok 9:16 | TikTok UGC)
-- stage (Unaware | Problem aware | Solution aware | Product aware | Most aware)
-- source_ad_reference: {
-    "source_brand": "<brand name from web_search>",
-    "source_url": "<URL where the ad can be viewed>",
-    "source_format": "<format of the source ad · same vocab as above>",
-    "source_pattern_summary": "<10-15 word mechanic description · NOT verbatim copy>",
-    "why_it_works": "<1 sentence on the psychology / structure that makes the pattern effective for this audience>"
-  }
-- title (2-5 word concept name for OUR version)
-- adapted_headline (our ORIGINAL scroll-stopping copy · 1-2 lines · brand voice · no exclamation points · no em-dashes · MUST NOT be a paraphrase of source_ad's copy)
-- adapted_body (1-2 sentences of OUR body copy in our voice)
-- adapted_cta (3-5 word phrase from OUR brand)
-- framework (PAS | BAB | AIDA | Compare | Founder POV | UGC testimonial | Trend pivot | Day-in-life | Sensory | Price transparency | Authority | Social proof stack | etc.)
-- visual_brief (1-2 sentences for OUR visual · used by Pass 8.5 for image generation · specify casting if a person is shown · brand-safe · no competitor brand names in the prompt)
+Each card returns: id · persona_name · format · stage · source_ad_reference{source_brand, source_url, source_format, source_pattern_summary, why_it_works} · title · adapted_headline · adapted_body · adapted_cta · framework · visual_brief
 
-Return ONLY JSON: {"swipe_file": [{...}, {...}, ... ten total]}
+Return ONLY JSON: {"swipe_file": [{...}, ... ten total]}
 
-ABSOLUTE RULES:
-1. Exactly 10 cards. Not 8. Not 12. Ten.
-2. source_pattern_summary describes the MECHANIC (~10-15 words). Never the verbatim source ad copy.
-3. adapted_headline / adapted_body / adapted_cta are ORIGINAL · not paraphrases or "swap the brand name" rewrites.
-4. visual_brief contains NO competitor brand names · brand-safe for downstream image generation.
-5. Each card MUST have a real source_url. If web_search can't find a real ad for a particular pattern, skip that pattern and find one you CAN ground.`,
+ABSOLUTE RULES: Exactly 10 · source_pattern_summary is MECHANIC not copy · adapted_* are ORIGINAL · visual_brief is brand-safe · every card has a real source_url.`,
     `${ctx}\n\n${pos}\n\nPersonas:\n${personaList}`,
     {
       tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 12 }],
@@ -757,6 +817,137 @@ ABSOLUTE RULES:
     }
   );
   return extractJSON(data);
+}
+
+// ── PASS 8.4 · Ad Visual Analysis (Engine v1.10.0 · multimodal) ──
+//
+// For each Foreplay-sourced swipe ad, fetch the source ad's creative
+// (image URL) and have multimodal Claude extract structured visual
+// details: composition, framing, lighting, color palette, text overlay
+// placement, product placement, talent demographics + pose, setting,
+// hook pattern, transferable visual elements, brand-specific elements
+// to NOT copy, plus a vision_grounded_prompt for gpt-image-2 generation.
+//
+// Anthropic API supports image content blocks with source.type "url" ·
+// the server-side fetches the image · no browser CORS · simpler than
+// base64 encoding.
+//
+// IP DISCIPLINE:
+//   - Output extracts STRUCTURAL/COMPOSITIONAL properties (factual visual
+//     observations: framing, lighting, colors, layout regions).
+//   - on_screen_text_observed records WHERE text appears + its visual role
+//     (positionally) but the adapted_* fields downstream MUST be original
+//     brand creative, NOT verbatim or paraphrase of the source ad's text.
+//   - vision_grounded_prompt is a NEW prompt describing brand-safe visual
+//     composition · NO source brand identifiers · NO source-specific copy
+//     · safe for direct gpt-image-2 ingestion.
+//
+// Cost: ~$0.003 per image (Claude Sonnet vision) · 10 ads = ~$0.03 / run
+// Wall: ~2-3s per call · 10 ads sequential = ~25-30s
+//
+export async function analyzeAdVisuals(apiKey, sourceAdRef, { brandVoice = "" } = {}) {
+  if (!sourceAdRef || !sourceAdRef.source_url) {
+    return { visual_analysis: null, note: "Pass 8.4 skipped · no source URL on ad reference" };
+  }
+
+  // Foreplay's creative_url is the ad's image/video. For videos we'd need
+  // ffmpeg frame extraction (deferred to v1.10.1). For now we pass the
+  // URL straight to Claude · if it's an image, multimodal works · if a
+  // video, Claude returns text-only analysis with a note.
+  const imageUrl = sourceAdRef.creative_url || sourceAdRef.thumbnail_url || sourceAdRef.source_url;
+
+  const sys = `You are a senior creative director analyzing a real running ad's VISUAL COMPOSITION for the purpose of helping another brand produce an ORIGINAL ad that uses the same STRUCTURAL MECHANIC. You are NOT asked to reproduce the source ad's text, copy, or brand identifiers.
+
+Extract structured visual observations and produce a brand-safe gpt-image-2 prompt.
+
+Return ONLY JSON in this shape:
+
+{
+  "composition": {
+    "subject_focus": "<the primary visual subject · 1 phrase>",
+    "framing": "<extreme close-up | close-up | medium | wide | establishing · plus camera angle>",
+    "rule_of_thirds_or_centered": "<which compositional layout>",
+    "depth": "<flat | shallow DoF | deep · 1 phrase>"
+  },
+  "lighting": {
+    "source": "<natural | studio | golden hour | overhead · etc.>",
+    "mood": "<warm | cool | high-contrast | soft | dramatic · 1 phrase>",
+    "time_of_day": "<morning | midday | golden hour | dusk | night | indistinct>"
+  },
+  "color": {
+    "dominant_palette": ["<top 3 dominant colors as plain names or short hex notes>"],
+    "accent_colors": ["<accent colors used for emphasis>"],
+    "temperature": "<warm | cool | neutral>"
+  },
+  "text_overlay_layout": {
+    "has_overlay": <boolean>,
+    "regions_used": ["<where text appears positionally · top | center | bottom | corners>"],
+    "visual_role": "<credibility plant | CTA prep | category pivot | product callout | none>",
+    "typography_style": "<sans-serif bold | serif elegant | script | mono | hand-drawn · 1 phrase>",
+    "size_relative_to_frame": "<dominant | secondary | small caption · 1 phrase>"
+  },
+  "product_placement": {
+    "visible": <boolean>,
+    "framing": "<hero center | edge of frame | held in hand | environmental · 1 phrase>",
+    "context": "<being used | being unboxed | being displayed | absent · 1 phrase>"
+  },
+  "talent": {
+    "count": <number or 0>,
+    "demographics_hint": "<age range + presentation if visible · brand-safe · NO names>",
+    "expression": "<intimate | aspirational | candid | neutral · 1 phrase>",
+    "pose": "<the body language in 1 phrase>"
+  },
+  "setting": {
+    "location_type": "<bedroom | kitchen | exterior | studio | etc.>",
+    "materials_visible": ["<2-3 key materials/textures in the scene>"],
+    "props": ["<2-4 supporting props>"]
+  },
+  "hook_pattern": {
+    "type": "<problem_statement | founder_pov | ugc_testimonial | demonstration | ritual_pov | before_after | social_proof | category_pivot | pattern_interrupt | list | comparison | seasonal_deal>",
+    "where_it_fires_visually": "<which region of the frame carries the hook · 1 phrase>",
+    "mechanic": "<10-15 word mechanic description tying the visual hook to the buyer's emotional state>"
+  },
+  "transferable_visual_elements": ["<3-5 elements that another brand could safely adopt · structural, not creative-content-specific>"],
+  "brand_specific_elements_to_avoid": ["<2-3 elements that are clearly brand-specific to the source · MUST NOT be reproduced>"],
+  "vision_grounded_prompt": "<= 220 chars · brand-safe visual brief ready to paste into gpt-image-2 · describes the COMPOSITION/MECHANIC the user's brand should replicate · contains NO source brand identifiers · contains NO source-specific text/copy · pure visual direction>"
+}
+
+ABSOLUTE RULES:
+1. transferable_visual_elements describe STRUCTURE (e.g., 'extreme close-up + warm natural lighting + product hero center frame'). NOT 'use this person' or 'use this product label'.
+2. brand_specific_elements_to_avoid explicitly flags what's IP of the source brand (their logo, their tagline if visible, their product trade dress, specific talent if identifiable).
+3. vision_grounded_prompt is a NEW prompt of YOUR composition · ≤220 chars · brand-safe · pure visual direction.
+4. If the source is a video and you can only see the cover/thumbnail frame, note that in composition.framing as 'thumbnail only · video analysis limited'.
+5. If text overlays are present, RECORD where they appear and their visual role · do NOT transcribe the verbatim text into any field.${brandVoice ? `\n\nADAPTING FOR BRAND VOICE: ${brandVoice}` : ""}`;
+
+  const userContent = [
+    { type: "image", source: { type: "url", url: imageUrl } },
+    {
+      type: "text",
+      text: `Analyze this ad's visual composition for the user's brand to ethically adapt.
+
+Source reference (for context only · DO NOT reproduce identifiers in output):
+  Brand: ${sourceAdRef.source_brand || "competitor"}
+  Platform: ${sourceAdRef.source_platform || sourceAdRef.source_format || "unknown"}
+  Pattern hint: ${sourceAdRef.source_pattern_summary || "(no pattern summary)"}
+
+Extract the structural visual mechanic per the schema above.`,
+    },
+  ];
+
+  try {
+    const data = await callClaude(apiKey, sys, userContent, { maxTokens: 2500 });
+    const parsed = extractJSON(data);
+    return {
+      visual_analysis: parsed,
+      _generated_at: new Date().toISOString(),
+      _engine_version: "v1.10.0",
+    };
+  } catch (e) {
+    // Multimodal failures (image fetch errors, format issues) are non-fatal ·
+    // Pass 8.5 falls back to text-only visual_brief.
+    console.warn(`[Pass 8.4] vision analysis failed: ${e.message} · falling back to text-only visual_brief downstream`);
+    return { visual_analysis: null, note: `Pass 8.4 failed: ${e.message}` };
+  }
 }
 
 // ── PASS 9: TikTok Scripts (Engine v1.5) ──
