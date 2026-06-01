@@ -6,6 +6,89 @@ the output template version is independent of the React app version.
 
 ---
 
+## [1.9.2] — 2026-05-31 · FOREPLAY AD VALIDATOR + EVALUATOR (SCAFFOLD)
+
+User direction: "We need to add foreplay.co to this for our ad validator and evaluator."
+
+Foreplay.co slots alongside Adyntel as a **second canonical Stage B source with a different role**. v1.9.2 ships the client scaffold + env slot + spec. Wire-in to Pass 8 / 8.6 / 8.7 is v1.10 work (same scaffold-first pattern we used for Adyntel back in v1.7.x).
+
+### The architectural role split (Foreplay vs Adyntel)
+
+| Aspect | Adyntel | Foreplay |
+|---|---|---|
+| Coverage shape | EXHAUSTIVE · every ad a brand runs | CURATED · saved boards + Spyder-tracked brands + filterable global library |
+| Best-for query | "Every ad The Junkluggers ran in Q1" | "Junk-removal ads running 60+ days that someone saved as worth studying" |
+| Auth | `email` + `api_key` in request body | Single `Authorization: <key>` header (no Bearer prefix) |
+| Pricing | Per-API-call credits | Subscription tier (no per-call cost) |
+| Pipeline role | DISCOVERY + new competitor mapping | **VALIDATION** (is this pattern proven?) + **EVALUATION** (composite score) |
+
+The "validator" + "evaluator" framing maps directly to Foreplay's API surface — they expose `running_duration_min_days` as a filter (any ad a brand has paid to run 30+ consecutive days is almost certainly profitable, because performance marketers don't pay for losers for a month), plus duplicate detection (how many other brands are copying the same image/video), plus board-save curation. Together those are strong proxies for "this pattern works."
+
+### Added · `src/lib/foreplay.js` (NEW · ~370 lines · scaffold only)
+
+Mirrors the architectural pattern of `src/lib/adyntel.js`. NOT yet imported by any pass — same scaffold-first discipline.
+
+- `ForeplayClient` class with 11 endpoints wrapped as methods:
+  - SwipeFile: `fetchSwipefileAds`, `listBoards`, `fetchBoardAds`, `fetchBoardBrands`
+  - Spyder: `listSpyderBrands`, `getSpyderBrand`, `fetchSpyderBrandAds`
+  - Brand discovery: `findBrandsByDomain`, `fetchAdsByBrandIds`, `fetchAdsByPageId`
+  - Single-ad: `getAdDetails`, `getAdDuplicates`
+- `ForeplayError` class · exposes status / endpoint / body for caller branching
+- `ForeplayCallCounter` class · subscription model so this tracks call volume for debug + runaway-loop safety rather than per-credit budgets
+- `validateKey()` workaround · pings `/api/boards?limit=1` (cheapest call) · 401 → invalid, 200 → valid
+- **`provenWinnerFilters({ platform, min_running_days, date_window_days, display_format, niches, languages })`** helper · builds the validator-baseline filter set (`live: true · running_duration_min_days: 30 · order: running_duration_desc`)
+- **`scoreAdSignal(ad, { duplicateCount, boardSaveCount })`** · the EVALUATOR · returns 0-10 composite with breakdown:
+  - Running duration · 4pt max (180+d = 4 · 90+d = 3.5 · 30+d = 2.5 · 14+d = 1.5)
+  - Live status · 1pt max
+  - Duplicate count · 3pt max (20+ dupes = 3 · 10+ = 2.5 · 5+ = 2)
+  - Board save count · 2pt max (10+ saves = 2 · 5+ = 1.5)
+  - Verdict labels: `canonical winner` (8+) · `strong validator` (6-8) · `moderate signal` (4-6) · `weak · skip` (<4)
+- 5xx retry with exponential backoff (200ms, 1s) · 4xx surfaces immediately
+- 30s per-request timeout via AbortController
+- `createForeplayClient(cfg)` factory · returns null when credentials absent (caller falls back to Adyntel → web_search)
+- `foreplayConfigDefaults(cfg)` · reads max calls + min running days from config or env
+
+### Added · `VITE_FOREPLAY_API_KEY` env slot in `.env.local`
+
+```
+VITE_FOREPLAY_API_KEY=
+# VITE_FOREPLAY_MAX_CALLS_PER_RUN=200
+# VITE_FOREPLAY_MIN_RUNNING_DAYS=30
+```
+
+User pastes their key when ready. Scaffold is import-safe with the key absent (factory returns null).
+
+### Vault docs
+
+- **NEW** `<vault>/08c - Foreplay Ad Source Spec.md` · full spec · API surface · v1.10 wire-in plan · risk register · 6 open questions deferred to wire-in time
+- `<vault>/08 - Ad-Intel Module.md` · Stage B description updated to list both canonical sources (Adyntel exhaustive + Foreplay curated) + the role split
+- `<vault>/13 - Roadmap & Backlog.md` · new "Ad-Intel · Foreplay validator + evaluator" block alongside the existing Adyntel section · v1.10 wire-in items listed
+
+### What v1.10 wires in (NOT this ship · ~3-4 hours)
+
+- Pass 8 priority order: Foreplay → Adyntel → web_search · each swipe card gains a `validator` block with composite score + verdict
+- Renderer adds a small validator chip on each swipe card ("validated · running 67d · 14 duplicates · strong")
+- Pass 8.6 replaces the "first 4-8 ads" heuristic with explicit composite-rank by `scoreAdSignal`
+- Config drawer · Foreplay key field + inline validation
+
+### Bundle
+
+576.08 KB / 163.48 KB gzip · **unchanged from v1.9.1** because `foreplay.js` isn't imported anywhere yet (scaffold only).
+
+### Acceptance criteria
+
+1. ✅ `ForeplayClient` class · 11 endpoints
+2. ✅ `scoreAdSignal` evaluator · 0-10 composite with verdict labels
+3. ✅ `provenWinnerFilters` helper · validator-baseline filter set
+4. ✅ `createForeplayClient(cfg)` factory · returns null when key absent (safe import)
+5. ✅ `validateKey()` workaround for the no-dedicated-validation-endpoint case
+6. ✅ Spec doc at `<vault>/08c` mirrors `<vault>/08a` Adyntel structure
+7. ✅ Cross-refs in `<vault>/08` (parent module) + `<vault>/13` (roadmap)
+8. ✅ `VITE_FOREPLAY_API_KEY` slot added to gitignored `.env.local`
+9. ✅ Build clean · bundle unchanged
+
+---
+
 ## [1.9.1] — 2026-05-27 · PDF-DECK-ONLY · KILLED HTML OUTPUT + AGENDA SLIDE
 
 User direction: "lets kill the html file creation only have the super pdf deck the deck may be 60 pages when done and thats okay its formatted like a solutions and analysis from a PE firm"
